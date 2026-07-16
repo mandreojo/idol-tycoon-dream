@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>아이돌 육성 타이쿤</title>
+<title>프로젝트 최애돌</title>
 <style>
   :root{
     --bg:#fff2f4; --panel:#ffffff; --panel2:#fff5f7; --line:#ffdbe1;
@@ -486,7 +486,7 @@
     <div class="spacer"></div>
     <img id="titleMascot" src="assets/mascot.png" alt="">
     <img id="logo" src="assets/logo.png" alt="최애돌">
-    <h1 class="center" style="font-size:21px;margin-top:12px" data-i18n="t_title">아이돌 육성 타이쿤</h1>
+    <h1 class="center" style="font-size:21px;margin-top:12px" data-i18n="t_title">프로젝트 최애돌</h1>
     <p class="muted center" style="margin-top:9px" data-i18n-html="t_tagline">
       원석을 발굴해 스타로 키우고,<br>신인 그룹으로 데뷔시켜<br>정상에 올리는 프로듀서 시뮬.</p>
     <div class="spacer"></div>
@@ -1983,7 +1983,7 @@ const Game = {
     const r=this.lastResult; if(!r) return;
     const file=r.cardFile;
     if(!file){ this.shareCardSlow(); return; }   // 아직 생성 전이면 폴백
-    const shareData={files:[file],title:"아이돌 육성 타이쿤",
+    const shareData={files:[file],title:"프로젝트 최애돌",
       text:`${r.name} → ${r.ending} (팬 ${fmt(r.fans)}명)`};
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share(shareData).catch(e=>{ if(e.name!=="AbortError") this.fallbackSave(file); });
@@ -1996,7 +1996,7 @@ const Game = {
     const cv=await this.makeCard();
     cv.toBlob(async (blob)=>{
       const file=new File([blob],`idol-tycoon-${this.lastResult.name}.png`,{type:"image/png"});
-      const shareData={files:[file],title:"아이돌 육성 타이쿤",
+      const shareData={files:[file],title:"프로젝트 최애돌",
         text:`${this.lastResult.name} → ${this.lastResult.ending} (팬 ${fmt(this.lastResult.fans)}명)`};
       if(navigator.canShare && navigator.canShare({files:[file]})){
         try{ await navigator.share(shareData); return; }catch(e){ if(e.name==="AbortError") return; }
@@ -2874,7 +2874,7 @@ window.addEventListener("popstate", ()=>{
       x.fillStyle='#ec3a5c'; x.font=`900 48px ${FF}`; x.fillText(gAll, 128, 1288);
       x.textAlign='right'; x.fillStyle='#9a8f9a'; x.font=`600 26px ${FF}`; x.fillText('멤버', W-128, 1236);
       x.fillStyle='#f0a01e'; x.font=`900 42px ${FF}`; x.fillText(`${filled}/9`, W-128, 1288);
-      x.textAlign='center'; x.fillStyle='#b9adb4'; x.font=`600 23px ${FF}`; x.fillText('최애돌 · 아이돌 육성 타이쿤', W/2, 1332);
+      x.textAlign='center'; x.fillStyle='#b9adb4'; x.font=`600 23px ${FF}`; x.fillText('프로젝트 최애돌', W/2, 1332);
       return cv;
     },
     async shareGroupCard(){
