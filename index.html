@@ -488,11 +488,11 @@
     <img id="logo" src="assets/logo.png" alt="최애돌">
     <h1 class="center" style="font-size:21px;margin-top:12px" data-i18n="t_title">아이돌 육성 타이쿤</h1>
     <p class="muted center" style="margin-top:9px" data-i18n-html="t_tagline">
-      최애를 데뷔시키고 세계로.<br>52주 동안 6가지 재능을 키워<br>어떤 슈퍼스타가 되는지 겨뤄봐.</p>
+      원석을 발굴해 스타로 키우고,<br>신인 그룹으로 데뷔시켜<br>정상에 올리는 프로듀서 시뮬.</p>
     <div class="spacer"></div>
     <button class="btn" id="continueBtn" style="display:none;margin-bottom:9px" onclick="Game.continueGame()" data-i18n="t_continue">▶ 이어하기</button>
     <button class="btn" onclick="DG.go()">🏢 우리 기획사</button>
-    <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">최애 고르기 →</button>
+    <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">연습생 발굴 →</button>
     <div style="display:flex;gap:9px;margin-top:9px">
       <button class="btn ghost" style="flex:1" onclick="Game.showDex()" data-i18n="t_dex">📖 엔딩 도감</button>
       <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏆 명예의 전당</button>
@@ -826,12 +826,12 @@ const EVENTS = [
             fx:s=>{s.mental-=15;s.cond-=14;s.fans=Math.round(s.fans*0.88);}}},
      {t:"연습에 집중 (멘탈 +7)", fx:s=>{s.mental+=7;}},
    ]},
-  {id:"drama", emoji:"🎬", title:"드라마 조연 캐스팅", text:"연기돌로 갈 기회. 근데 발연기 논란 나면 이미지 타격이 커.",
+  {id:"drama", emoji:"🎤", title:"힙합 사이퍼 섭외", text:"실력파로 눈도장 찍을 기회. 근데 삑사리 나면 이미지 타격이 커.",
    choices:[
-     {t:"연기 도전", odds:s=>0.34+s.acting/1100+s.mental/500,
-       win:{label:"인생 조연!",emoji:"🎬",desc:"연기 <b>+40</b> · 팬 <b>↑↑↑</b> · 컨디션 <b>-12</b>",
+     {t:"사이퍼 도전", odds:s=>0.34+s.acting/1100+s.mental/500,
+       win:{label:"인생 벌스!",emoji:"🎤",desc:"랩 <b>+40</b> · 팬 <b>↑↑↑</b> · 컨디션 <b>-12</b>",
             fx:s=>{s.acting+=40;s.fans+=Math.round(2100);s.cond-=12;}},
-       lose:{label:"발연기 논란",emoji:"😬",desc:"연기 <b>+6</b> · 멘탈 <b>-14</b> · 팬 <b>↓↓</b>",
+       lose:{label:"가사 실수 논란",emoji:"😬",desc:"랩 <b>+6</b> · 멘탈 <b>-14</b> · 팬 <b>↓↓</b>",
             fx:s=>{s.acting+=6;s.mental-=14;s.fans=Math.round(s.fans*0.85);}}},
      {t:"음악에 집중 (보컬 +14)", fx:s=>{s.vocal+=14;}},
    ]},
@@ -1064,8 +1064,8 @@ const ENDING_DEX=[
   {id:"stage",   emoji:"🎆", name:"무대 장악 퍼포머",tier:"S",  hint:"무대 4종(보컬·댄스·비주얼·끼)을 압도적으로"},
   {id:"crown",   emoji:"🎉", name:"이변의 대관식",   tier:"A",  hint:"실력보다 화제성·팬덤으로 대상까지"},
   {id:"bigstar", emoji:"⭐", name:"믿고 보는 대형 스타",tier:"A", hint:"빈틈없이 두루 성장시켜 입상"},
-  {id:"stageA",  emoji:"🎭", name:"무대형 스타",     tier:"A",  hint:"무대는 최강이지만 연기·작곡은 아직"},
-  {id:"actingstar",emoji:"🎬", name:"대세 연기돌",    tier:"S",  hint:"연기를 확실한 주무기로 세워 월드까지"},
+  {id:"stageA",  emoji:"🎭", name:"무대형 스타",     tier:"A",  hint:"무대는 최강이지만 랩·작곡은 아직"},
+  {id:"actingstar",emoji:"🎤", name:"대세 래퍼",      tier:"S",  hint:"랩을 확실한 주무기로 세워 월드까지"},
   {id:"songwriter",emoji:"🎹", name:"싱어송라이터",   tier:"S",  hint:"작곡을 주무기로 세워 월드까지"},
   {id:"fandom",   emoji:"💞", name:"SNS 팬덤 제국",   tier:"A",  hint:"실력보다 순수 화력·팬덤만으로 대상"},
   {id:"soloist",  emoji:"🪄", name:"외길 장인",       tier:"A",  hint:"한 재능만 극단적으로, 나머진 포기"},
@@ -1077,7 +1077,7 @@ const ENDING_DEX=[
 ];
 const DEX_BY_EMOJI={"🌟":"ss","👑":"onetop","🏆":"allround","🌈":"allround","🎆":"stage",
   "🎉":"crown","⭐":"bigstar","✨":"bigstar","🌱":"longrun","🌗":"local","💔":"disband",
-  "🎬":"actingstar","🎹":"songwriter","💞":"fandom","🪄":"soloist","🐣":"rookie","🛋️":"slacker"};
+  "🎤":"actingstar","🎹":"songwriter","💞":"fandom","🪄":"soloist","🐣":"rookie","🛋️":"slacker"};
 function dexIdOf(end){ if(end.emoji==="🎭") return end.tier==="C"?"local":"stageA";
   return DEX_BY_EMOJI[end.emoji]||"local"; }
 
@@ -1795,7 +1795,7 @@ const Game = {
     this.lastResult={name:idolName(s.idol),grp:idolGrp(s.idol),ending:end.name,emoji:end.emoji,
       tier:end.tier,fans:s.fans,reachedWorld,statVals,overall,finalRank:finalRank||null,
       spec:s.idol.spec, specName:spStat.n, specIco:spStat.ico, specColor:spStat.c, img:s.idol.img||"",
-      stage:reachedWorld?(finalRank?`글로벌 대상 ${finalRank}위`:"WORLD TOUR · WEEK 52"):"DOMESTIC 탈락"};
+      stage:reachedWorld?(finalRank?`글로벌 대상 ${finalRank}위`:"WORLD TOUR · 파이널"):"DOMESTIC 탈락"};
     document.getElementById("endIdolBox").style.display="";
     const eav=document.getElementById("endAvatar");
     if(s.idol.img){ eav.src=s.idol.img; eav.style.display=""; } else { eav.style.display="none"; }
