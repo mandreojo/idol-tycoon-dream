@@ -605,7 +605,7 @@
       <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
       <h2 id="assignTitle">배치</h2>
     </div>
-    <p class="muted" style="margin:2px 0 6px">이 자리에 세울 연습생을 골라 (적합도 높은 순). 같은 아이돌은 중복 배치 불가.</p>
+    <p class="muted" style="margin:2px 0 6px">이 자리에 세울 연습생을 골라 (적합도 높은 순). 이미 다른 자리에 있으면 눌러서 옮길 수 있어.</p>
     <div id="assignList"></div>
   </section>
 
@@ -2675,7 +2675,13 @@ window.addEventListener("popstate", ()=>{
       const a=this.agency(); const ot=document.getElementById('officeTitle');
       if(ot) ot.innerHTML=`${this.logoHtml(a.logo,26)} ${esc(a.name)}`;
       const gi=this.groupInfo();
-      const slots=POSITIONS.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
+      // 동적 슬롯: 최소 2칸, 채운 자리+열어둔 만큼만 노출(최대 9). "9칸 다 채워야 할 것 같은" 압박 제거
+      const filled=this.filledCount();
+      const openN=Math.min(9, Math.max(2, this.data.openSlots||2, filled));
+      const filledIdxs=POSITIONS.map((p,i)=>this.data.lineup[p.id]?i:-1).filter(i=>i>=0);
+      const lastNeeded=Math.max(openN-1, filledIdxs.length?Math.max.apply(null,filledIdxs):0);
+      const shown=POSITIONS.slice(0, lastNeeded+1);
+      const slots=shown.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
         if(r){ const val=this.posScore(r.stats,p.stat), av=r.img?`style="background-image:url('${r.img}')"`:'';
           return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
             <span class="dg-av" ${av}>${r.img?'':'🎤'}</span>
@@ -2689,8 +2695,12 @@ window.addEventListener("popstate", ()=>{
           <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '창고에서 2명 이상 편성하면 활동 시작'}</div></div>
          <div class="dg-grid nine">${slots}</div>
          <div style="display:flex;gap:8px;margin-top:11px">
-           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 창고 (${this.data.roster.length})</button>
-           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.shareGroupCard()">📸 데뷔조 카드</button>`:''}
+           <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
+           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 창고 (${this.data.roster.length})</button>
+         </div>
+         <div style="display:flex;gap:8px;margin-top:8px">
+           ${shown.length<9? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
+           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.shareGroupCard()">📸 그룹 카드</button>`:''}
          </div>
          ${gi.n>=2? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
       // 데뷔(저장)한 그룹 목록 — 멤버 전속
@@ -2725,13 +2735,20 @@ window.addEventListener("popstate", ()=>{
       if(cur) html+=`<button class="btn ghost" onclick="DG.unassign('${slot.id}');DG.renderAssign()" style="margin-bottom:9px">✕ 이 자리 비우기 (현재 ${esc(cur.name)})</button>`;
       if(!list.length) html+='<p class="muted" style="text-align:center;padding:20px">편성할 무소속 연습생이 없어.<br>새로 육성하거나, 전속은 이미 데뷔한 그룹 소속이야.</p>';
       else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.stat), dup=this.idkeyInLineup(r.idkey,slot.id), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
+        // 이미 다른 자리에 있으면 → 이동 가능(선택 시 기존 자리 자동 해지). 현재 포지션 표시
+        let otherPos='';
+        if(dup&&!isCur){ const osid=Object.keys(this.data.lineup).find(sid=>{ const rr=this.rosterById(this.data.lineup[sid]); return rr&&rr.idkey===r.idkey; }); otherPos=osid?((POSITIONS.find(p=>p.id===osid)||{}).nm||''):''; }
+        const label = isCur?'배치됨' : (dup? `${esc(otherPos)}→이동` : '배치');
         return `<div class="ros-row${isCur?' cur':''}"><span class="ros-av" ${av}>${r.img?'':'🎤'}</span>
-          <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span></div>
+          <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${dup&&!isCur?` <span style="color:#18b06e;font-size:11px">● ${esc(otherPos)}</span>`:''}</div>
             <div class="muted" style="font-size:12px">${slot.nm} 적합 <b style="color:#ec3a5c">${grade(val)}·${val}</b></div></div>
-          <button class="cr-btn${dup&&!isCur?' off':''}" ${dup&&!isCur?'disabled':''} onclick="DG.pickForSlot(${r.rid})">${isCur?'배치됨':(dup?'중복':'배치')}</button></div>`;}).join('');
+          <button class="cr-btn" onclick="DG.pickForSlot(${r.rid})">${label}</button></div>`;}).join('');
       document.getElementById('assignList').innerHTML=html;
     },
-    pickForSlot(rid){ const r=this.assign(this._slot, rid); if(r.err==='dup'){ toast(`${r.name}은(는) 이미 데뷔조에 있어`); return; } if(r.err){ toast('배치 실패'); return; } this.go(); },
+    pickForSlot(rid){ this.load(); const r0=this.rosterById(rid);
+      // 같은 아이돌이 다른 자리에 있으면 그 자리 비우고 이동
+      if(r0){ for(const sid in this.data.lineup){ if(sid===this._slot)continue; const rr=this.rosterById(this.data.lineup[sid]); if(rr&&rr.idkey===r0.idkey) delete this.data.lineup[sid]; } this.persist(); }
+      const r=this.assign(this._slot, rid); if(r.err==='committed'){ toast('전속 멤버라 배치 못 해'); return; } if(r.err){ toast('배치 실패'); return; } this.go(); },
     // ===== 연습생 창고 =====
     goRoster(){ this.load(); this.renderRoster(); show('s-roster'); },
     renderRoster(){
@@ -2750,6 +2767,25 @@ window.addEventListener("popstate", ()=>{
           </div>`}</div>`;}).join('');
     },
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
+    // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
+    autoFill(){ this.load();
+      const used=new Set(this.lineupRids());
+      const openN=Math.min(9, Math.max(2, this.data.openSlots||2, this.filledCount()));
+      let placed=0;
+      POSITIONS.slice(0,openN).forEach(p=>{ if(this.data.lineup[p.id])return;
+        let best=null,bv=-1;
+        (this.data.roster||[]).forEach(r=>{ if(this.isCommitted(r.rid)||used.has(r.rid))return;
+          if(this.idkeyInLineup(r.idkey,p.id))return;
+          const s=this.posScore(r.stats,p.stat); if(s>bv){bv=s;best=r;} });
+        if(best){ this.data.lineup[p.id]=best.rid; used.add(best.rid); placed++; } });
+      this.persist(); this.renderOffice();
+      toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어');
+    },
+    // 자리(슬롯) 추가 — 최대 9
+    addSlot(){ this.load(); const cur=Math.min(9, Math.max(2, this.data.openSlots||2, this.filledCount()));
+      if(cur>=9){ toast('멤버는 최대 9명이야'); return; }
+      this.data.openSlots=cur+1; this.persist(); this.renderOffice();
+    },
     doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 폐기하고 카드로 바꿀까?`))return; const res=this.discard(rid); if(res.ok) toast(`폐기 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
     doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
