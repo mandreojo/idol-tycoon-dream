@@ -1047,13 +1047,15 @@ const RIVAL_EMOJI = ["💫","⚡","🌙","🥀","🌸","🔮","🌌","🖤","✴
 //   ※ 연말 시상식(대상)은 1년에 한 번 → 52주에만. 36주는 '월드 진출 심사'이지 대상 아님.
 const AWARD_PEAK_K = 0.34;   // 시상식에서 원톱 스탯 반영 계수(낮을수록 몰빵 불리)
 // ===== 턴/관문 스케줄 (드림그룹 프로토) =====
-// ⚡ 지금은 테스트용 12턴. 본밸런싱 때 TOTAL_W=36(월3턴×12개월, 초/중/하순) + COMPETS 재배치·base 재튜닝.
-const TOTAL_W = 12;   // 총 턴 수
-const DEBUT_W = 4;    // 데뷔 심사 턴
+// ⚡ 24턴 = 월2턴(초/말)×12개월. 관문은 분기(3·6·9·12월말)에 배치 → 6·12·18·24턴 균등.
+//    데뷔심사(6) → 음방1위 국내무대(12) → 월드진출 쇼케이스(18,gate=1위만 월드) → 연말 글로벌대상(24,final).
+//    ⚠️ base(라이벌 기준선)는 초기 추정값 — 플레이 피드백으로 세밀 튜닝 예정(gatesim 미도입).
+const TOTAL_W = 24;   // 총 턴 수
+const DEBUT_W = 6;    // 데뷔 심사 턴
 const COMPETS = {
-  // 테스트 스케줄: 데뷔(4) + 최종 대상(12)만. base는 임시(밸런싱 전) — 대충 통과되게 낮춤.
-  8:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:90},
-  12:{type:"award", emoji:"👑", tk:"cp_t_52", base:130, final:true},
+  12:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:140},
+  18:{type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:210},
+  24:{type:"award", emoji:"👑", tk:"cp_t_52", base:280, final:true},
 };
 
 // ===== 엔딩 도감 (반복 플레이 훅) =====
@@ -1189,7 +1191,7 @@ const Game = {
       talk:t("cs1_talk",{name:idolName(idol)})},
       ()=>{ show("s-play"); this.startWeek(); this.armBackGuard(); toast(t("start_toast",{name:idolName(idol)})); });
   },
-  actName(w){ return w<=DEBUT_W?t("act_debut"):w<=Math.round(TOTAL_W*0.66)?t("act_domestic"):t("act_world"); },
+  actName(w){ return w<=DEBUT_W?t("act_debut"):w<=Math.round(TOTAL_W*0.72)?t("act_domestic"):t("act_world"); },
   // 다음 관문 돌파 예상(runCompet/debutJudge 공식에서 랜덤 뺀 기대치 vs 기준선). 스탯 변할 때마다 실시간 갱신.
   gateForecast(s, nxw){
     if(nxw===DEBUT_W){   // 데뷔 심사: total>=340 || peak>=150
@@ -1247,7 +1249,7 @@ const Game = {
     }).join("");
     // 연습실 패널: 도트 버디 + 다음 관문 D-day + 진행바
     const sex=(idol.cat==="M")?"m":"f";
-    const MS=[{w:DEBUT_W,k:"ms_debut"},{w:8,k:"ms_music1"},{w:TOTAL_W,k:"ms_global_award"}];
+    const MS=[{w:DEBUT_W,k:"ms_debut"},{w:12,k:"ms_music1"},{w:18,k:"ms_award"},{w:TOTAL_W,k:"ms_global_award"}];
     const nx=MS.find(m=>m.w>=s.week)||MS[MS.length-1];
     const prevW=(MS.filter(m=>m.w<nx.w).map(m=>m.w).pop())||0;
     const prog=Math.max(6,Math.min(100,Math.round((s.week-prevW)/(nx.w-prevW)*100)));
