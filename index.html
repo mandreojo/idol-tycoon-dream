@@ -1,0 +1,2896 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>아이돌 육성 타이쿤</title>
+<style>
+  :root{
+    --bg:#fff2f4; --panel:#ffffff; --panel2:#fff5f7; --line:#ffdbe1;
+    --txt:#2b2530; --sub:#9a8f9a; --accent:#ec3a5c; --accent2:#ff7a9c;
+    --gold:#f0a01e; --good:#18b06e; --bad:#ef4452;
+    --vocal:#ff4f97; --dance:#2f9fe6; --visual:#f5a516; --charm:#9160f5;
+    --acting:#ff6a3d; --creative:#12bda0; --mental:#8a92ad;
+  }
+  @font-face{font-family:'Jua';src:url('assets/Jua-400.ttf') format('truetype');font-display:swap}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:#f3e6e9;color:var(--txt);
+    font-family:'Jua',-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif}
+  #app{max-width:480px;margin:0 auto;min-height:100vh;background:
+    radial-gradient(120% 55% at 50% -8%, #ffe2e8 0%, var(--bg) 52%);
+    display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .screen{flex:1;display:none;flex-direction:column;padding:16px}
+  .screen.on{display:flex}
+  #s-title{background:radial-gradient(120% 48% at 50% 14%, #ffdde4 0%, var(--bg) 62%)}
+  #logo{width:230px;max-width:70%;height:auto;margin:0 auto;display:block}
+  #titleMascot{width:132px;height:132px;border-radius:50%;object-fit:cover;object-position:top center;
+    margin:0 auto;display:block;border:4px solid #fff;box-shadow:0 10px 22px rgba(236,58,92,.22)}
+  h1{font-size:26px;margin:0;line-height:1.15;letter-spacing:-.5px}
+  h2{font-size:19px;margin:0 0 6px}
+  .muted{color:var(--sub);font-size:13px;line-height:1.5}
+  .btn{appearance:none;border:none;border-radius:14px;padding:15px 16px;
+    font-size:16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    width:100%;cursor:pointer;transition:transform .08s;box-shadow:0 6px 18px -6px var(--accent2)}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:var(--panel2);box-shadow:none;color:var(--txt);border:1px solid var(--line)}
+  .btn.saved-done{background:#e6f8ef !important;color:#1f9d63 !important;border:1px solid #7fdcae !important;opacity:1}
+  .btn:disabled{opacity:.4}
+
+  /* 플레이 메뉴 버튼 + 시트 모달 */
+  .menu-btn{flex:none;width:38px;height:38px;border-radius:12px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);font-size:18px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:transform .08s}
+  .menu-btn:active{transform:scale(.92)}
+  .sub-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .sub-head h2{margin:0;font-size:20px}
+  .sheet{position:absolute;inset:0;background:rgba(40,20,28,.42);backdrop-filter:blur(2px);
+    display:none;flex-direction:column;justify-content:flex-end;z-index:35}
+  .sheet.on{display:flex;animation:sheetFade .18s ease}
+  @keyframes sheetFade{from{opacity:0}to{opacity:1}}
+  .sheet-card{background:var(--bg);border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    box-shadow:0 -10px 30px rgba(0,0,0,.18);animation:sheetUp .22s cubic-bezier(.2,.9,.3,1)}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet-title{font-weight:800;font-size:17px;text-align:center;margin-bottom:4px}
+  .sheet-sub{color:var(--sub);font-size:13px;text-align:center;line-height:1.5;margin-bottom:16px}
+  .sheet-btn{width:100%;border:none;border-radius:14px;padding:15px 16px;font-size:16px;font-weight:700;
+    cursor:pointer;margin-top:9px;transition:transform .08s;font-family:inherit}
+  .sheet-btn:active{transform:scale(.97)}
+  .sheet-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .sheet-btn.plain{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .sheet-btn.danger{background:var(--panel2);color:var(--bad);border:1px solid var(--line)}
+  .sheet-lang{display:flex;gap:8px;margin-top:9px}
+  .sheet-lang button{flex:1;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel2);color:var(--sub);font-family:inherit}
+  .sheet-lang button.sel{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+
+  /* SELECT */
+  .segtab{display:flex;gap:8px;margin-bottom:12px}
+  .seg{flex:1;appearance:none;border:1px solid var(--line);border-radius:12px;padding:11px 8px;
+    background:var(--panel);color:var(--sub);font-size:14px;font-weight:700;cursor:pointer;transition:.1s}
+  .seg.on{background:var(--panel2);color:var(--txt);border-color:var(--accent)}
+  .modebox{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:78px}
+  /* 플로팅 시작 버튼 */
+  .startfab{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+    width:calc(100% - 32px);max-width:448px;z-index:26;
+    box-shadow:0 10px 26px -6px rgba(236,58,92,.6);
+    transition:transform .28s cubic-bezier(.2,.9,.3,1.3),opacity .2s}
+  .startfab.hide{opacity:0;transform:translateX(-50%) translateY(24px);pointer-events:none}
+  .srch{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    color:var(--txt);padding:12px 14px;font-size:15px;margin-bottom:10px;-webkit-appearance:none}
+  .srch:focus{outline:none;border-color:var(--accent)}
+  .uploader{display:flex;align-items:center;justify-content:center;height:160px;border-radius:16px;
+    border:2px dashed var(--line);background:var(--panel) center/cover no-repeat;color:var(--sub);
+    cursor:pointer;margin-bottom:12px;text-align:center;overflow:hidden;font-size:32px}
+  .uploader small{font-size:12px;font-weight:600}
+  .specpick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-bottom:4px}
+  .sp{appearance:none;border:1px solid var(--line);border-radius:12px;padding:11px 4px;
+    background:var(--panel);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;transition:.1s}
+  .sp.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+  .sp .spico{font-size:20px;display:block;margin-bottom:3px}
+  .genderpick{display:flex;gap:8px}
+  .gsel{flex:1;appearance:none;border:1px solid var(--line);border-radius:12px;padding:11px 4px;
+    background:var(--panel);color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;transition:.1s}
+  .gsel.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;color:var(--accent)}
+  #s-select .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow-y:auto;padding:4px 0 12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    cursor:pointer;transition:transform .1s,border-color .1s;position:relative}
+  .card:active{transform:scale(.97)}
+  .card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+  .card .ph{width:100%;aspect-ratio:1;background:#ffe0e6 center/cover no-repeat;display:block}
+  .card .nm{padding:8px 10px 4px;font-weight:700;font-size:14px;line-height:1.2}
+  .card .gp{padding:0 10px 10px;color:var(--sub);font-size:11px}
+  .card .tag{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+    font-size:10px;padding:3px 7px;border-radius:20px;font-weight:700}
+
+  /* PLAY header */
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .avatar{width:104px;height:104px;border-radius:22px;background:#ffe0e6 center/cover no-repeat;
+    flex:none;border:3px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:50px;
+    box-shadow:0 8px 20px rgba(236,58,92,.28)}
+  .top .meta{flex:1;min-width:0}
+  .top .nm{font-weight:800;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--panel2);
+    color:var(--sub);margin-top:3px}
+  .fans{text-align:right;flex:none}
+  .fans b{font-size:19px;color:var(--gold);display:block;transition:transform .12s}
+  .fans span{font-size:10px;color:var(--sub)}
+  .fans b.fanbump{animation:fanBump .5s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes fanBump{0%{transform:scale(1);color:var(--gold)}35%{transform:scale(1.28);color:var(--accent)}100%{transform:scale(1);color:var(--gold)}}
+  /* 화면 전환 페이드 인 (※transform 금지 — .screen 안의 position:fixed 요소[startfab]의 기준이 바뀜) */
+  .screen.on{animation:screenIn .3s ease both}
+  @keyframes screenIn{from{opacity:0}to{opacity:1}}
+
+  .actbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .week{font-weight:800;font-size:15px}
+  .actbanner{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;
+    background:linear-gradient(135deg,var(--accent2),var(--accent))}
+
+  /* 활력 2열 (컨디션·멘탈) */
+  .vitals{display:flex;gap:10px;margin-bottom:10px}
+  .vital{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 11px;
+    box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .vital .vlbl{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:5px;font-weight:700}
+  .vital .vlbl b{color:var(--txt);font-variant-numeric:tabular-nums}
+  .vital .bar{height:8px;background:var(--panel2);border-radius:20px;overflow:hidden}
+  .vital .bar>i{display:block;height:100%;border-radius:20px;transition:width .45s cubic-bezier(.3,.8,.4,1)}
+  /* 관문 카드: 돌파 예상 칩 · 임박 펄스 · 코치 멘트 */
+  .pr-fore{display:inline-flex;align-items:center;font-size:11px;font-weight:900;
+    padding:2px 9px;border-radius:20px;margin-left:5px;vertical-align:middle;white-space:nowrap}
+  .pr-fore.safe{background:#e6f8ef;color:#1f9d63}
+  .pr-fore.tight{background:#fff3e0;color:#c8862a}
+  .pr-fore.risk{background:#ffe6ea;color:#d63754}
+  .practice.urgent{border-color:var(--accent2)}
+  .practice.urgent .pr-buddy{animation:prBob 1.5s ease-in-out infinite, urgentGlow 1.1s ease-in-out infinite}
+  @keyframes urgentGlow{0%,100%{filter:none}50%{filter:drop-shadow(0 0 8px rgba(236,58,92,.6))}}
+  .pr-coach{margin-top:7px;font-size:12px;color:var(--accent);font-weight:700;line-height:1.35}
+  .cond{margin-bottom:10px}
+  .barlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-bottom:4px}
+  .barlbl b{color:var(--txt)}
+  .bar{height:9px;background:var(--panel2);border-radius:20px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:20px;transition:width .4s}
+
+  .stats{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 12px;margin-bottom:10px}
+  .stats,.act,.card,.ev-card,.lb,.uploader,.seg,.btn.ghost{box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .stat{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .stat .k{width:64px;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap}
+  .stat .bar{flex:1}
+  .stat .v{width:26px;text-align:right;font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+  .stat.maxed .v{width:auto;min-width:30px;font-size:11px;color:#e79a00;letter-spacing:.3px}
+  .stat.maxed{background:linear-gradient(90deg,rgba(255,211,92,.14),rgba(255,157,224,.10))}
+  .gbadge{width:30px;text-align:center;font-size:11px;font-weight:900;color:#0e0b1a;
+    border-radius:7px;padding:2px 0;letter-spacing:-.5px}
+
+  /* 연습실 패널 (빈 공간 채움 + 다음 관문 안내) */
+  .practice{display:flex;align-items:center;gap:14px;margin:14px 0 0;padding:12px 16px;
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .pr-buddy{width:60px;height:60px;object-fit:cover;border-radius:14px;flex:none;
+    box-shadow:0 3px 10px rgba(236,58,92,.18);animation:prBob 1.5s ease-in-out infinite}
+  @keyframes prBob{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-6px) scaleY(1.04)}}
+  .pr-info{flex:1;min-width:0}
+  .pr-label{font-size:11px;color:var(--sub);font-weight:700}
+  .pr-next{font-size:15px;font-weight:800;margin:2px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pr-track{height:8px;background:var(--panel2);border-radius:20px;overflow:hidden}
+  .pr-track>i{display:block;height:100%;border-radius:20px;transition:width .5s;
+    background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .actions{margin-top:14px}
+  .act .d{margin-left:5px}
+  .agrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .act{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+    border-radius:13px;padding:11px 12px;cursor:pointer;transition:transform .08s,border-color .1s;text-align:left;width:100%}
+  .act:active{transform:scale(.97)}
+  .act.rest{background:var(--panel2)}
+  .act.care{background:#fff0f5;border-color:#ffcfe0}
+  .act.care .ico{filter:drop-shadow(0 1px 2px rgba(236,58,92,.3))}
+  .act .ico{font-size:20px;width:22px;text-align:center;flex:none}
+  .act .body{flex:1;min-width:0}
+  .act .t{font-weight:700;font-size:14px}
+  .act .d{font-size:10px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* overlay */
+  .ov{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,240,243,.9);backdrop-filter:blur(6px);
+    display:none;flex-direction:column;justify-content:center;align-items:center;padding:26px;z-index:20;text-align:center}
+  .ov.on{display:flex}
+  /* 유저 매뉴얼 모달 */
+  .manual{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+    background:rgba(40,16,30,.5);backdrop-filter:blur(3px);padding:22px}
+  .manual.on{display:flex;animation:mFade .22s ease}
+  @keyframes mFade{from{opacity:0}to{opacity:1}}
+  .manual-card{position:relative;background:#fff;border-radius:22px;max-width:400px;width:100%;
+    max-height:85vh;overflow-y:auto;padding:26px 22px 22px;box-shadow:0 18px 50px rgba(0,0,0,.28);
+    animation:mPop .3s cubic-bezier(.3,1.3,.5,1)}
+  @keyframes mPop{from{transform:scale(.9) translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .manual-x{position:absolute;top:12px;right:14px;border:none;background:#f2eaef;color:#9a8f9a;
+    width:30px;height:30px;border-radius:50%;font-size:13px;cursor:pointer;font-weight:800}
+  .manual-emoji{text-align:center;font-size:46px;line-height:1}
+  .manual-title{text-align:center;font-size:20px;margin:8px 0 15px;color:var(--accent)}
+  .manual-body{font-size:14px;line-height:1.6;color:#4a4048}
+  .manual-body p{margin:0 0 12px}
+  .manual-body b{color:var(--txt);font-weight:800}
+  .manual-body .mrow{display:flex;gap:10px;align-items:flex-start;margin:11px 0}
+  .manual-body .mrow .mi{font-size:19px;flex-shrink:0;width:22px;text-align:center;line-height:1.3}
+  .manual-body .mrow .mt{flex:1}
+  .manual .btn{margin-top:18px}
+  .roll{font-size:52px;font-weight:900;letter-spacing:-2px;margin-bottom:4px}
+  .roll.dc{color:var(--bad)} .roll.f{color:#ff9d5f} .roll.s{color:var(--good)} .roll.dg{color:var(--gold)}
+  .roll.pf{color:#ffcf3f;text-shadow:0 0 14px rgba(255,207,63,.85),0 0 28px rgba(255,95,162,.5);
+    animation:pfPulse .7s ease-in-out infinite}
+  @keyframes pfPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.12);filter:brightness(1.25)}}
+  .px-anim.perfect-glow{filter:drop-shadow(0 0 10px rgba(255,207,63,.9)) drop-shadow(0 0 20px rgba(255,95,162,.6))}
+  .delta{font-size:15px;color:var(--sub);line-height:1.7;margin-top:6px}
+  .delta b{color:var(--txt)}
+  .ev-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 20px;width:100%;animation:evCardIn .34s cubic-bezier(.3,1.2,.5,1)}
+  @keyframes evCardIn{from{transform:scale(.92) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  .ev-banner{display:inline-block;font-size:12px;font-weight:800;color:var(--accent);background:rgba(236,58,92,.1);padding:3px 13px;border-radius:20px;margin-bottom:8px;animation:evBannerPop .42s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes evBannerPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .ev-emoji{font-size:44px}
+  .ev-title{font-size:19px;font-weight:800;margin:8px 0 6px}
+  .ev-text{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:16px}
+  .ev-choices{display:grid;gap:9px}
+  /* 오클릭 방지: 선택지는 살짝 뒤에 등장 + 그 전엔 클릭 무효 */
+  .ev-choices.locked{pointer-events:none}
+  .ev-choices .btn{opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .32s cubic-bezier(.3,1.2,.5,1)}
+  .ev-choices.ready .btn{opacity:1;transform:none}
+  .ev-choices.ready .btn:nth-child(2){transition-delay:.09s}
+  .ev-choices.ready .btn:nth-child(3){transition-delay:.18s}
+
+  /* end */
+  #s-end{overflow-y:auto}
+  #s-play{overflow-y:auto}  /* 아이콘 확대 등으로 짧은 화면서 넘칠 때 스크롤(클리핑 방지) */
+  .endtitle{font-size:14px;color:var(--sub);font-weight:700}
+  .end-idol{text-align:center;margin:8px 0 2px}
+  .end-avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;background:#ffe0e6;
+    border:3px solid var(--accent);box-shadow:0 8px 22px rgba(236,58,92,.24)}
+  .end-idolname{font-weight:800;font-size:18px;margin-top:9px}
+  .end-idolname small{color:var(--sub);font-weight:700;font-size:13px;margin-left:4px}
+  .rank-emoji{font-size:52px;text-align:center;margin:4px 0 0}
+  .endname{font-size:25px;font-weight:900;text-align:center;letter-spacing:-1px;line-height:1.15}
+  .endsub{text-align:center;color:var(--sub);font-size:13px;margin-top:6px;line-height:1.6}
+  #radarWrap{display:flex;justify-content:center;margin:10px 0 4px}
+  #radar{width:290px;height:290px;max-width:88%}
+  .ograde{text-align:center;margin-top:2px;font-size:13px;color:var(--sub)}
+  .ograde b{font-size:20px;color:var(--gold);vertical-align:-2px;margin-left:4px}
+  .lb{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:14px}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);font-size:14px}
+  .lb-row:first-child{border-top:none}
+  .lb-row.me{background:rgba(255,95,162,.14)}
+  .lb-row .r{width:22px;font-weight:800;color:var(--sub)}
+  .lb-row .who{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-row .who small{color:var(--sub)}
+  .lb-row .sc{font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+  input.name{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    color:var(--txt);padding:12px 14px;font-size:16px;margin-top:12px}
+  .center{text-align:center}
+  .spacer{flex:1}
+  .toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--panel2);
+    border:1px solid var(--line);padding:9px 16px;border-radius:20px;font-size:13px;z-index:30;
+    opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90%}
+  .toast.on{opacity:1}
+
+  /* 페이즈 전환 컷씬 */
+  .cutscene{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+    z-index:40;display:none;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:30px;overflow:hidden;
+    background:linear-gradient(165deg,#3a0f1f 0%,#180610 100%)}
+  .cutscene.on{display:flex}
+  .cutscene::before{content:"";position:absolute;top:-40%;left:50%;width:200%;height:150%;
+    transform:translateX(-50%);pointer-events:none;
+    background:conic-gradient(from 0deg at 50% 0%, transparent 0deg, rgba(255,120,150,.16) 22deg, transparent 46deg, rgba(255,140,165,.12) 80deg, transparent 104deg, rgba(255,150,175,.16) 150deg, transparent 180deg);
+    animation:spot 9s linear infinite}
+  @keyframes spot{to{transform:translateX(-50%) rotate(360deg)}}
+  .cs-in{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+    animation:csIn .55s cubic-bezier(.2,.9,.3,1.3) both}
+  @keyframes csIn{from{opacity:0;transform:translateY(28px) scale(.94)}to{opacity:1;transform:none}}
+  .cs-act{color:#ff9db3;font-size:14px;letter-spacing:4px;font-weight:800;margin-bottom:8px}
+  .cs-emoji{font-size:60px;line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))}
+  .cs-title{color:#fff;font-size:33px;font-weight:900;margin:10px 0 4px;letter-spacing:-.5px;
+    text-shadow:0 3px 22px rgba(236,58,92,.55)}
+  .cs-sub{color:#ffc2d0;font-size:15px;font-weight:700;letter-spacing:1px}
+  .cs-talk{display:flex;align-items:flex-end;gap:10px;margin-top:28px;max-width:340px}
+  .cs-mascot{width:72px;height:72px;border-radius:50%;object-fit:cover;flex:none;background:#ffe0e6;
+    border:3px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.4);animation:bob 1.7s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .cs-bubble{background:#fff;color:#2b2530;border-radius:16px 16px 16px 4px;padding:12px 15px;
+    font-size:14px;font-weight:700;line-height:1.45;text-align:left;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+  .cs-tap{position:absolute;bottom:26px;left:0;right:0;color:rgba(255,255,255,.6);font-size:13px;
+    z-index:1;animation:blink 1.4s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:.4}50%{opacity:.9}}
+
+  /* 결과 집계 로딩 */
+  .loading{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+    z-index:45;display:none;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    background:linear-gradient(165deg,#3a0f1f,#180610)}
+  .loading.on{display:flex}
+  .load-ring{width:66px;height:66px;border-radius:50%;border:6px solid rgba(255,255,255,.15);
+    border-top-color:#ff5f8a;animation:spin .8s linear infinite;margin-bottom:22px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-txt{color:#fff;font-size:21px;font-weight:900}
+  .load-step{color:#ffc2d0;font-size:14px;font-weight:700;margin-top:12px;min-height:20px;animation:blink 1.2s ease-in-out infinite}
+
+  /* 관문/시상식 특수 발표 무대 (순위 서스펜스 리빌 + 컨페티) */
+  .compstage{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+    z-index:46;display:none;flex-direction:column;align-items:center;justify-content:center;
+    padding:26px 22px;overflow:hidden;background:linear-gradient(165deg,#3a0f1f 0%,#180610 100%)}
+  .compstage.on{display:flex}
+  .compstage.t2{background:linear-gradient(165deg,#3a1420 0%,#12060f 100%)}   /* gate: 월드행 */
+  .compstage.t3{background:linear-gradient(165deg,#2a1236 0%,#0b0512 100%)}   /* final: 보랏빛 대상 */
+  .compstage::before{content:"";position:absolute;top:-40%;left:50%;width:220%;height:160%;
+    transform:translateX(-50%);pointer-events:none;z-index:0;
+    background:conic-gradient(from 0deg at 50% 0%, transparent 0deg, rgba(255,120,150,.16) 22deg, transparent 46deg, rgba(255,190,120,.13) 80deg, transparent 104deg, rgba(255,150,175,.16) 150deg, transparent 180deg);
+    animation:spot 9s linear infinite}
+  .compstage.t3::before{background:conic-gradient(from 0deg at 50% 0%, transparent 0deg, rgba(255,205,90,.20) 20deg, transparent 44deg, rgba(200,150,255,.16) 80deg, transparent 104deg, rgba(255,205,90,.2) 150deg, transparent 180deg)}
+  .cs-flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:47;display:none}
+  .cs-flash.go{display:block;animation:csFlash .6s ease-out}
+  @keyframes csFlash{0%{opacity:.85}100%{opacity:0}}
+  .comp-in{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%}
+  .comp-emoji{font-size:62px;line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));
+    animation:csIn .5s cubic-bezier(.2,.9,.3,1.3) both}
+  .comp-emoji.t3{font-size:80px}
+  .comp-emoji.win{animation:csIn .5s cubic-bezier(.2,.9,.3,1.3) both, pfPulse 1s ease-in-out .5s infinite}
+  .comp-title{color:#fff;font-size:25px;font-weight:900;margin:8px 0 2px;text-align:center;letter-spacing:-.5px;
+    text-shadow:0 3px 22px rgba(236,58,92,.55)}
+  .comp-phase{color:#ffc2d0;font-size:13px;font-weight:800;letter-spacing:3px;margin-bottom:16px;min-height:18px;
+    animation:blink 1.1s ease-in-out infinite}
+  .comp-board{width:100%;max-width:340px;display:flex;flex-direction:column;gap:7px;margin-bottom:4px}
+  .comp-row{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:12px;
+    background:rgba(255,255,255,.08);color:#fff;font-size:14px;font-weight:700;
+    opacity:0;transform:translateY(10px)}
+  .comp-row.show{animation:rowIn .34s cubic-bezier(.2,.9,.3,1.2) forwards}
+  @keyframes rowIn{to{opacity:1;transform:none}}
+  .comp-row.me{background:linear-gradient(135deg,rgba(255,95,162,.55),rgba(236,58,92,.42));
+    box-shadow:0 0 0 2px rgba(255,160,190,.7),0 8px 20px rgba(236,58,92,.4)}
+  .comp-row .r{width:28px;font-size:19px;text-align:center;flex:none}
+  .comp-row .who{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .comp-row .sc{font-variant-numeric:tabular-nums;color:#ffd7e2;font-weight:800;flex:none}
+  .comp-head{color:#fff;font-size:21px;font-weight:900;text-align:center;margin:14px 0 2px;min-height:26px;
+    text-shadow:0 2px 16px rgba(236,58,92,.6)}
+  .comp-head.pop{animation:emoPop .6s cubic-bezier(.3,1.6,.5,1)}
+  .comp-sub{color:#ffc2d0;font-size:13px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:18px;
+    max-width:320px;min-height:18px}
+  .comp-cont{width:100%;max-width:320px;opacity:0}
+  .comp-cont.show{animation:rowIn .3s ease forwards}
+  .confetti{position:fixed;top:-24px;width:11px;height:16px;pointer-events:none;z-index:48;border-radius:2px}
+  @keyframes confFall{0%{opacity:1;transform:translateY(0) rotate(0)}
+    100%{opacity:.85;transform:translateY(var(--fall)) rotate(var(--spin))}}
+
+  /* 육성 연출: 훈련 씬 · 게이지·등급 강조 */
+  .train-scene{display:flex;flex-direction:column;align-items:center;margin-bottom:14px}
+  .train-ava{width:104px;height:104px;border-radius:50%;object-fit:cover;background:#ffe0e6;
+    border:4px solid var(--accent);box-shadow:0 10px 26px rgba(236,58,92,.28)}
+  .train-ico{position:relative;margin-top:-22px;font-size:40px;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.2));animation:heave .5s ease-in-out infinite}
+  @keyframes heave{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-10px) rotate(6deg)}}
+  .train-say{margin-top:8px;font-size:14px;font-weight:800;color:var(--accent)}
+  .stat{transition:background .2s;border-radius:9px}
+  .stat.bump{background:rgba(236,58,92,.10);animation:statPulse .7s ease-out}
+  @keyframes statPulse{0%{transform:scale(1)}30%{transform:scale(1.035)}100%{transform:scale(1)}}
+  .gbadge{transition:transform .2s}
+  .gbadge.pop{animation:badgePop .6s cubic-bezier(.3,1.4,.5,1)}
+  @keyframes badgePop{0%{transform:scale(1)}35%{transform:scale(1.7)}100%{transform:scale(1)}}
+  .vgain{position:absolute;font-size:13px;font-weight:900;color:var(--good);
+    pointer-events:none;animation:floatUp 1s ease-out forwards}
+  @keyframes floatUp{0%{opacity:0;transform:translateY(4px)}20%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
+
+  /* 도트(픽셀) 이펙트 레이어 — 훈련 응원 버디 */
+  .px-stage{position:relative;display:flex;flex-direction:column;align-items:center;margin-bottom:12px;
+    padding:6px 40px 0}
+  .px-chibi{width:104px;height:104px;image-rendering:pixelated;image-rendering:crisp-edges;
+    transform-origin:center bottom}
+  /* 활동별 영차영차 모션 */
+  .fx-sing{animation:fxSing .45s ease-in-out infinite}
+  .fx-dance{animation:fxDance .5s ease-in-out infinite}
+  .fx-pose{animation:fxPose 1s ease-in-out infinite}
+  .fx-charm{animation:fxCharm .6s ease-in-out infinite}
+  .fx-act{animation:fxAct .7s ease-in-out infinite}
+  .fx-create{animation:fxCreate .8s ease-in-out infinite}
+  .fx-rest{animation:fxRest 1.6s ease-in-out infinite}
+  @keyframes fxSing{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-8px) scale(1.05,.97)}}
+  @keyframes fxDance{0%{transform:translateX(-9px) rotate(-9deg)}50%{transform:translateX(9px) rotate(9deg) translateY(-7px)}100%{transform:translateX(-9px) rotate(-9deg)}}
+  @keyframes fxPose{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.09) rotate(2deg)}}
+  @keyframes fxCharm{0%,100%{transform:rotate(-11deg) translateY(0)}50%{transform:rotate(11deg) translateY(-5px)}}
+  @keyframes fxAct{0%,100%{transform:translateX(0) scaleX(1)}30%{transform:translateX(-7px) scaleX(1.06)}60%{transform:translateX(7px) scaleX(.95)}}
+  @keyframes fxCreate{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-5px) rotate(-5deg)}75%{transform:translateY(-5px) rotate(5deg)}}
+  @keyframes fxRest{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.96) translateY(3px)}}
+  /* 결과별 마무리 모션 */
+  .rx-jump{animation:rxJump .55s cubic-bezier(.3,1.4,.5,1) 2}
+  .rx-ok{animation:rxOk .4s ease-out 2}
+  .rx-droop{animation:rxDroop .6s ease-out forwards}
+  .rx-fall{animation:rxFall .7s ease-in forwards}
+  @keyframes rxJump{0%{transform:translateY(0) rotate(0)}45%{transform:translateY(-36px) rotate(10deg)}100%{transform:translateY(0)}}
+  @keyframes rxOk{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+  @keyframes rxDroop{0%{transform:translateY(0) rotate(0) scale(1)}100%{transform:translateY(7px) rotate(-5deg) scale(.93)}}
+  @keyframes rxFall{0%{transform:translateY(0) rotate(0)}55%{transform:translateY(0) rotate(72deg)}100%{transform:translateY(16px) rotate(90deg)}}
+  .px-floor{width:120px;height:16px;border-radius:50%;margin-top:-8px;
+    background:radial-gradient(rgba(236,58,92,.2),transparent 70%)}
+  .px-note{position:absolute;font-size:22px;color:var(--accent);opacity:0;
+    animation:pxnote 1.2s ease-out infinite}
+  .px-note.n1{left:20%;top:34%;animation-delay:0s}
+  .px-note.n2{right:18%;top:24%;animation-delay:.45s}
+  .px-note.n3{left:32%;top:12%;animation-delay:.85s}
+  @keyframes pxnote{0%{opacity:0;transform:translateY(8px) scale(.8) rotate(-8deg)}
+    25%{opacity:1}100%{opacity:0;transform:translateY(-30px) scale(1.15) rotate(10deg)}}
+  .px-spark{position:absolute;width:9px;height:9px;image-rendering:pixelated;pointer-events:none;border-radius:1px}
+  @keyframes pxfly{0%{opacity:1;transform:translate(0,0) scale(1)}
+    100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+  /* 레티리니 픽셀 스프라이트 애니 (훈련 씬) */
+  .px-holder{position:relative;display:flex;justify-content:center;align-items:flex-end;
+    width:200px;height:180px}
+  .px-anim{height:168px;width:auto;image-rendering:pixelated;image-rendering:crisp-edges;
+    filter:drop-shadow(0 6px 10px rgba(236,58,92,.22))}
+  .px-anim.pop{animation:pxPop .45s cubic-bezier(.3,1.4,.5,1)}
+  @keyframes pxPop{0%{transform:scale(.72)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+  /* 훈련 씬 2D 에셋 카드 (도트 폐기 → emo 2D 일러). 모든 컷을 동일 둥근카드 프레임에 담아 톤 통일감. */
+  .emo-holder{position:relative;display:flex;justify-content:center;align-items:center;width:236px;height:236px}
+  .emo-card{width:212px;height:212px;object-fit:cover;border-radius:28px;border:4px solid #fff;background:#fff;
+    box-shadow:0 12px 30px rgba(236,58,92,.22),0 2px 8px rgba(0,0,0,.10);will-change:transform}
+  .emo-card.in{animation:emoIn .5s cubic-bezier(.25,1.5,.5,1) both, emoFloat 2.7s ease-in-out .55s infinite}
+  .emo-card.res{animation:emoPop .55s cubic-bezier(.3,1.65,.5,1) both}
+  .emo-card.perfect-glow{box-shadow:0 0 24px rgba(255,207,63,.95),0 0 48px rgba(255,95,162,.55),0 12px 30px rgba(236,58,92,.22)}
+  @keyframes emoIn{0%{opacity:0;transform:scale(.55) translateY(16px)}60%{opacity:1;transform:scale(1.07)}100%{transform:scale(1) translateY(0)}}
+  @keyframes emoFloat{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-10px) rotate(1.2deg)}}
+  @keyframes emoPop{0%{transform:scale(.5) rotate(-9deg)}55%{transform:scale(1.13) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+
+  /* 성장 서사 로그 */
+  .growth{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;
+    margin-top:14px;text-align:left;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .growth h3{font-size:14px;margin:0 0 8px;color:var(--accent)}
+  .growth .gl{font-size:12.5px;color:var(--sub);line-height:1.7;padding:3px 0;border-top:1px dashed var(--line)}
+  .growth .gl:first-of-type{border-top:none}
+  .growth .gl b{color:var(--txt)}
+
+  /* 엔딩 도감 */
+  #s-dex{overflow-y:auto}
+  .dex-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .dexcell{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:14px 12px 12px;text-align:center;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .dexcell.lock{background:var(--panel2);border-style:dashed;opacity:.85}
+  .dexcell .dex-emoji{font-size:38px;line-height:1;margin-bottom:6px}
+  .dexcell.lock .dex-emoji{filter:grayscale(1) opacity(.5)}
+  .dex-tier{position:absolute;top:9px;right:9px;min-width:22px;padding:1px 6px;border-radius:8px;
+    font-size:11px;font-weight:900;color:#0e0b1a}
+  .dexcell.lock .dex-tier{background:var(--sub)!important;color:#fff;opacity:.6}
+  .dex-name{font-size:14px;font-weight:800;margin-bottom:4px}
+  .dexcell.lock .dex-name{color:var(--sub)}
+  .dex-hint{font-size:11px;color:var(--sub);line-height:1.45}
+  .dex-unlock{display:table;margin:0 auto 10px;padding:6px 14px;border-radius:20px;
+    font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--gold),var(--accent2));
+    box-shadow:0 4px 12px -3px var(--accent2);animation:emoIn .5s cubic-bezier(.3,1.35,.5,1)}
+
+  /* 카드 저장 프리뷰 (모바일 롱프레스) */
+  .cardsave{display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px}
+  .cardsave-tip{font-size:14px;font-weight:700;color:var(--txt);line-height:1.5;margin-bottom:12px;text-align:center}
+  .cardsave-tip b{color:var(--accent)}
+  .cardsave-img{width:100%;max-width:300px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.28);
+    -webkit-touch-callout:default;touch-callout:default}
+  .cardsave-sub{font-size:12px;color:var(--sub);line-height:1.5;margin-top:12px;text-align:center}
+  .cardsave-sub b{color:var(--txt)}
+
+  /* 언어 스위처 · 공유 배너 */
+  .langsel{position:absolute;top:12px;right:12px;z-index:5;appearance:none;border:1px solid var(--line);
+    border-radius:10px;background:var(--panel);color:var(--sub);font-size:12px;font-weight:700;
+    padding:6px 26px 6px 10px;font-family:inherit;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%239a8f9a' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center}
+  .shared-banner{text-align:center;font-size:14px;font-weight:800;color:var(--accent);
+    background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px}
+</style>
+
+<div id="app">
+  <div class="toast" id="toast"></div>
+
+  <!-- 시트 모달 (메뉴 / 나가기 확인) -->
+  <div class="sheet" id="sheet" onclick="if(event.target===this)Game.closeSheet()">
+    <div class="sheet-card" id="sheetCard"></div>
+  </div>
+
+  <!-- TITLE -->
+  <section class="screen on" id="s-title">
+    <select id="langSel" class="langsel" onchange="Game.changeLang(this.value)" aria-label="language"></select>
+    <div class="spacer"></div>
+    <img id="titleMascot" src="assets/mascot.png" alt="">
+    <img id="logo" src="assets/logo.png" alt="최애돌">
+    <h1 class="center" style="font-size:21px;margin-top:12px" data-i18n="t_title">아이돌 육성 타이쿤</h1>
+    <p class="muted center" style="margin-top:9px" data-i18n-html="t_tagline">
+      최애를 데뷔시키고 세계로.<br>52주 동안 6가지 재능을 키워<br>어떤 슈퍼스타가 되는지 겨뤄봐.</p>
+    <div class="spacer"></div>
+    <button class="btn" id="continueBtn" style="display:none;margin-bottom:9px" onclick="Game.continueGame()" data-i18n="t_continue">▶ 이어하기</button>
+    <button class="btn" onclick="DG.go()">🏢 우리 기획사</button>
+    <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">최애 고르기 →</button>
+    <div style="display:flex;gap:9px;margin-top:9px">
+      <button class="btn ghost" style="flex:1" onclick="Game.showDex()" data-i18n="t_dex">📖 엔딩 도감</button>
+      <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏆 명예의 전당</button>
+    </div>
+    <button class="btn ghost" style="margin-top:9px" onclick="Game.showManual('intro')" data-i18n="t_intro">❓ 게임 소개</button>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- OFFICE (드림그룹 허브) -->
+  <section class="screen" id="s-office">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="Game.reset()" aria-label="back" title="뒤로">←</button>
+      <h2 id="officeTitle">🏢 우리 기획사</h2>
+      <button class="menu-btn" onclick="DG.editAgency()" title="기획사 설정" style="margin-left:auto">⚙️</button>
+    </div>
+    <div id="dgGroup"></div>
+    <div id="dgCards"></div>
+    <button class="btn" onclick="Game.goSelect()" style="margin-top:16px">＋ 새 연습생 육성</button>
+  </section>
+
+  <!-- SELECT -->
+  <section class="screen" id="s-select">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="Game.reset()" aria-label="back" title="뒤로">←</button>
+      <h2 data-i18n="sel_who">누구를 키울까?</h2>
+    </div>
+    <div class="segtab">
+      <button class="seg on" id="seg-search" onclick="Game.mode('search')" data-i18n="sel_tab_search">🔍 아이돌 검색</button>
+      <button class="seg" id="seg-custom" onclick="Game.mode('custom')" data-i18n="sel_tab_custom">✏️ 커스텀</button>
+    </div>
+
+    <div id="mode-search" class="modebox">
+      <input class="srch" id="idolSearch" placeholder="이름·그룹 검색 (예: 리사, BTS)" data-i18n-ph="sel_search_ph" oninput="Game.search()" autocomplete="off">
+      <div class="grid" id="idolGrid"></div>
+    </div>
+
+    <div id="mode-custom" class="modebox" style="display:none">
+      <label class="uploader" id="uploader">
+        <input type="file" accept="image/*" id="customFile" onchange="Game.customPhoto(event)" hidden>
+        <span id="upPh">📷<br><small data-i18n="sel_photo">사진 올리기 (선택)</small></span>
+      </label>
+      <input class="srch" id="customName" placeholder="아이돌 이름 (최대 10자)" data-i18n-ph="sel_name_ph" maxlength="10" oninput="Game.customValidate()" autocomplete="off">
+      <p class="muted" style="margin:2px 0 5px" data-i18n="sel_pick_gender">성별을 골라</p>
+      <div class="genderpick" id="genderPick">
+        <button type="button" class="gsel on" data-g="F" onclick="Game.pickGender('F')"><span data-i18n="gender_f">👩 여자</span></button>
+        <button type="button" class="gsel" data-g="M" onclick="Game.pickGender('M')"><span data-i18n="gender_m">👨 남자</span></button>
+      </div>
+      <p class="muted" style="margin:8px 0 7px" data-i18n="sel_pick_spec">타고난 특기를 골라</p>
+      <div class="specpick" id="specPick"></div>
+    </div>
+
+    <button class="btn startfab hide" id="startBtn" disabled onclick="DG.toCardPick()" data-i18n="sel_start">육성 시작 →</button>
+  </section>
+
+  <!-- 육성카드 선택 (캐릭터 선택 다음 단계) -->
+  <section class="screen" id="s-cardpick">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="Game.goSelect()" aria-label="back" title="뒤로">←</button>
+      <h2>🎴 육성카드 선택</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 4px">다음 육성에 힘을 실어줄 카드를 골라 · 최대 2개<br>(안 골라도 시작할 수 있어)</p>
+    <div id="cardPickList"></div>
+    <button class="btn" onclick="Game.start()" style="margin-top:16px">육성 시작 🔥</button>
+  </section>
+
+  <!-- 육성카드 강화·도감 -->
+  <section class="screen" id="s-cards">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2>🔧 카드 합치기 · 도감</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 6px">레어도(N·R·SR)는 카드 고유. 같은 <b>★</b> 2장을 합쳐 별을 올려(★1→★5).<br>확률 4단계: 🌟대성공(1장보존)·✨성공·💦실패·💥대실패.</p>
+    <div id="cardsList"></div>
+  </section>
+
+  <!-- 기획사 설정 (이름·로고) -->
+  <section class="screen" id="s-agency">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.exitAgency()" aria-label="back" title="뒤로">←</button>
+      <h2>🏢 기획사 설정</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 6px">기획사·데뷔조 이름과 로고를 정해줘.<br>데뷔조 카드에 그대로 박혀서 나와.</p>
+    <div style="text-align:center;margin:12px 0 6px">
+      <label class="ag-logo" id="agLogo"><input type="file" accept="image/*" id="agFile" hidden onchange="DG.agencyPhoto(event)"><span id="agLogoView">🏢</span></label>
+      <div class="muted" style="font-size:12px;margin-top:4px">탭해서 사진 올리기 · 또는 아래에서 고르기</div>
+    </div>
+    <div class="ag-emojis" id="agEmojis"></div>
+    <input class="srch" id="agName" placeholder="기획사 이름 (최대 14자)" maxlength="14" style="margin-top:12px">
+    <input class="srch" id="agGroup" placeholder="데뷔조(그룹) 이름 (예: STELLAR)" maxlength="14" style="margin-top:8px">
+    <button class="btn" onclick="DG.saveAgencyFromUI()" style="margin-top:12px">저장 →</button>
+  </section>
+
+  <!-- 연습생 창고 -->
+  <section class="screen" id="s-roster">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2>📋 연습생 창고</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 6px">육성한 연습생들. <b>편성</b>으로 데뷔조에, 안 쓸 연습생은 <b>폐기</b>해서 대표스탯 카드로.</p>
+    <div id="rosterList"></div>
+    <button class="btn" onclick="Game.goSelect()" style="margin-top:14px">＋ 새 연습생 육성</button>
+  </section>
+
+  <!-- 포지션 배치 -->
+  <section class="screen" id="s-assign">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2 id="assignTitle">배치</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 6px">이 자리에 세울 연습생을 골라 (적합도 높은 순). 같은 아이돌은 중복 배치 불가.</p>
+    <div id="assignList"></div>
+  </section>
+
+  <!-- PLAY -->
+  <section class="screen" id="s-play">
+    <div class="top">
+      <div class="avatar" id="pAvatar"></div>
+      <div class="meta">
+        <div class="nm" id="pName">—</div>
+        <span class="chip" id="pChip">—</span>
+      </div>
+      <div class="fans"><b id="pFans">0</b><span>FANS</span></div>
+      <button class="menu-btn" id="helpBtn" onclick="Game.showManual('play')" aria-label="help" title="도움말">❓</button>
+      <button class="menu-btn" id="menuBtn" onclick="Game.openMenu()" aria-label="menu">☰</button>
+    </div>
+
+    <div class="actbar">
+      <span class="week" id="pWeek">WEEK 1 / 52</span>
+      <span class="actbanner" id="pAct">Road to Debut</span>
+    </div>
+
+    <div class="vitals" id="vitalsBox"></div>
+
+    <div class="stats" id="statBox"></div>
+    <div class="practice" id="practiceBox"></div>
+    <div class="actions" id="actionBox"></div>
+  </section>
+
+  <!-- END -->
+  <section class="screen" id="s-end">
+    <div class="spacer"></div>
+    <div class="shared-banner" id="sharedBanner" style="display:none"></div>
+    <div class="endtitle center" id="endStage">—</div>
+    <div class="end-idol" id="endIdolBox">
+      <img class="end-avatar" id="endAvatar" src="" alt="">
+      <div class="end-idolname" id="endIdolName">—</div>
+    </div>
+    <div class="rank-emoji" id="endEmoji">🌟</div>
+    <div class="endname" id="endName">—</div>
+    <div class="endsub" id="endSub">—</div>
+    <div id="radarWrap"><canvas id="radar" width="580" height="580"></canvas></div>
+    <div class="ograde" id="oGrade"></div>
+    <div id="dgResult"></div>
+    <button class="btn" id="dgOfficeBtn" style="margin-top:12px;display:none" onclick="DG.go()">🏢 기획사로 (드림그룹 보기)</button>
+    <div class="growth" id="growthBox" style="display:none"></div>
+    <button class="btn" id="shareLinkBtn" style="margin-top:14px" onclick="Game.shareLink()" data-i18n="share_link_btn">🔗 결과 공유하기</button>
+    <button class="btn ghost" id="shareBtn" style="margin-top:9px" onclick="Game.shareCard()" data-i18n="share_btn">📸 이미지로 저장</button>
+    <input class="name" id="nameInput" placeholder="이름을 남겨봐 (리더보드)" maxlength="10" data-i18n-ph="name_ph">
+    <button class="btn ghost" id="saveBtn" style="margin-top:9px" onclick="Game.saveScore()" data-i18n="save_btn">🏆 명예의 전당 등록</button>
+    <div class="lb" id="lbBox"></div>
+    <button class="btn ghost" id="againBtn" style="margin-top:12px" onclick="Game.reset()">홈으로</button>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- ENDING DEX -->
+  <section class="screen" id="s-dex">
+    <div class="spacer" style="max-height:8px"></div>
+    <h2 class="center" style="font-size:22px" data-i18n="dex_title">📖 엔딩 도감</h2>
+    <p class="muted center" id="dexLine" style="margin:4px 0 14px">지금까지 배출한 결말 <b id="dexCount" style="color:var(--accent)">0 / 0</b><br>다른 육성으로 새로운 엔딩을 모아봐!</p>
+    <div class="dex-grid" id="dexGrid"></div>
+    <button class="btn ghost" style="margin-top:14px" onclick="Game.reset()" data-i18n="home_btn">홈으로</button>
+    <div class="spacer" style="max-height:12px"></div>
+  </section>
+
+  <div class="ov" id="ov"></div>
+  <div class="manual" id="manual" onclick="Game.closeManual(event)">
+    <div class="manual-card" onclick="event.stopPropagation()">
+      <button class="manual-x" onclick="Game.closeManual()" aria-label="close">✕</button>
+      <div class="manual-emoji" id="manualEmoji">🌟</div>
+      <h2 class="manual-title" id="manualTitle"></h2>
+      <div class="manual-body" id="manualBody"></div>
+      <button class="btn" id="manualCta" onclick="Game.closeManual()" data-i18n="manual_ok">알겠어!</button>
+    </div>
+  </div>
+  <div class="cutscene" id="cutscene"></div>
+  <div class="loading" id="loading"></div>
+  <div class="compstage" id="competStage"></div>
+</div>
+
+<!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
+<script src="i18n.js?v=20260716rap"></script>
+<script src="idols.js?v=20260715d"></script>
+<script>
+// 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
+const IDOLS = window.IDOL_DB || [];
+// 영문모드 이름 표기: 아이돌 영문명(nameEn)·그룹 영문명(grpEn) 있으면 사용, 없으면(커스텀 등) 한글 폴백.
+function idolName(i){ return (typeof LANG!=="undefined" && LANG==="en" && i && i.nameEn) ? i.nameEn : (i ? i.name : ""); }
+function idolGrp(i){ return (typeof LANG!=="undefined" && LANG==="en" && i && i.grpEn) ? i.grpEn : (i ? (i.grp||"") : ""); }
+
+// 6대 능력치 (육각형)
+const STATS = [
+  {k:"vocal",   n:"보컬",         ico:"🎵", c:"#ff7ab8"},
+  {k:"acting",  n:"랩",           ico:"🎤", c:"#ff8a6b"},
+  {k:"dance",   n:"댄스",         ico:"💃", c:"#5fc9ff"},
+  {k:"visual",  n:"비주얼",       ico:"✨", c:"#ffca5f"},
+  {k:"charm",   n:"예능",         ico:"🎭", c:"#a97bff"},
+  {k:"creative",n:"크리에이티브", ico:"🎼", c:"#4fe0c0"},
+];
+const MENTAL = {k:"mental", n:"멘탈", ico:"🧠", c:"#9aa6c9"};
+
+// 등급 F ~ SS — 스탯은 누적 포인트 P. 100마다 등급 1개↑ (게이지 꽉차면 등급업).
+// level 0~7 = F E D C B A S SS. 게이지 = 현재 등급 안에서의 진행도(0~100).
+const GRADES=["F","E","D","C","B","A","S","SS"];
+function levelOf(p){ return Math.min(7, Math.floor(Math.max(0,p)/100)); }
+function progOf(p){ p=Math.max(0,p); return levelOf(p)>=7 ? Math.min(100,Math.round(p-700)) : Math.floor(p%100); } // 게이지 표시값(SS구간=700~800 진행, 800=MAX)
+function grade(p){ return GRADES[levelOf(p)]; }
+const GRADE_COLOR={SS:"#ffd35c",S:"#ff5fa2",A:"#c48bff",B:"#5fc9ff",C:"#4fd6a0",D:"#8f9bbf",E:"#77809e",F:"#606784"};
+
+// 타고난 재능 (특기 기반 — 검색·커스텀 공통). 스탯은 누적 P 스케일(0~800).
+function talentOf(spec){
+  const keys = STATS.map(s=>s.k);
+  if(!keys.includes(spec)) spec=keys[0];
+  const base = {}; keys.forEach(k=>base[k]=12);
+  base.mental=60;   // 초기멘탈 60(2026-07-15): 시작부터 임계(56) 위 → "초반 1회 멘탈케어 강제" 지배전략 제거
+  base[spec] += 18;                                   // 특기 (초기 살짝 앞섬)
+  const si=keys.indexOf(spec);
+  base[keys[(si+3)%keys.length]] += 2;                // 준특기(맞은편)
+  return {base, spec};
+}
+
+const TRAININGS = [
+  {k:"vocal",   ico:"🎵", t:"보컬 레슨",   d:"발성·음정"},
+  {k:"dance",   ico:"💃", t:"댄스 연습",   d:"안무·체력"},
+  {k:"visual",  ico:"✨", t:"비주얼 관리", d:"스타일링"},
+  {k:"charm",   ico:"🎭", t:"예능 도전",   d:"끼·화술"},
+  {k:"acting",  ico:"🎬", t:"연기 학원",   d:"발연기 탈출"},
+  {k:"creative",ico:"🎼", t:"작업실",      d:"작사·작곡"},
+];
+const REST = {k:"rest", ico:"😴", t:"휴식", d:"컨디션 회복 + 멘탈 ↑"};
+
+// 에셋 캐시버스터: 애니/스프라이트 갱신이 브라우저·Pages 하드캐시에 막혀 구버전 표시되던 문제 방지.
+// 애니 바꿀 때마다 이 값 갱신(날짜+접미).
+const ASSET_VER = "20260715t";
+// ===== Firebase (Firestore REST) — 서버 공유 리더보드. apiKey는 브라우저용 공개키(시크릿 아님), 실보안은 Security Rules =====
+const FB_PID="idol-tycoon", FB_KEY="AIzaSyCUgSzgS2DBf58G6-lHzO77Qn0ZkZglAeE";
+const FS_BASE=`https://firestore.googleapis.com/v1/projects/${FB_PID}/databases/(default)/documents`;
+function fsStr(v){ return {stringValue:String(v==null?"":v)}; }
+function fsParse(doc){ const f=doc.fields||{};
+  const g=k=>{ const c=f[k]; if(!c) return ""; return c.stringValue!=null?c.stringValue:(c.integerValue!=null?+c.integerValue:(c.doubleValue!=null?+c.doubleValue:"")); };
+  return {player:g("player"),name:g("name"),ending:g("ending"),emoji:g("emoji"),fans:+g("fans")||0,lang:g("lang")};
+}
+// 훈련 도트 연출: 활동별 동작(영차영차) + 결과별 마무리
+const TRAIN_FX = {
+  vocal:   {motion:"fx-sing",   notes:["♪","♫","🎵"], word:"노래 연습 중"},
+  dance:   {motion:"fx-dance",  notes:["✨","💫","✨"], word:"춤 연습 중"},
+  visual:  {motion:"fx-pose",   notes:["✨","💖","✨"], word:"비주얼 가꾸는 중"},
+  charm:   {motion:"fx-charm",  notes:["💕","⭐","💕"], word:"끼 발산 중"},
+  acting:  {motion:"fx-act",    notes:["❗","💬","❗"], word:"연기 연습 중"},
+  creative:{motion:"fx-create", notes:["🎶","💡","🎶"], word:"작업 중"},
+  rest:    {motion:"fx-rest",   notes:["💤","💤","💤"], word:"휴식 중"},
+};
+// 활동별 담당 캐릭터(레티=토끼🐰 / 리니=오리🦆). 3:3 번갈아 — "하나로 돌려막기" 탈피.
+const ACT_CHAR = {
+  vocal:"rety", visual:"rety", acting:"rety",
+  charm:"rini", dance:"rini", creative:"rini", rest:"rini",
+};
+const RESULT_FX = {
+  dbad: {motion:"rx-fall",  burst:"debris"},
+  fail: {motion:"rx-droop", burst:"none"},
+  ok:   {motion:"rx-ok",    burst:"small"},
+  great:{motion:"rx-jump",  burst:"party"},
+  perfect:{motion:"rx-jump",burst:"party"},   // 각성 — great 모션 재사용 + 골드 연출은 CSS
+};
+
+// 컨디션이 핵심 레버: 높으면 대성공↑·안정, 낮으면 대실패 급증·대성공 희박.
+// 컨디션 0에서 훈련하면 대실패/실패가 70%+ → 사실상 도박(재율애비 요청: 저컨디션 페널티 크게)
+// 각성(퍼펙트): 고컨디션에서만 대성공 일부가 초대성공으로 승격되는 팻테일.
+// 순수로또 아님 — 컨디션 관리(실력)해야 확률이 오르고, 이게 프레스티지 엔딩의 상위 꼬리를 만듦.
+const PERF = { condMin:78, pMax:0.10, mult:4.6 };   // 각성(perfect) 확률 하향(2026-07-15: 대성공 폭발 억제)
+function rollJudge(cond, mental){
+  let pGreat = Math.max(0, 0.03 + cond*0.0018);            // 대성공률 하향(cond80: 0.30→0.174). 대성공이 실패쪽보다 낮게(긴장감)
+  // 저멘탈 임계 페널티: 멘탈 MENTAL_THRESH 미만부터 대실패·실패 급증(그 이상은 페널티 0). 멘탈을 관리 자원화.
+  const lowM = Math.max(0, MENTAL_THRESH - mental);
+  let pDbad  = Math.max(0.02, 0.44 - cond*0.0052 + lowM*0.008);
+  let pFail  = Math.max(0.05, 0.37 - cond*0.0022 + lowM*0.004);   // 일반 실패 소폭↑(실패쪽 ~22%). 대실패(pDbad)는 유지 — 억까 방지
+  const r = Math.random();
+  if(r < pDbad) return "dbad";
+  if(r < pDbad + pFail) return "fail";
+  if(r > 1 - pGreat){
+    const pp = cond>=PERF.condMin ? PERF.pMax*((cond-PERF.condMin)/(100-PERF.condMin)) : 0;
+    return Math.random()<pp ? "perfect" : "great";
+  }
+  return "ok";
+}
+// label은 i18n(j_*)로 렌더 — 여기선 연출/수치만
+const JUDGE = {
+  dbad:{cls:"dc", jk:"dbad", emoji:"💥", mult:-0.5, cond:-24, fanMult:0.2},
+  fail:{cls:"f",  jk:"fail", emoji:"😥", mult:0.28, cond:-14, fanMult:0.4},
+  ok:  {cls:"s",  jk:"ok",   emoji:"👍", mult:1.0,  cond:-9,  fanMult:1.0},
+  great:{cls:"dg",jk:"great",emoji:"🔥", mult:2.1,  cond:-4,  fanMult:2.3},
+  perfect:{cls:"pf",jk:"perfect",emoji:"🌟", mult:PERF.mult, cond:-2, fanMult:3.2},
+};
+// 멘탈 밸런스(sim.js 8000판 확정): 판정 결과가 멘탈에 피드백(비대칭 — 실패 크게, 성공 소폭).
+// 저멘탈(<THRESH)이면 대실패·실패 급증. 자동회복 없음(주차 0)·휴식은 멘탈 소폭만 → 멘탈은 케어 액션으로 관리.
+const MENTAL_THRESH = 56;
+const MENTAL_DELTA = {dbad:-9, fail:-3, ok:0, great:2, perfect:4};
+const CARE = {k:"care", ico:"💗", mentalGain:54, condGain:3};
+
+// 성장곡선(등급별 계단식 우하향): 낮은 등급 쭉쭉(도파민) → 높은 등급 뻑뻑.
+// level 0~7 = F E D C B A S SS. 등급 오를수록 같은 훈련이 덜 오름.
+// 곡선 끝 살리기(2026-07-15 sim 확정): 저레벨(F/E)은 유지해 초반 도파민·초반 관문 감 보존,
+// 중~고레벨(D~SS)을 살려 완벽플레이시 6스탯 S~SS급 도달 가능케. 육각형 슈퍼스타(minV≥600)를 만분의일급으로 여는 곡선.
+const GROWTH_BY_LEVEL=[2.6, 2.4, 2.8, 2.7, 2.4, 2.0, 1.3, 0.75];
+function growthMult(p){ return GROWTH_BY_LEVEL[levelOf(p)]; }
+
+// 선택지 두 종류:
+//  · 확정형: {t, fx}                       → 고르면 바로 적용
+//  · 분기형: {t, odds:s=>p, win:{...}, lose:{...}}  → 주사위로 성공/실패 갈림 (스탯·컨디션 높을수록 성공↑)
+// 리스크(분기형) win 보상은 일반 훈련 한방(대성공급)보다 크게 — 리스크 테이킹이 이득이 되도록.
+// ⚠️ 표시 텍스트는 i18n.js의 ev_<id>_* 키에서 렌더됨(showEvent). 아래 인라인 title/text/t/label/desc는
+//   미사용 참고용 — 실제 화면엔 안 뜸. 단, win/lose emoji와 odds/fx는 여기가 원장.
+//   수치 바꾸면(fx) 반드시 i18n.js ev_<id>_w_d/_lo_d(ko·en) 동기화할 것(안 하면 표시-실제 불일치 버그).
+const EVENTS = [
+  // ── 분기형 (도전·리스크) ──
+  {id:"talent", emoji:"📺", title:"예능 대박 각?", text:"인기 예능 고정 자리가 걸린 파일럿. 잘 살리면 화제성 폭발, 삐끗하면 편집 굴욕.",
+   choices:[
+     {t:"끼 발산하며 올인", odds:s=>0.38+s.charm/1400+s.cond/500,
+       win:{label:"예능 캐 각인!",emoji:"🤩",desc:"끼 <b>+32</b> · 팬 <b>대폭↑↑</b> · 컨디션 <b>-10</b>",
+            fx:s=>{s.charm+=32;s.fans+=Math.round(2000+s.charm*5);s.cond-=10;}},
+       lose:{label:"통편집·굴욕짤",emoji:"✂️",desc:"멘탈 <b>-15</b> · 컨디션 <b>-14</b> · 팬 <b>↓↓</b>",
+            fx:s=>{s.mental-=15;s.cond-=14;s.fans=Math.round(s.fans*0.88);}}},
+     {t:"연습에 집중 (멘탈 +7)", fx:s=>{s.mental+=7;}},
+   ]},
+  {id:"drama", emoji:"🎬", title:"드라마 조연 캐스팅", text:"연기돌로 갈 기회. 근데 발연기 논란 나면 이미지 타격이 커.",
+   choices:[
+     {t:"연기 도전", odds:s=>0.34+s.acting/1100+s.mental/500,
+       win:{label:"인생 조연!",emoji:"🎬",desc:"연기 <b>+40</b> · 팬 <b>↑↑↑</b> · 컨디션 <b>-12</b>",
+            fx:s=>{s.acting+=40;s.fans+=Math.round(2100);s.cond-=12;}},
+       lose:{label:"발연기 논란",emoji:"😬",desc:"연기 <b>+6</b> · 멘탈 <b>-14</b> · 팬 <b>↓↓</b>",
+            fx:s=>{s.acting+=6;s.mental-=14;s.fans=Math.round(s.fans*0.85);}}},
+     {t:"음악에 집중 (보컬 +14)", fx:s=>{s.vocal+=14;}},
+   ]},
+  {id:"live", emoji:"📹", title:"편집 없는 生라이브", text:"실시간 소통 라이브 제안. 날것 그대로라 리스크가 커.",
+   choices:[
+     {t:"생방송 강행", odds:s=>0.44+s.charm/1300+s.mental/500,
+       win:{label:"라이브 레전드!",emoji:"🎥",desc:"끼 <b>+28</b> · 팬 <b>대폭↑↑</b>",
+            fx:s=>{s.charm+=28;s.fans+=Math.round(1800+s.charm*4);s.cond-=6;}},
+       lose:{label:"방송사고·박제",emoji:"📵",desc:"멘탈 <b>-16</b> · 컨디션 <b>-13</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=16;s.cond-=13;s.fans=Math.round(s.fans*0.92);}}},
+     {t:"녹화로 안전하게 (끼 +12)", fx:s=>{s.charm+=12;}},
+   ]},
+  {id:"chal", emoji:"🕺", title:"챌린지 열풍", text:"네 안무 클립이 SNS에서 도는 중. 챌린지 유행을 노려볼까?",
+   choices:[
+     {t:"댄스 챌린지 점화", odds:s=>0.40+s.dance/1300+s.visual/2000,
+       win:{label:"떡상 챌린지!",emoji:"🔥",desc:"댄스 <b>+36</b> · 팬 <b>폭발↑↑</b>",
+            fx:s=>{s.dance+=36;s.fans+=Math.round(2600+s.dance*5);}},
+       lose:{label:"조롱 밈으로 소비",emoji:"🥲",desc:"댄스 <b>+4</b> · 멘탈 <b>-10</b> · 팬 <b>↓</b>",
+            fx:s=>{s.dance+=4;s.mental-=10;s.fans=Math.round(s.fans*0.93);}}},
+     {t:"완성도 더 높이기 (댄스 +14)", fx:s=>{s.dance+=14;}},
+   ]},
+  {id:"cf", emoji:"💄", title:"명품 브랜드 CF", text:"글로벌 브랜드 광고 제안. 비주얼 승부라 부담도 커.",
+   choices:[
+     {t:"메인 모델 도전", odds:s=>0.36+s.visual/1200+s.charm/2000,
+       win:{label:"브랜드 뮤즈!",emoji:"👑",desc:"비주얼 <b>+36</b> · 팬 <b>↑↑↑</b>",
+            fx:s=>{s.visual+=36;s.fans+=Math.round(2300);}},
+       lose:{label:"혹평·계약 무산",emoji:"🫤",desc:"비주얼 <b>+5</b> · 멘탈 <b>-12</b> · 팬 <b>↓</b>",
+            fx:s=>{s.visual+=5;s.mental-=12;s.fans=Math.round(s.fans*0.93);}}},
+     {t:"내실부터 다지기 (비주얼 +12)", fx:s=>{s.visual+=12;}},
+   ]},
+  {id:"surv", emoji:"🎙️", title:"서바이벌 프로 출연", text:"경연 프로에서 실력 검증 무대. 이기면 급상승, 지면 굴욕.",
+   choices:[
+     {t:"경연 참가", odds:s=>0.28+(s.vocal+s.dance)/2600+s.cond/500,
+       win:{label:"올킬 무대!",emoji:"🏅",desc:"보컬·댄스 <b>+24</b> · 팬 <b>대폭↑↑</b>",
+            fx:s=>{s.vocal+=24;s.dance+=24;s.fans+=Math.round(2800);s.cond-=10;}},
+       lose:{label:"광탈·악편 논란",emoji:"💧",desc:"멘탈 <b>-18</b> · 컨디션 <b>-14</b> · 팬 <b>↓↓</b>",
+            fx:s=>{s.mental-=18;s.cond-=14;s.fans=Math.round(s.fans*0.9);}}},
+     {t:"기권하고 컨디션 관리 (컨디션 +12)", fx:s=>{s.cond=Math.min(100,s.cond+12);}},
+   ]},
+  {id:"scandal", emoji:"💞", title:"열애설 보도", text:"근거 약한 열애설이 터졌어. 대응이 관건이야.",
+   choices:[
+     {t:"쿨하게 정면 대응", odds:s=>0.48+s.mental/300,
+       win:{label:"대인배 인정!",emoji:"😎",desc:"멘탈 <b>+10</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.mental+=10;s.fans+=Math.round(1300);}},
+       lose:{label:"루머 눈덩이·탈덕",emoji:"🌪️",desc:"멘탈 <b>-16</b> · 팬 <b>↓↓↓</b> · 컨디션 <b>-6</b>",
+            fx:s=>{s.mental-=16;s.fans=Math.round(s.fans*0.8);s.cond-=6;}}},
+     {t:"소속사에 맡기고 잠수 (컨디션 +10)", fx:s=>{s.cond=Math.min(100,s.cond+10);}},
+   ]},
+  // ── 확정형 (트레이드오프·회복) ──
+  {id:"support", emoji:"🎁", title:"열성팬의 서포트", text:"팬들이 자발적으로 지하철·버스 광고를 걸어줬어!",
+   choices:[
+     {t:"고맙게 화답 (팬 대폭 ↑)", fx:s=>{s.fans+=Math.round(900+s.fans*0.05);}},
+   ]},
+  {id:"selfwrite", emoji:"🎼", title:"자작곡 떡밥", text:"작업하던 데모 반응이 좋아. 자컨·자작곡 아티스트로?",
+   choices:[
+     {t:"공개한다 (크리에이티브 +24, 팬 ↑)", fx:s=>{s.creative+=24;s.fans+=Math.round(900);}},
+     {t:"더 다듬는다 (멘탈 +6)", fx:s=>{s.mental+=6;}},
+   ]},
+  {id:"injury", emoji:"🤕", title:"연습 중 부상", text:"무리한 안무로 발목을 삐끗했어.",
+   choices:[
+     {t:"쉬어간다 (컨디션 +20)", fx:s=>{s.cond=Math.min(100,s.cond+20);}},
+     {t:"참고 강행 (댄스 +18, 컨디션 -18)", fx:s=>{s.dance+=18;s.cond-=18;}},
+   ]},
+  {id:"fansign", emoji:"🧧", title:"팬사인회", text:"오프라인에서 팬들을 직접 만나는 날. 소통으로 팬심을 다져.",
+   choices:[
+     {t:"한 명 한 명 눈맞춤 (팬 ↑, 멘탈 +4)", fx:s=>{s.fans+=Math.round(700+s.fans*0.03);s.mental+=4;}},
+   ]},
+  {id:"burnout", emoji:"🛌", title:"번아웃 경보", text:"쉼 없이 달렸더니 몸이 보내는 신호가 왔어.",
+   choices:[
+     {t:"과감히 휴가 (컨디션 +26, 멘탈 +6)", fx:s=>{s.cond=Math.min(100,s.cond+26);s.mental+=6;}},
+     {t:"그래도 스케줄 소화 (모든 스탯 +8, 컨디션 -12)", fx:s=>{STATS.forEach(x=>s[x.k]+=8);s.cond-=12;}},
+   ]},
+  {id:"tour", emoji:"🌐", title:"해외 팬미팅 투어", text:"글로벌 팬덤이 커지는 중. 해외 일정을 잡을까?",
+   choices:[
+     {t:"강행군 (비주얼·끼 +14, 컨디션 -16, 팬 ↑↑)", fx:s=>{s.visual+=14;s.charm+=14;s.cond-=16;s.fans+=1400;}},
+     {t:"국내 집중 (팬 +안정)", fx:s=>{s.fans+=600;}},
+   ]},
+  // ── 신규 분기형 (도전·리스크) ──
+  {id:"mv", emoji:"🎥", title:"뮤직비디오 파격 티저", text:"이번 MV 콘티가 파격적이야. 비주얼·컨셉 승부수를 던질까?",
+   choices:[
+     {t:"파격 컨셉으로 올인", odds:s=>0.38+s.visual/1400+s.creative/2000,
+       win:{label:"티저 조회수 폭발!",emoji:"🎬",desc:"비주얼 <b>+30</b> · 크리에이티브 <b>+16</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.visual+=30;s.creative+=16;s.fans+=Math.round(2000+s.visual*4);s.cond-=8;}},
+       lose:{label:"과했다 혹평",emoji:"🫠",desc:"멘탈 <b>-12</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=12;s.fans=Math.round(s.fans*0.9);}}},
+     {t:"무난한 컨셉 (비주얼 +12)", fx:s=>{s.visual+=12;}},
+   ]},
+  {id:"collab", emoji:"🎧", title:"해외 아티스트 콜라보", text:"글로벌 아티스트가 피처링을 제안했어. 언어·톤이 관건이야.",
+   choices:[
+     {t:"콜라보 도전", odds:s=>0.34+s.vocal/1300+s.creative/1600,
+       win:{label:"글로벌 차트인!",emoji:"🌍",desc:"보컬 <b>+24</b> · 크리에이티브 <b>+20</b> · 팬 <b>대폭↑↑</b>",
+            fx:s=>{s.vocal+=24;s.creative+=20;s.fans+=Math.round(2800);s.cond-=10;}},
+       lose:{label:"톤 안 맞아 묻힘",emoji:"😵‍💫",desc:"멘탈 <b>-13</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=13;s.fans=Math.round(s.fans*0.92);}}},
+     {t:"국내 활동 집중 (보컬 +13)", fx:s=>{s.vocal+=13;}},
+   ]},
+  {id:"vlog", emoji:"📱", title:"브이로그 채널 오픈", text:"자컨으로 팬들과 더 가까이. 근데 사생활 노출이 부담돼.",
+   choices:[
+     {t:"일상 다 공개", odds:s=>0.42+s.charm/1300+s.mental/500,
+       win:{label:"입덕 유발 자컨!",emoji:"🥰",desc:"끼 <b>+26</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.charm+=26;s.fans+=Math.round(1700+s.charm*4);}},
+       lose:{label:"과공개 역풍",emoji:"🫥",desc:"멘탈 <b>-14</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=14;s.fans=Math.round(s.fans*0.9);}}},
+     {t:"적당히 편집 (끼 +11)", fx:s=>{s.charm+=11;}},
+   ]},
+  {id:"dancebattle", emoji:"🕺", title:"댄스 배틀 프로그램", text:"실력파 댄서들과 맞붙는 배틀 무대. 이기면 각인, 지면 굳은 몸 굴욕.",
+   choices:[
+     {t:"배틀 참가", odds:s=>0.32+s.dance/1200+s.cond/500,
+       win:{label:"무대 씹어먹음!",emoji:"🔥",desc:"댄스 <b>+34</b> · 팬 <b>대폭↑↑</b>",
+            fx:s=>{s.dance+=34;s.fans+=Math.round(2400+s.dance*4);s.cond-=10;}},
+       lose:{label:"버벅임 밈화",emoji:"🥶",desc:"댄스 <b>+6</b> · 멘탈 <b>-12</b> · 팬 <b>↓</b>",
+            fx:s=>{s.dance+=6;s.mental-=12;s.fans=Math.round(s.fans*0.92);}}},
+     {t:"연습으로 대비 (댄스 +14)", fx:s=>{s.dance+=14;}},
+   ]},
+  {id:"busk", emoji:"🎸", title:"게릴라 버스킹", text:"깜짝 길거리 라이브. 입소문 나면 대박, 썰렁하면 흑역사.",
+   choices:[
+     {t:"광장에서 즉흥 무대", odds:s=>0.40+s.vocal/1500+s.charm/1500,
+       win:{label:"직캠 역주행!",emoji:"🎤",desc:"보컬 <b>+20</b> · 끼 <b>+20</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.vocal+=20;s.charm+=20;s.fans+=Math.round(1900);s.cond-=6;}},
+       lose:{label:"소음신고·썰렁",emoji:"🚓",desc:"멘탈 <b>-10</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=10;s.fans=Math.round(s.fans*0.94);}}},
+     {t:"실내 소극장으로 안전하게 (보컬 +12)", fx:s=>{s.vocal+=12;}},
+   ]},
+  // ── 신규 1회성(once) 특별 이벤트 ──
+  {id:"documentary", emoji:"🎞️", once:true, weight:0.7, title:"데뷔 다큐 제작", text:"연습생 시절부터의 서사를 담은 다큐 제안. 팬덤 결속의 기회야.",
+   choices:[
+     {t:"진심을 담아 공개 (팬 대폭 ↑↑, 멘탈 +8)", fx:s=>{s.fans+=Math.round(2600+s.fans*0.05);s.mental=Math.min(100,s.mental+8);}},
+   ]},
+  {id:"photobook", emoji:"📸", once:true, weight:0.7, title:"첫 화보집 발매", text:"데뷔 첫 화보집. 콘셉트를 세게 잡으면 소장각, 어설프면 재고각.",
+   choices:[
+     {t:"아트 화보로 승부", odds:s=>0.44+s.visual/1200,
+       win:{label:"완판 화보!",emoji:"💎",desc:"비주얼 <b>+30</b> · 팬 <b>↑↑↑</b>",
+            fx:s=>{s.visual+=30;s.fans+=Math.round(2500);}},
+       lose:{label:"콘셉트 미스",emoji:"😶‍🌫️",desc:"비주얼 <b>+8</b> · 팬 <b>↓</b>",
+            fx:s=>{s.visual+=8;s.fans=Math.round(s.fans*0.93);}}},
+     {t:"자연스러운 데일리 화보 (비주얼 +14)", fx:s=>{s.visual+=14;}},
+   ]},
+  {id:"charity", emoji:"💝", once:true, weight:0.7, title:"선한 영향력", text:"수익 일부를 기부하고 선행에 동참할까? 이미지에 큰 자산이 돼.",
+   choices:[
+     {t:"기부·봉사 동참 (멘탈 +10, 팬 ↑)", fx:s=>{s.mental=Math.min(100,s.mental+10);s.fans+=Math.round(1200+s.fans*0.03);}},
+   ]},
+  // ── 신규 확정형(트레이드오프·회복) ──
+  {id:"radio", emoji:"📻", title:"라디오 고정 게스트", text:"편한 라디오 코너에 고정 출연. 부담 없이 소통하며 재정비.",
+   choices:[
+     {t:"수다 떨며 힐링 (멘탈 +8, 팬 +소폭)", fx:s=>{s.mental=Math.min(100,s.mental+8);s.fans+=600;}},
+   ]},
+  {id:"diet", emoji:"🥗", title:"컴백 전 관리 모드", text:"컴백을 앞두고 몸 관리에 들어갈 시간.",
+   choices:[
+     {t:"빡세게 관리 (비주얼 +18, 컨디션 -12)", fx:s=>{s.visual+=18;s.cond-=12;}},
+     {t:"균형 있게 (비주얼 +8, 컨디션 +8)", fx:s=>{s.visual+=8;s.cond=Math.min(100,s.cond+8);}},
+   ]},
+  {id:"mentor", emoji:"🧑‍🏫", title:"선배의 조언", text:"업계 선배가 밥 사주며 진심 어린 조언을 해줬어.",
+   choices:[
+     {t:"새겨듣는다 (모든 스탯 +6, 멘탈 +6)", fx:s=>{STATS.forEach(x=>s[x.k]+=6);s.mental=Math.min(100,s.mental+6);}},
+   ]},
+  // ── 최애돌 서비스 요소 이벤트 (텍스트는 i18n ev_<id>_*. 여기선 fx·odds·emoji·weight·once만 원장) ──
+  {id:"fairy", emoji:"💝", title:"기부요정 선정!", text:"팬들이 네 이름으로 기부를 모았어. 선한 영향력 '기부요정'에 선정됐대!",
+   choices:[
+     {t:"팬들과 봉사활동 동행", fx:s=>{s.fans+=Math.round(1600+s.fans*0.02);s.mental+=10;s.charm+=8;}},
+     {t:"조용히 기부만 보태기", fx:s=>{s.mental+=8;s.fans+=600;}},
+   ]},
+  {id:"awards", emoji:"🏆", once:true, weight:0.8, title:"최애돌 어워즈", text:"연말 최애돌 어워즈 시즌! 하트픽 투표로 팬덤 화력을 증명할 때야.",
+   choices:[
+     {t:"팬덤 총공 독려!", odds:s=>0.38+s.charm/1500+Math.min(0.25,s.fans/70000),
+       win:{label:"어워즈 대상 수상!",emoji:"🏆",desc:"팬 <b>대폭↑↑</b> · 멘탈 <b>+10</b> · 비주얼 <b>+10</b>",
+            fx:s=>{s.fans+=Math.round(3000+s.fans*0.05);s.mental+=10;s.visual+=10;}},
+       lose:{label:"아쉬운 후보 탈락",emoji:"😢",desc:"멘탈 <b>-12</b> · 팬 <b>소폭↓</b>",
+            fx:s=>{s.mental-=12;s.fans=Math.round(s.fans*0.94);}}},
+     {t:"부담없이 즐기기 (멘탈 +6)", fx:s=>{s.mental+=6;}},
+   ]},
+  {id:"heartpick", emoji:"💗", title:"하트픽 총공", text:"이번 주 하트픽 1위를 노려볼까? 팬들의 하트가 쏟아지는 중.",
+   choices:[
+     {t:"하트픽 1위 총공!", odds:s=>0.42+s.charm/1300+Math.min(0.2,s.fans/80000),
+       win:{label:"이번 주 하트픽 1위!",emoji:"💗",desc:"팬 <b>↑↑</b> · 끼 <b>+14</b>",
+            fx:s=>{s.fans+=Math.round(1900+s.charm*3);s.charm+=14;}},
+       lose:{label:"근소한 차이로 2위",emoji:"💔",desc:"멘탈 <b>-10</b> · 컨디션 <b>-6</b>",
+            fx:s=>{s.mental-=10;s.cond-=6;}}},
+     {t:"자연스러운 유입 기다리기", fx:s=>{s.fans+=500;}},
+   ]},
+  {id:"birthday", emoji:"🎂", title:"생일 지하철 서포트", text:"팬클럽이 네 생일 맞이 지하철 광고를 걸었어!",
+   choices:[
+     {t:"팬들에게 감사 인사 전하기", fx:s=>{s.fans+=Math.round(1400+s.fans*0.02);s.mental+=12;}},
+     {t:"생일 라이브 켜기", fx:s=>{s.charm+=12;s.fans+=800;s.cond-=5;}},
+   ]},
+  // ── 성별 이벤트 (아이돌 cat=F/M에 따라만 등장) ──
+  {id:"concept_f", gender:"F", emoji:"💃", title:"컨셉 회의: 청순 vs 걸크러시", text:"다음 컴백 컨셉을 정한다. 파격 변신은 화제성 폭발이지만 기존 팬 반응은 갈려.",
+   choices:[
+     {t:"걸크러시로 파격 변신", odds:s=>0.4+s.visual/1500+s.charm/1500,
+       win:{label:"컨셉 대성공·역주행!",emoji:"🔥",desc:"비주얼 <b>+26</b> · 끼 <b>+18</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.visual+=26;s.charm+=18;s.fans+=Math.round(1800+s.visual*4);s.cond-=8;}},
+       lose:{label:"컨셉 미스·팬 이탈",emoji:"😮‍💨",desc:"멘탈 <b>-12</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=12;s.fans=Math.round(s.fans*0.9);}}},
+     {t:"청순 컨셉 유지 (안정, 팬 +소폭)", fx:s=>{s.fans+=700;s.cond+=4;}},
+   ]},
+  {id:"concept_m", gender:"M", emoji:"🔥", title:"컨셉 회의: 청량 vs 짐승돌", text:"다음 컴백 컨셉. 청량은 안전빵, 짐승돌은 입덕직캠 대박 아니면 오글 논란.",
+   choices:[
+     {t:"짐승돌 컨셉 도전", odds:s=>0.4+s.dance/1500+s.visual/1500,
+       win:{label:"입덕직캠 터짐!",emoji:"🤩",desc:"비주얼 <b>+22</b> · 댄스 <b>+22</b> · 팬 <b>↑↑</b>",
+            fx:s=>{s.visual+=22;s.dance+=22;s.fans+=Math.round(1800+s.dance*4);s.cond-=8;}},
+       lose:{label:"오글 논란·밈화",emoji:"😬",desc:"멘탈 <b>-12</b> · 팬 <b>↓</b>",
+            fx:s=>{s.mental-=12;s.fans=Math.round(s.fans*0.9);}}},
+     {t:"청량 컨셉 유지 (안정, 팬 +소폭)", fx:s=>{s.fans+=700;s.cond+=4;}},
+   ]},
+];
+
+// ===== 경쟁(필수 이벤트) — 라이벌과 순위 대결 =====
+const RIVAL_POOL  = ["스텔라","네온사인","루나틱스","블랙로즈","아이리스","프리즘","코스모스","벨벳나잇","하이퍼노바","오로라"];
+const RIVAL_EMOJI = ["💫","⚡","🌙","🥀","🌸","🔮","🌌","🖤","✴️","🌠"];
+// type: stage(무대 퍼포먼스=보컬·댄스·비주얼·끼) / award(시상식=종합력+팬)
+// base: 라이벌 기대 파워 기준선(P 스케일, 밸런스 시뮬로 확정). gate: 실패시 탈락 관문. final: 최종.
+// 52주=1년 3막(봄 데뷔→여름 국내→가을 월드진출→연말 대상):
+//   데뷔 12주(봄) / 국내 무대 20·28(초여름·한여름) / 월드진출 쇼케이스 36(가을,관문) / 월드쇼 44(늦가을) / 연말 글로벌대상 52(12월).
+//   ※ 연말 시상식(대상)은 1년에 한 번 → 52주에만. 36주는 '월드 진출 심사'이지 대상 아님.
+const AWARD_PEAK_K = 0.34;   // 시상식에서 원톱 스탯 반영 계수(낮을수록 몰빵 불리)
+// ===== 턴/관문 스케줄 (드림그룹 프로토) =====
+// ⚡ 지금은 테스트용 12턴. 본밸런싱 때 TOTAL_W=36(월3턴×12개월, 초/중/하순) + COMPETS 재배치·base 재튜닝.
+const TOTAL_W = 12;   // 총 턴 수
+const DEBUT_W = 4;    // 데뷔 심사 턴
+const COMPETS = {
+  // 테스트 스케줄: 데뷔(4) + 최종 대상(12)만. base는 임시(밸런싱 전) — 대충 통과되게 낮춤.
+  8:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:90},
+  12:{type:"award", emoji:"👑", tk:"cp_t_52", base:130, final:true},
+};
+
+// ===== 엔딩 도감 (반복 플레이 훅) =====
+const ENDING_DEX=[
+  {id:"ss",      emoji:"🌟", name:"육각형 슈퍼스타", tier:"SS", hint:"6가지 재능을 모두 정상급으로"},
+  {id:"onetop",  emoji:"👑", name:"원톱형 월드스타", tier:"S",  hint:"한 재능을 압도적으로 키워 대상권에"},
+  {id:"allround",emoji:"🌈", name:"만능 올라운더",   tier:"S",  hint:"약점 없이 고르게 최상급으로"},
+  {id:"stage",   emoji:"🎆", name:"무대 장악 퍼포머",tier:"S",  hint:"무대 4종(보컬·댄스·비주얼·끼)을 압도적으로"},
+  {id:"crown",   emoji:"🎉", name:"이변의 대관식",   tier:"A",  hint:"실력보다 화제성·팬덤으로 대상까지"},
+  {id:"bigstar", emoji:"⭐", name:"믿고 보는 대형 스타",tier:"A", hint:"빈틈없이 두루 성장시켜 입상"},
+  {id:"stageA",  emoji:"🎭", name:"무대형 스타",     tier:"A",  hint:"무대는 최강이지만 연기·작곡은 아직"},
+  {id:"actingstar",emoji:"🎬", name:"대세 연기돌",    tier:"S",  hint:"연기를 확실한 주무기로 세워 월드까지"},
+  {id:"songwriter",emoji:"🎹", name:"싱어송라이터",   tier:"S",  hint:"작곡을 주무기로 세워 월드까지"},
+  {id:"fandom",   emoji:"💞", name:"SNS 팬덤 제국",   tier:"A",  hint:"실력보다 순수 화력·팬덤만으로 대상"},
+  {id:"soloist",  emoji:"🪄", name:"외길 장인",       tier:"A",  hint:"한 재능만 극단적으로, 나머진 포기"},
+  {id:"longrun", emoji:"🌱", name:"롱런형 아이돌",   tier:"B",  hint:"한 방은 없어도 꾸준함으로 월드까지"},
+  {id:"rookie",  emoji:"🐣", name:"아쉬운 유망주",   tier:"C",  hint:"실력은 붙었는데 월드 진출에서 미끄러짐"},
+  {id:"local",   emoji:"🌗", name:"지역 스타",       tier:"C",  hint:"월드 진출의 벽을 넘지 못하고"},
+  {id:"disband", emoji:"💔", name:"팀 해체",         tier:"F",  hint:"바닥에서 끝나버린 비운의 결말"},
+  {id:"slacker", emoji:"🛋️", name:"숨만 쉰 아이돌",  tier:"F",  hint:"🥚 이스터에그 · 훈련을 아예 안 하면…?"},
+];
+const DEX_BY_EMOJI={"🌟":"ss","👑":"onetop","🏆":"allround","🌈":"allround","🎆":"stage",
+  "🎉":"crown","⭐":"bigstar","✨":"bigstar","🌱":"longrun","🌗":"local","💔":"disband",
+  "🎬":"actingstar","🎹":"songwriter","💞":"fandom","🪄":"soloist","🐣":"rookie","🛋️":"slacker"};
+function dexIdOf(end){ if(end.emoji==="🎭") return end.tier==="C"?"local":"stageA";
+  return DEX_BY_EMOJI[end.emoji]||"local"; }
+
+const Game = {
+  st:null, lastResult:null, selIdol:null, curMode:"search", customSpec:null, customImg:null, customGender:"F",
+
+  goSelect(){
+    this.selIdol=null; this.customImg=null; this.customSpec=null; this.customGender="F";
+    this.renderSpecPick();
+    document.querySelectorAll("#genderPick .gsel").forEach(b=>b.classList.toggle("on", b.dataset.g==="F"));
+    document.getElementById("idolSearch").value="";
+    document.getElementById("customName").value="";
+    document.getElementById("uploader").style.backgroundImage="none";
+    document.getElementById("upPh").style.display="";
+    this.mode("search");
+    this.search();
+    show("s-select");
+  },
+  mode(m){
+    this.curMode=m; this.selIdol=null;
+    document.getElementById("seg-search").classList.toggle("on", m==="search");
+    document.getElementById("seg-custom").classList.toggle("on", m==="custom");
+    document.getElementById("mode-search").style.display = m==="search"?"":"none";
+    document.getElementById("mode-custom").style.display  = m==="custom"?"":"none";
+    document.querySelectorAll("#idolGrid .card.sel").forEach(c=>c.classList.remove("sel"));
+    this.updateStartFab();
+  },
+  search(){
+    const q=(document.getElementById("idolSearch").value||"").trim().toLowerCase();
+    let list = q ? IDOLS.filter(i=> (i.name||"").toLowerCase().includes(q) || (i.grp||"").toLowerCase().includes(q) || (i.en||"").includes(q)) : IDOLS;
+    list = list.slice(0,60);
+    const grid=document.getElementById("idolGrid");
+    if(!list.length){ grid.innerHTML=`<p class="muted" style="grid-column:1/-1;text-align:center;padding:24px">${t("sel_no_result")}</p>`; return; }
+    grid.innerHTML = list.map(i=>{
+      return `<div class="card" data-id="${i.id}" onclick="Game.pick(${i.id})">
+        <span class="ph" style="background-image:url('${i.img}')"></span>
+        <div class="nm">${esc(idolName(i))}</div>
+        <div class="gp">${esc(idolGrp(i))}</div>
+      </div>`;}).join("");
+  },
+  pick(id){
+    this.selIdol = IDOLS.find(i=>i.id===id) || null;
+    document.querySelectorAll("#idolGrid .card").forEach(c=>c.classList.toggle("sel", +c.dataset.id===id));
+    this.updateStartFab();
+  },
+  renderSpecPick(){
+    document.getElementById("specPick").innerHTML = STATS.map(s=>
+      `<button class="sp" data-k="${s.k}" onclick="Game.pickSpec('${s.k}')">
+        <span class="spico">${s.ico}</span>${t("st_"+s.k)}</button>`).join("");
+  },
+  pickSpec(k){
+    this.customSpec=k;
+    document.querySelectorAll("#specPick .sp").forEach(b=>b.classList.toggle("on", b.dataset.k===k));
+    this.customValidate();
+  },
+  pickGender(g){
+    this.customGender=g;
+    document.querySelectorAll("#genderPick .gsel").forEach(b=>b.classList.toggle("on", b.dataset.g===g));
+  },
+  customPhoto(ev){
+    const f=ev.target.files && ev.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=e=>{ const img=new Image();
+      img.onload=()=>{ const S=256, cv=document.createElement("canvas"); cv.width=S; cv.height=S;
+        const x=cv.getContext("2d"), m=Math.min(img.width,img.height);
+        x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
+        this.customImg=cv.toDataURL("image/jpeg",0.85);
+        const up=document.getElementById("uploader");
+        up.style.backgroundImage=`url('${this.customImg}')`;
+        document.getElementById("upPh").style.display="none";
+      };
+      img.src=e.target.result;
+    };
+    rd.readAsDataURL(f);
+  },
+  customValidate(){ this.updateStartFab(); },
+  // 플로팅 시작 버튼: 선택되면 하단에 떠오르고, 선택된 이름 표시
+  updateStartFab(){
+    const btn=document.getElementById("startBtn");
+    const ready = this.curMode==="custom"
+      ? !!((document.getElementById("customName").value||"").trim() && this.customSpec)
+      : !!this.selIdol;
+    btn.disabled=!ready;
+    btn.classList.toggle("hide", !ready);
+    if(ready){
+      const nm = this.curMode==="custom"
+        ? ((document.getElementById("customName").value||t("my_idol")).trim()||t("my_idol"))
+        : this.selIdol.name;
+      btn.textContent=t("sel_start_named",{name:nm});
+    } else btn.textContent=t("sel_start");
+  },
+  start(){
+    let idol;
+    if(this.curMode==="custom"){
+      const nm=(document.getElementById("customName").value||t("my_idol")).trim().slice(0,10) || t("my_idol");
+      if(!this.customSpec) return;
+      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); show("s-select"); return; } }catch(e){}
+      idol={id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
+    } else {
+      idol=this.selIdol; if(!idol) return;
+    }
+    const {base} = talentOf(idol.spec);
+    this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[]};
+    DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
+    this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
+    this.logWeek(t("start_log",{name:esc(idolName(idol))}));
+    this.save();
+    this.cutscene({act:t("cs_act1"), emoji:"🎬", title:t("cs1_title"), sub:t("cs1_sub"),
+      talk:t("cs1_talk",{name:idolName(idol)})},
+      ()=>{ show("s-play"); this.startWeek(); this.armBackGuard(); toast(t("start_toast",{name:idolName(idol)})); });
+  },
+  actName(w){ return w<=DEBUT_W?t("act_debut"):w<=Math.round(TOTAL_W*0.66)?t("act_domestic"):t("act_world"); },
+  // 다음 관문 돌파 예상(runCompet/debutJudge 공식에서 랜덤 뺀 기대치 vs 기준선). 스탯 변할 때마다 실시간 갱신.
+  gateForecast(s, nxw){
+    if(nxw===DEBUT_W){   // 데뷔 심사: total>=340 || peak>=150
+      const total=STATS.reduce((a,st)=>a+s[st.k],0), peak=Math.max(...STATS.map(st=>s[st.k]));
+      const r=Math.max(total/340, peak/150);
+      return r>=1.12?'safe':r>=0.85?'tight':'risk';
+    }
+    const c=COMPETS[nxw]; if(!c) return null;
+    let mine;
+    if(c.type==="stage"){
+      const f=c.field.reduce((a,k)=>a+s[k],0)/c.field.length;
+      mine=f*(0.55+0.45*s.cond/100);
+    } else {
+      const avg=STATS.reduce((a,st)=>a+s[st.k],0)/6, peak=Math.max(...STATS.map(st=>s[st.k]));
+      mine=Math.max(avg,peak*AWARD_PEAK_K)*(1+Math.min(0.45,s.fans/60000));
+    }
+    const r=mine/c.base;   // 라이벌 기대 파워≈base, 1등/통과엔 여유 필요
+    return r>=1.15?'safe':r>=0.88?'tight':'risk';
+  },
+  // 상황 반응형 코치 한 줄(버디 멘트) — 관문 임박·저컨디션·저멘탈·호조에 반응
+  coachLine(s, dday, fore){
+    if(dday>0 && dday<=2 && fore==='risk') return t("coach_gate_risk");
+    if(dday>0 && dday<=3)                  return t("coach_gate_near");
+    if(s.cond<28)                          return t("coach_low_cond");
+    if(s.mental<28)                        return t("coach_low_mental");
+    if(fore==='safe')                      return t("coach_hot");
+    return t("coach_default");
+  },
+
+  render(){
+    const s=this.st, idol=s.idol;
+    const av=document.getElementById("pAvatar");
+    if(idol.img){ av.style.backgroundImage=`url('${idol.img}')`; av.textContent=""; }
+    else { av.style.backgroundImage="none"; av.textContent="🎤"; }
+    document.getElementById("pName").textContent=idolName(idol);
+    document.getElementById("pChip").textContent=idolGrp(idol);
+    this.setFans(s.fans);   // 팬 수 카운트업(변할 때 숫자가 굴러오며 강조)
+    document.getElementById("pWeek").textContent="턴 "+s.week+" / "+TOTAL_W;
+    document.getElementById("pAct").textContent=this.actName(s.week);
+    // 활력 2열: 컨디션 + 멘탈 (한눈에 두 핵심 자원)
+    const cond=Math.max(0,Math.round(s.cond)), mv=Math.max(0,Math.round(s.mental));
+    const condC = s.cond>55?"var(--good)":s.cond>25?"var(--visual)":"var(--bad)";
+    const menC  = s.mental>55?"var(--good)":s.mental>25?"var(--visual)":"var(--bad)";
+    document.getElementById("vitalsBox").innerHTML=
+      `<div class="vital"><div class="vlbl"><span>⚡ ${t("p_cond")}</span><b>${cond}</b></div>
+        <div class="bar"><i style="width:${Math.min(100,cond)}%;background:${condC}"></i></div></div>
+       <div class="vital"><div class="vlbl"><span>${MENTAL.ico} ${t("st_mental")}</span><b>${mv}</b></div>
+        <div class="bar"><i style="width:${Math.min(100,mv)}%;background:${menC}"></i></div></div>`;
+    document.getElementById("statBox").innerHTML=STATS.map(st=>{
+      const p=Math.round(s[st.k]); const g=grade(p); const prog=progOf(p); const maxed=p>=800;
+      return `<div class="stat${maxed?" maxed":""}" data-k="${st.k}"><span class="k">${st.ico} ${t("st_"+st.k)}</span>
+        <span class="bar"><i style="width:${prog}%;background:${maxed?"linear-gradient(90deg,#ffd35c,#ff9de0)":st.c}"></i></span>
+        <span class="v">${maxed?"MAX":prog}</span>
+        <span class="gbadge" style="background:${GRADE_COLOR[g]}">${g}</span></div>`;
+    }).join("");
+    // 연습실 패널: 도트 버디 + 다음 관문 D-day + 진행바
+    const sex=(idol.cat==="M")?"m":"f";
+    const MS=[{w:DEBUT_W,k:"ms_debut"},{w:8,k:"ms_music1"},{w:TOTAL_W,k:"ms_global_award"}];
+    const nx=MS.find(m=>m.w>=s.week)||MS[MS.length-1];
+    const prevW=(MS.filter(m=>m.w<nx.w).map(m=>m.w).pop())||0;
+    const prog=Math.max(6,Math.min(100,Math.round((s.week-prevW)/(nx.w-prevW)*100)));
+    const dday=nx.w-s.week;
+    const fore=this.gateForecast(s, nx.w);   // 다음 관문 돌파 예상(스탯 변하면 실시간 갱신)
+    const foreChip = fore ? `<span class="pr-fore ${fore}">${t("fc_"+fore)}</span>` : "";
+    const urgent = (dday>0 && dday<=3);       // 관문 임박 → 카드 펄스
+    const pbox=document.getElementById("practiceBox");
+    pbox.className="practice"+(urgent?" urgent":"");
+    pbox.innerHTML=
+      `<img class="pr-buddy" src="assets/emo/buddy.png" alt="">
+       <div class="pr-info">
+         <div class="pr-label">${dday>0?t("pr_next_dday",{d:dday}):t("pr_next_now")} ${foreChip}</div>
+         <div class="pr-next">${t(nx.k)}</div>
+         <div class="pr-track"><i style="width:${prog}%"></i></div>
+         <div class="pr-coach">🐥 ${this.coachLine(s, dday, fore)}</div>
+       </div>`;
+    document.getElementById("actionBox").innerHTML=
+      `<div class="agrid">${TRAININGS.map(tr=>`
+        <button class="act" onclick="Game.train('${tr.k}')">
+          <span class="ico">${tr.ico}</span>
+          <span class="body"><span class="t">${t("tr_"+tr.k+"_t")}</span><span class="d">${t("tr_"+tr.k+"_d")}</span></span>
+        </button>`).join("")}</div>
+      <div class="agrid">
+        <button class="act rest" onclick="Game.train('rest')">
+          <span class="ico">${REST.ico}</span>
+          <span class="body"><span class="t">${t("tr_rest_t")}</span><span class="d">${t("tr_rest_d")}</span></span>
+        </button>
+        <button class="act care" onclick="Game.train('care')">
+          <span class="ico">${CARE.ico}</span>
+          <span class="body"><span class="t">${t("tr_care_t")}</span><span class="d">${t("tr_care_d")}</span></span>
+        </button>
+      </div>`;
+  },
+
+  train(kind){
+    const s=this.st; if(s.busy) return; s.busy=true;
+    sfx(kind==="rest"||kind==="care"?"rest":"click");   // 훈련 시작음(첫 제스처가 모바일 오디오 unlock도 겸함)
+    if(kind==="rest"){
+      const gain=26+Math.round(Math.random()*14);
+      s.cond=Math.min(100,s.cond+gain); s.mental=Math.min(100,s.mental+3);  // 휴식=컨디션 위주, 멘탈은 소폭만(디커플링)
+      this.trainReveal(s.idol, "rest", "ok", {cls:"s",label:t("rest_label"),emoji:"😌"},
+        t("rest_delta",{g:gain}), t("rest_say"),
+        ()=>{ this.render(); this.afterTurn(); });
+      return;
+    }
+    if(kind==="care"){   // 멘탈 케어(힐링) — 멘탈 전용 회복. 멘탈이 관리 자원이 됨.
+      const mg=Math.min(100,s.mental+CARE.mentalGain)-s.mental;
+      s.mental=Math.min(100,s.mental+CARE.mentalGain); s.cond=Math.min(100,s.cond+CARE.condGain);
+      this.trainReveal(s.idol, "rest", "great", {cls:"dg",label:t("care_label"),emoji:"💗"},
+        t("care_delta",{m:mg,c:CARE.condGain}), t("care_say"),
+        ()=>{ this.render(); this.afterTurn(); });
+      return;
+    }
+    const j=rollJudge(s.cond,s.mental), J=JUDGE[j];
+    const stat=STATS.find(x=>x.k===kind);
+    const baseGain=22+Math.round(Math.random()*7);   // 케어 턴세 상쇄용 성장 보정(sim 확정)
+    // 히든 특기 가점: 타고난 특기 훈련이 더 잘 자람 (준특기는 소폭). UI엔 안 보임.
+    const keys=STATS.map(x=>x.k), si=keys.indexOf(s.idol.spec);
+    const talent = kind===s.idol.spec ? 1.22 : (kind===keys[(si+3)%keys.length] ? 1.1 : 1.0);
+    let gain = J.mult>0 ? Math.round(baseGain*J.mult*growthMult(s[kind])*talent)
+                        : Math.round(baseGain*J.mult);
+    const oldV=Math.round(s[kind]), oldG=grade(oldV), oldL=levelOf(oldV);
+    s[kind]=Math.max(0,Math.min(800,s[kind]+gain));   // 스탯 상한 800(=SS 만점). 넘겨도 캡
+    s.cond=Math.max(0,s.cond+J.cond);
+    s.mental=Math.max(0,Math.min(100,s.mental+(MENTAL_DELTA[j]||0)));  // 판정 연동 멘탈(비대칭)
+    const fanGain=Math.round((30+s[kind]*0.6)*J.fanMult);
+    s.fans+=fanGain;
+    const newV=Math.round(s[kind]), newG=grade(newV), newL=levelOf(newV);
+    const sign=gain>=0?"+":"";
+    const gradeUp = newL>oldL;   // 게이지 100 넘겨 등급 상승
+    if(gradeUp) this.logWeek(t("gradeup_log",{ico:stat.ico,stat:t("st_"+kind),from:oldG,to:newG}));
+    const say=t("say_"+j);
+    this.trainReveal(s.idol, kind, j, J,
+      t("train_delta",{ico:stat.ico,stat:t("st_"+kind),sign,gain,fans:fmt(fanGain),cond:J.cond}),
+      say,
+      ()=>{ this.render(); this.bumpStat(kind, oldV, newV, oldG, newG);
+            setTimeout(()=>this.afterTurn(), 900); });
+  },
+
+  // 훈련 씬: 활동 동작(영차영차) → 결과 마무리 (성별·활동·결과별 도트 연출)
+  trainReveal(idol, kind, jkey, J, deltaHtml, say, done){
+    const ov=document.getElementById("ov");
+    ov.className="ov on"; ov.onclick=null;
+    const fx = TRAIN_FX[kind] || TRAIN_FX.vocal;
+    const R  = RESULT_FX[jkey] || RESULT_FX.ok;
+    // 활동별 담당 캐릭터(레티=토끼 / 리니=오리). 결과 애니도 같은 캐릭터로 통일.
+    const cpfx = (ACT_CHAR[kind]||"rini")==="rety" ? "rety_" : "";
+    // ── Phase 1: 활동 (레티리니 2D 일러 카드 + 활동별 음표) ──  ※도트 폐기, emo 2D 에셋 사용
+    const p1src = `assets/emo/act-${kind}.png?v=${ASSET_VER}`;   // act-{vocal|dance|visual|charm|acting|creative|rest}
+    const notes = (fx.notes||["♪","♫","♪"]).map((n,i)=>
+      `<span class="px-note n${i+1}">${n}</span>`).join("");
+    ov.innerHTML=`<div class="px-stage" id="pxStage">
+        <div class="emo-holder">
+          <img class="emo-card in" id="emoChar" src="${p1src}" alt="">
+          ${notes}
+        </div>
+        <div class="train-say" id="pxSay">${t("fx_"+kind)}…</div>
+      </div>`;
+    // ── Phase 2: 결과 (1.1초 뒤 결과 애니로 전환, 같은 캐릭터) ──
+    clearTimeout(this._pxPhase);
+    this._pxPhase=setTimeout(()=>{
+      const el=document.getElementById('emoChar');
+      const sprite = jkey==="perfect" ? "great" : jkey;   // 각성 전용컷 없음 → great 재사용
+      sfx(jkey);   // 결과음(great/ok/fail/dbad/perfect) — 판정 컷 전환과 동시에
+      if(el){ el.src=`assets/emo/res-${sprite}.png?v=${ASSET_VER}`;   // res-{great|ok|fail|dbad}
+              el.classList.remove('in'); void el.offsetWidth; el.classList.add('res');  // 결과 팝 연출
+              if(jkey==="perfect") el.classList.add('perfect-glow'); }
+      const holder=document.querySelector('.emo-holder');
+      if(holder) holder.querySelectorAll('.px-note').forEach(n=>n.remove()); // 결과엔 음표 제거
+      if(jkey==="perfect") this.pxSparkle(ov,34,['#ffd35c','#ffe98a','#fff4c2','#ff5fa2'],false);
+      else if(R.burst==="party") this.pxSparkle(ov,18,null,false);
+      else if(R.burst==="small") this.pxSparkle(ov,7,['#4fd6a0','#5fc9ff','#ffd35c'],false);
+      const sayEl=document.getElementById('pxSay');
+      if(sayEl){ sayEl.textContent=say||""; sayEl.style.color="var(--txt)"; }
+      const info=document.createElement('div');
+      info.innerHTML=`<div class="roll ${J.cls}">${J.emoji}</div>
+        <div class="roll ${J.cls}" style="font-size:28px">${J.label||t("j_"+jkey)}</div>
+        <div class="delta">${deltaHtml}</div>`;
+      ov.appendChild(info);
+      setTimeout(()=>{ ov.onclick=()=>{ clearTimeout(this._pxPhase);
+          ov.className="ov"; ov.onclick=null; done(); };
+        const h=document.createElement("div");h.className="muted";h.style.marginTop="12px";
+        h.textContent=t("tap_continue");ov.appendChild(h);
+      }, 450);
+    }, 1100);
+  },
+  pxSparkle(container, count, colors, down){
+    const stage=container.querySelector('.px-stage'); if(!stage) return;
+    const pal=colors||['#ff5f8a','#ffd35c','#5fc9ff','#8b5cff','#4fd6a0','#ec3a5c'];
+    for(let i=0;i<(count||16);i++){
+      const s=document.createElement('div'); s.className='px-spark';
+      const ang=Math.random()*6.283, dist=42+Math.random()*66;
+      const dy = down ? Math.abs(Math.sin(ang))*dist+18 : Math.sin(ang)*dist;
+      s.style.background=pal[i%pal.length];
+      s.style.left='50%'; s.style.top='40%';
+      s.style.setProperty('--dx',(Math.cos(ang)*dist).toFixed(0)+'px');
+      s.style.setProperty('--dy',(dy).toFixed(0)+'px');
+      s.style.animation='pxfly .85s ease-out forwards';
+      stage.appendChild(s); setTimeout(()=>s.remove(), 950);
+    }
+  },
+
+  // 게이지 채우기 + 숫자 카운트업 + 등급 상승 팝. 게이지 100 채우면 리셋되며 등급업.
+  bumpStat(kind, oldV, newV, oldG, newG){
+    const box=document.getElementById("statBox");
+    const row=box && box.querySelector(`.stat[data-k="${kind}"]`);
+    if(!row) return;
+    const bar=row.querySelector('.bar > i'), numEl=row.querySelector('.v'), badge=row.querySelector('.gbadge');
+    const oldP=progOf(oldV), newP=progOf(newV);
+    const levelUp = levelOf(newV)>levelOf(oldV);
+    if(bar){
+      bar.style.transition='none'; bar.style.width=oldP+'%'; void bar.offsetWidth;
+      if(levelUp){
+        bar.style.transition='width .4s cubic-bezier(.3,.8,.4,1)'; bar.style.width='100%';
+        setTimeout(()=>{ bar.style.transition='none'; bar.style.width='0%'; void bar.offsetWidth;
+          bar.style.transition='width .55s cubic-bezier(.3,.8,.4,1)'; bar.style.width=newP+'%'; }, 430);
+      } else {
+        bar.style.transition='width .7s cubic-bezier(.3,.8,.4,1)'; bar.style.width=newP+'%';
+      }
+    }
+    if(numEl){ if(levelUp) setTimeout(()=>countUp(numEl,0,newP,550),450); else countUp(numEl,oldP,newP,700); }
+    row.classList.remove('bump'); void row.offsetWidth; row.classList.add('bump');
+    setTimeout(()=>row.classList.remove('bump'), 760);
+    if(badge && levelUp){ setTimeout(()=>{ badge.textContent=newG; badge.style.background=GRADE_COLOR[newG];
+      badge.classList.add('pop'); sfx('sparkle'); setTimeout(()=>badge.classList.remove('pop'), 700); }, 450); }
+  },
+
+  // 헤더 팬 수 카운트업: 이전 표시값 → 새 값으로 숫자가 굴러오고, 늘면 살짝 튐(연출감)
+  setFans(to){
+    const el=document.getElementById("pFans"); if(!el) return;
+    const from = this._fansShown==null ? to : this._fansShown;
+    this._fansShown=to;
+    if(from===to){ el.textContent=fmt(to); return; }
+    if(to>from){ el.classList.remove("fanbump"); void el.offsetWidth; el.classList.add("fanbump"); }
+    const t0=performance.now(), dur=Math.min(1100,420+Math.abs(to-from)*0.6);
+    const step=(now)=>{ const p=Math.min(1,(now-t0)/dur); const e=1-Math.pow(1-p,3);
+      el.textContent=fmt(Math.round(from+(to-from)*e)); if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  },
+  logWeek(html){ if(!this.st.log) this.st.log=[]; this.st.log.push(`<b>W${this.st.week}</b> · ${html}`); },
+
+  showRoll(J, deltaHtml, done){
+    const ov=document.getElementById("ov");
+    ov.className="ov on";
+    ov.innerHTML=`<div class="roll ${J.cls}">${J.emoji}</div>
+      <div class="roll ${J.cls}" style="font-size:30px">${J.label}</div>
+      <div class="delta">${deltaHtml}</div>`;
+    ov.onclick=null;
+    setTimeout(()=>{ ov.onclick=()=>{ov.className="ov";ov.onclick=null;done();};
+      const h=document.createElement("div");h.className="muted";h.style.marginTop="18px";
+      h.textContent=t("tap_continue");ov.appendChild(h);
+    },600);
+  },
+
+  // 훈련 끝 → 다음 주로. (관문·이벤트는 '주 시작'에서 처리 — 훈련효과와 분리)
+  afterTurn(){ this.nextWeek(); },
+  nextWeek(){ this.st.week++; this.st.busy=false;
+    // 주차 자동 멘탈 회복 제거(sim 확정) — 멘탈은 케어 액션으로 능동 관리
+    this.save(); this.startWeek(); },
+  // 주 시작: 데뷔/관문이면 바로 진행, 아니면 확률로 이벤트 → 닫으면 그 주 훈련 선택
+  startWeek(){
+    const s=this.st, w=s.week;
+    s.busy=false;
+    if(w===DEBUT_W){ this.render(); return this.debutJudge(); }
+    if(COMPETS[w]){ this.render(); return this.runCompet(w); }
+    this.render();
+    if(w>=3 && Math.random()<0.25){ s.busy=true; this.showEvent(()=>{ s.busy=false; this.render(); }); }
+  },
+
+  // ===== 중간 저장(localStorage) =====
+  save(){ try{ if(this.st) localStorage.setItem("idol_save", JSON.stringify(this.st)); }catch(e){} },
+  clearSave(){ try{ localStorage.removeItem("idol_save"); }catch(e){} },
+  hasSave(){ try{ return !!localStorage.getItem("idol_save"); }catch(e){ return false; } },
+  continueGame(){
+    let raw; try{ raw=localStorage.getItem("idol_save"); }catch(e){}
+    if(!raw){ toast(t("toast_no_save")); return; }
+    try{ this.st=JSON.parse(raw); }catch(e){ toast(t("toast_save_broken")); this.clearSave(); return; }
+    if(!this.st.log) this.st.log=[];
+    this._fansShown=this.st.fans;   // 이어하기: 저장된 팬 수부터(0→튐 방지)
+    show("s-play"); this.startWeek(); this.armBackGuard();
+    toast(t("toast_resume",{w:this.st.week}));
+  },
+
+  showEvent(done){
+    const s=this.st;
+    if(!s.usedEvents) s.usedEvents=[];
+    // 성별 게이팅 + once(1회성) 소진 제외. 후보 없으면 once 무시하고 재사용.
+    const okGender=e=> !e.gender || e.gender===(s.idol.cat||"F");
+    let pool=EVENTS.filter(e=> okGender(e) && !(e.once && s.usedEvents.includes(e.id)));
+    if(!pool.length) pool=EVENTS.filter(okGender);
+    // 가중치 랜덤(weight 기본 1, once는 살짝 낮춰 특별하게)
+    const wsum=pool.reduce((a,e)=>a+(e.weight||1),0);
+    let r=Math.random()*wsum, ev=pool[0];
+    for(const e of pool){ r-=(e.weight||1); if(r<=0){ ev=e; break; } }
+    if(ev.once && !s.usedEvents.includes(ev.id)) s.usedEvents.push(ev.id);
+    const ov=document.getElementById("ov");
+    ov.className="ov on";
+    const eid=ev.id;
+    ov.innerHTML=`<div class="ev-card"><div class="ev-banner">${t("ev_banner")}</div><div class="ev-emoji">${ev.emoji}</div>
+      <div class="ev-title">${t("ev_"+eid+"_title")}</div><div class="ev-text">${t("ev_"+eid+"_text")}</div>
+      <div class="ev-choices locked" id="evc"></div></div>`;
+    ov.onclick=null;
+    const box=document.getElementById("evc");
+    ev.choices.forEach((ch,i)=>{
+      const b=document.createElement("button");
+      b.className="btn ghost";
+      const clabel=t("ev_"+eid+"_c"+(i+1));
+      // 분기형은 예상 성공확률을 미리 보여줌(우마무스메식 리스크 판단)
+      if(ch.odds){
+        const pct=Math.round(Math.min(0.92,ch.odds(s))*100);
+        b.innerHTML=`${clabel} <span style="opacity:.55;font-size:12px;font-weight:600">${t("ev_odds",{pct})}</span>`;
+      } else b.textContent=clabel;
+      b.onclick=()=>{
+        if(ch.odds){
+          const winr = Math.random() < Math.min(0.92, ch.odds(s));
+          const res = winr ? ch.win : ch.lose;
+          res.fx(s); clampState(s);
+          ov.className="ov";
+          const wl = winr ? "_w" : "_lo";
+          this.showRoll({cls:winr?"dg":"dc",label:t("ev_"+eid+wl+"_l"),emoji:res.emoji},
+            t("ev_"+eid+wl+"_d"), ()=>{ this.render(); done(); });
+        } else {
+          ch.fx(s); clampState(s);
+          ov.className="ov"; this.render(); done();
+        }
+      };
+      box.appendChild(b);
+    });
+    // 오클릭 방지: 훈련 연타 관성이 멈출 시간(0.65s) 뒤에 선택지 활성화 + 등장 연출
+    setTimeout(()=>{ box.classList.remove("locked"); box.classList.add("ready"); try{sfx("whoosh");}catch(e){} }, 650);
+  },
+
+  debutJudge(){
+    const s=this.st;
+    const total=STATS.reduce((a,st)=>a+s[st.k],0);
+    const peak=Math.max(...STATS.map(st=>s[st.k]));
+    const pass = peak>=100 && (total>=340 || peak>=150);   // 올F 컷: 최소 한 스탯 F 탈출(100+) 없으면 데뷔 실패(훈련 안 하고 초기스탯·이벤트만으론 못 뚫음)
+    const bonus = pass ? Math.round(1500+total*4) : Math.round(total*2);
+    s.fans+=bonus;
+    this.logWeek(pass?t("debut_pass_log"):t("debut_fail_log"));
+    const ov=document.getElementById("ov"); ov.className="ov on"; ov.onclick=null;
+    ov.innerHTML=`<div class="ev-card"><div class="ev-emoji">${pass?"🎊":"😅"}</div>
+      <div class="ev-title">${pass?t("debut_pass_title"):t("debut_fail_title")}</div>
+      <div class="ev-text">${pass?t("debut_pass_text"):t("debut_fail_text")}<br>
+      ${t("debut_body",{bonus:fmt(bonus)})}</div>
+      <button class="btn" onclick="Game.afterDebut()" data-i18n="debut_next">${t("debut_next")}</button></div>`;
+    if(pass){ sfx("win"); this.confetti(46,false); } else { sfx("fail"); }
+  },
+
+  // 라이벌과 순위 대결 (필수 경쟁 이벤트)
+  runCompet(week){
+    const c=COMPETS[week], s=this.st;
+    let mine;
+    if(c.type==="stage"){
+      const f=c.field.reduce((a,k)=>a+s[k],0)/c.field.length;      // 무대 스탯(보컬·댄스·비주얼·끼) 평균
+      mine = f * (0.55 + 0.45*s.cond/100) * (0.9 + Math.random()*0.2);
+    } else {
+      const avg=STATS.reduce((a,st)=>a+s[st.k],0)/6;               // 종합력(시상식 주력)
+      const peak=Math.max(...STATS.map(st=>s[st.k]));              // 원톱 한 방도 일부 반영
+      const metric=Math.max(avg, peak*AWARD_PEAK_K);
+      mine = metric * (1 + Math.min(0.45, s.fans/60000)) * (0.9 + Math.random()*0.2);
+    }
+    const idxs=[]; while(idxs.length<3){ const r=Math.floor(Math.random()*RIVAL_POOL.length); if(!idxs.includes(r)) idxs.push(r); }
+    const rivals=idxs.map(i=>({name:RIVAL_POOL[i], emoji:RIVAL_EMOJI[i], score:c.base*(0.75+Math.random()*0.5), me:false}));
+    const board=[{name:idolName(s.idol), emoji:"🎤", score:mine, me:true}, ...rivals].sort((a,b)=>b.score-a.score);
+    const myRank=board.findIndex(r=>r.me)+1;
+    this.resolveCompet(c, board, myRank);
+  },
+
+  resolveCompet(c, board, myRank){
+    const s=this.st, N=board.length, win=myRank===1;
+    let head, sub, btn=t("cp_cont"), onCont=()=>{ document.getElementById("ov").className="ov"; this.nextWeek(); };
+
+    if(c.type==="stage"){
+      if(win){ s.fans+=Math.round(2200+c.base*45); s.mental+=8; s.cond=Math.max(0,s.cond-6);
+        head=t("cp_stage_win_head"); sub=t("cp_stage_win_sub"); }
+      else if(myRank<=3){ s.fans+=Math.round(700); s.mental+=3;
+        head=t("cp_stage_top_head",{rank:myRank}); sub=t("cp_stage_top_sub"); }
+      else { s.fans+=150; s.mental=Math.max(0,s.mental-6); s.cond=Math.max(0,s.cond-4);
+        head=t("cp_stage_out_head",{rank:myRank}); sub=t("cp_stage_out_sub"); }
+    }
+    else if(c.gate){   // 월드 진출 쇼케이스 심사 = 관문 (1위만 월드행!)
+      if(win){ const b=Math.round(3800+s.fans*0.04); s.fans+=b; s.mental+=6;
+        head=t("cp_gate_win_head"); sub=t("cp_gate_win_sub",{b:fmt(b)});
+        btn=t("cp_gate_win_btn");
+        onCont=()=>{ document.getElementById("ov").className="ov";
+          this.cutscene({act:t("cs_act3"), emoji:"✈️", title:t("cs3_title"), sub:t("cs3_sub"),
+            talk:t("cs3_talk")},
+            ()=>this.nextWeek()); };
+      } else { s.fans+=400; head=t("cp_gate_lose_head",{rank:myRank});
+        sub=t("cp_gate_lose_sub");
+        onCont=()=>{ document.getElementById("ov").className="ov"; this.finish(false); }; btn=t("cp_result"); }
+    }
+    else if(c.final){  // 글로벌 대상 = 최종
+      const b=Math.round(4000+(N-myRank+1)*1900+s.fans*0.04); s.fans+=b;
+      head = win?t("cp_final_win_head"):t("cp_final_lose_head",{rank:myRank});
+      sub = (win?t("cp_final_win_sub"):t("cp_final_lose_sub"))+t("cp_final_bonus",{b:fmt(b)});
+      onCont=()=>{ document.getElementById("ov").className="ov";
+        this.resultLoading(()=>this.finish(true, myRank)); }; btn=t("cp_final_btn");
+    }
+    this.logWeek(`${c.emoji} <b>${t(c.tk)}</b> — ${head.replace(/<[^>]+>/g,"")}`);
+    this.showCompetBoard(c, board, myRank, head, sub, btn, onCont);
+  },
+
+  // 관문/시상식 특수 발표: 순위를 꼴찌→1등 순으로 서스펜스 리빌 후 반응 연출. 관문 등급별 스케일업.
+  showCompetBoard(c, board, myRank, head, sub, btnLabel, onCont){
+    const st=document.getElementById("competStage");
+    const win=myRank===1, podium=myRank<=3;
+    const tier = c.final?3 : (c.gate?2:1);   // 스테이지<관문<대상 순으로 화려하게
+    st.className="compstage on"+(tier===3?" t3":tier===2?" t2":"");
+    const emojiCls = "comp-emoji"+(tier===3?" t3":"")+(win?" win":"");
+    const N=board.length;
+    // 뼈대: 타이틀 + 발표중 문구 + 빈 보드(아래→위로 채움) + 헤드/서브/버튼
+    st.innerHTML=`<div class="comp-in">
+        <div class="${emojiCls}">${c.emoji}</div>
+        <div class="comp-title">${t(c.tk)}</div>
+        <div class="comp-phase" id="compPhase">${t("cp_announcing")}</div>
+        <div class="comp-board" id="compBoard">${board.map((r,i)=>{
+          const medal=["🥇","🥈","🥉"][i]||`${i+1}`;
+          return `<div class="comp-row ${r.me?"me":""}" data-i="${i}">
+            <span class="r">${medal}</span>
+            <span class="who">${r.emoji} ${esc(r.name)}${r.me?t("cp_me"):""}</span>
+            <span class="sc">${Math.round(r.score)}</span></div>`;
+        }).join("")}</div>
+        <div class="comp-head" id="compHead"></div>
+        <div class="comp-sub" id="compSub"></div>
+        <button class="btn comp-cont" id="competCont">${btnLabel}</button>
+      </div>`;
+    const rows=[...st.querySelectorAll(".comp-row")];
+    const headEl=st.querySelector("#compHead"), subEl=st.querySelector("#compSub"),
+          phaseEl=st.querySelector("#compPhase"), contEl=st.querySelector("#competCont");
+    contEl.onclick=()=>{ st.className="compstage"; st.innerHTML=""; onCont&&onCont(); };
+    // 꼴찌부터 순차 공개(서스펜스). 내 순위가 나올 때 tick 강조.
+    let idx=rows.length-1;
+    const revealDelay = tier>=2 ? 600 : 480;
+    const revealNext=()=>{
+      if(idx<0){ this._competReact(st,{win,podium,tier,head,sub,headEl,subEl,phaseEl,contEl}); return; }
+      const row=rows[idx];
+      row.classList.add("show");
+      sfx(row.classList.contains("me") ? "sparkle" : "tick");
+      idx--;
+      this._competTimer=setTimeout(revealNext, revealDelay);
+    };
+    this._competTimer=setTimeout(revealNext, 700);
+  },
+  // 전체 공개 후 반응(승리 컨페티/팡파레·입상 메달·탈락 침묵)
+  _competReact(st,o){
+    o.phaseEl.textContent="";
+    o.headEl.textContent=o.head.replace(/<[^>]+>/g,"");
+    o.headEl.classList.add("pop");
+    o.subEl.innerHTML=o.sub;
+    if(o.win){
+      sfx(o.tier>=2?"fanfare":"win");
+      const flash=document.getElementById("csFlash")||this._makeFlash();
+      flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+      const amount = o.tier===3?110 : o.tier===2?80 : 55;
+      this.confetti(amount, o.tier===3);
+      if(o.tier===3){ setTimeout(()=>this.confetti(70,true), 700); }   // 대상은 2차 폭죽
+    } else if(o.podium){
+      sfx("win");
+      this.confetti(26,false);
+    } else {
+      sfx("lose");
+    }
+    setTimeout(()=>o.contEl.classList.add("show"), o.win?900:500);
+  },
+  _makeFlash(){ const f=document.createElement("div"); f.className="cs-flash"; f.id="csFlash";
+    document.getElementById("app").appendChild(f); return f; },
+  // 떨어지는 컨페티(승리 연출). gold=금빛(대상용)
+  confetti(count, gold){
+    const app=document.getElementById("app");
+    const pal = gold ? ['#ffd35c','#ffe98a','#fff4c2','#ff5fa2','#ffb347','#fff']
+                     : ['#ff5f8a','#ffd35c','#5fc9ff','#8b5cff','#4fd6a0','#ff9ec4'];
+    const W=app.clientWidth||375;
+    for(let i=0;i<count;i++){
+      const c=document.createElement('div'); c.className='confetti';
+      c.style.background=pal[i%pal.length];
+      c.style.left=(Math.random()*W)+'px';
+      c.style.setProperty('--fall',(window.innerHeight+60)+'px');
+      c.style.setProperty('--spin',(Math.random()*720-360)+'deg');
+      const dur=1.6+Math.random()*1.4, delay=Math.random()*0.5;
+      c.style.animation=`confFall ${dur}s ${delay}s cubic-bezier(.25,.6,.5,1) forwards`;
+      if(Math.random()<0.4) c.style.borderRadius='50%';
+      app.appendChild(c);
+      setTimeout(()=>c.remove(),(dur+delay)*1000+120);
+    }
+  },
+  contAfterJudge(){ document.getElementById("ov").className="ov"; this.nextWeek(); },
+
+  // ===== 연출: 페이즈 전환 컷씬 =====
+  cutscene(opt, cb){
+    const cs=document.getElementById("cutscene");
+    cs.className="cutscene on";
+    cs.innerHTML=`<div class="cs-in">
+        <div class="cs-act">${opt.act}</div>
+        <div class="cs-emoji">${opt.emoji}</div>
+        <div class="cs-title">${opt.title}</div>
+        <div class="cs-sub">${opt.sub}</div>
+        <div class="cs-talk"><img class="cs-mascot" src="assets/mascot.png" alt="">
+          <div class="cs-bubble">${opt.talk}</div></div>
+      </div><div class="cs-tap">${t("tap_continue")} →</div>`;
+    let done=false;
+    const go=()=>{ if(done) return; done=true; cs.onclick=null; cs.className="cutscene"; cb&&cb(); };
+    cs.onclick=go;
+    this._csTimer=setTimeout(go, 3400);   // 자동 진행(탭하면 스킵)
+  },
+  afterDebut(){
+    document.getElementById("ov").className="ov";
+    this.cutscene({act:t("cs_act2"), emoji:"🎤", title:t("cs2_title"), sub:t("cs2_sub"),
+      talk:t("cs2_talk")},
+      ()=>this.nextWeek());
+  },
+
+  // ===== 연출: 최종 결과 집계 로딩 =====
+  resultLoading(cb){
+    const el=document.getElementById("loading");
+    el.className="loading on";
+    el.innerHTML=`<div class="load-ring"></div>
+      <div class="load-txt">${t("load_title")}</div>
+      <div class="load-step" id="loadStep">${t("load_s1")}</div>`;
+    const steps=[t("load_s1"),t("load_s2"),t("load_s3"),t("load_s4")];
+    let i=0; const st=document.getElementById("loadStep");
+    const iv=setInterval(()=>{ i++; if(i<steps.length) st.textContent=steps[i]; }, 780);
+    setTimeout(()=>{ clearInterval(iv); el.className="loading"; cb&&cb(); }, 3400);
+  },
+
+  ending(reachedWorld, finalRank){
+    const s=this.st;
+    const arr=STATS.map(st=>({...st, v:s[st.k]})).sort((a,b)=>b.v-a.v);
+    const top=arr[0], total=arr.reduce((a,b)=>a+b.v,0), minV=arr[arr.length-1].v;
+    const gap=top.v-arr[1].v;
+    const stage4=(s.vocal+s.dance+s.visual+s.charm)/4;   // 무대 4종 평균
+    const stageStar = stage4>=440 && minV<340;            // 무대 특화(연기·크리 낮음)
+    const topName=t("st_"+top.k);
+    // 🥚 이스터에그: 훈련 거의 안 하고 휴식·멘탈케어만 → 스탯 바닥, 데뷔조차 못한 은둔 결말. 최우선 판정.
+    if(total < 200) return {emoji:"🛋️",name:t("e_slacker_n"),tier:"F",sub:t("e_slacker_s")};
+    // 외길 장인(mono): 한 스탯만 몰빵하고 나머진 방치. 순위·월드 무관한 괴짜 엔딩.
+    const soloist = top.v>=560 && (total-top.v)<680;
+
+    if(soloist) return {emoji:"🪄",name:t("e_soloist_n",{stat:topName}),tier:reachedWorld?"A":"B",
+      sub:t("e_soloist_s",{stat:topName,g:grade(top.v)})};
+
+    if(!reachedWorld){
+      if(total<680 && top.v<430) return {emoji:"💔",name:t("e_disband_n"),tier:"F",sub:t("e_disband_s")};
+      if(stageStar) return {emoji:"🎭",name:t("e_stagelocal_n"),tier:"C",sub:t("e_stagelocal_s")};
+      // 중고신인: 실력은 붙었는데 관문(월드 진출)에서 아깝게 미끄러짐
+      if(total>=1600) return {emoji:"🐣",name:t("e_rookie_n"),tier:"C",sub:t("e_rookie_s")};
+      return {emoji:"🌗",name:t("e_local_n",{stat:topName}),tier:"C",sub:t("e_local_s",{stat:topName})};
+    }
+    const champ=finalRank===1, podium=finalRank<=3;
+    const superA = minV>=600 && total>=3600;   // 육각형 슈퍼스타: 6스탯 전부 S등급(600+)+총합 3600. sim 확정 도달률 완벽봇 0.09%·정석봇 0.003%(만분의일급 전설). D3곡선 전제.
+    const onetop  = top.v>=620 && gap>=180;      // 한 스탯 S~SS 원톱
+    const allround= minV>=340 && total>=2400;
+    const solid   = minV>=230 && total>=1900;
+    const specialist = top.v>=500 && gap>=100;   // 특정 분야가 확실히 앞서는 스페셜리스트
+
+    // SS — 6각 완성 (실력이 SS급, 순위 무관)
+    if(superA) return {emoji:"🌟",name:t("e_ss_n"),tier:"SS",
+      sub:t("e_ss_s",{champ:champ?t("e_ss_champ"):t("e_ss_nochamp")})};
+    // S/A — 연기돌 전향 (연기가 확실한 주무기)
+    if(specialist && top.k==="acting") return {emoji:"🎬",name:t("e_actingstar_n"),tier:podium?"S":"A",
+      sub:t("e_actingstar_s",{g:grade(top.v)})};
+    // S/A — 싱어송라이터 (작곡이 확실한 주무기)
+    if(specialist && top.k==="creative") return {emoji:"🎹",name:t("e_songwriter_n"),tier:podium?"S":"A",
+      sub:t("e_songwriter_s",{g:grade(top.v)})};
+    // S — 대상 1위 + 원톱
+    if(champ && onetop) return {emoji:"👑",name:t("ot_"+top.k),tier:"S",
+      sub:t("e_onetop_champ_s",{stat:topName,g:grade(top.v)})};
+    // S — 대상 1위 + 올라운더
+    if(champ && allround) return {emoji:"🏆",name:t("e_allround_champ_n"),tier:"S",sub:t("e_allround_champ_s")};
+    // S — 원톱 실력으로 상위 입상
+    if(onetop && podium) return {emoji:"👑",name:t("ot_"+top.k),tier:"S",
+      sub:t("e_onetop_podium_s",{stat:topName,g:grade(top.v)})};
+    // S — 무대 4종 특화로 상위 입상
+    if(stageStar && podium) return {emoji:"🎆",name:t("e_stage_n"),tier:"S",sub:t("e_stage_s")};
+    // S — 완성형 올라운더
+    if(allround) return {emoji:"🌈",name:t("e_allround_n"),tier:"S",sub:t("e_allround_s")};
+    // A — 무대형 (입상은 못했지만 무대는 최강)
+    if(stageStar) return {emoji:"🎭",name:t("e_stageA_n"),tier:"A",sub:t("e_stageA_s")};
+    // A — SNS 팬덤 제국 (실력은 미미한데 순수 화력·팬덤만으로 대상)
+    if(champ && total<1650) return {emoji:"💞",name:t("e_fandom_n"),tier:"A",sub:t("e_fandom_s")};
+    // A — 대상 1위지만 스탯은 평범 (화제성·팬덤으로 대관식)
+    if(champ) return {emoji:"🎉",name:t("e_crown_n"),tier:"A",sub:t("e_crown_s")};
+    // A — 준수 + 상위 입상
+    if(solid && podium) return {emoji:"⭐",name:t("e_bigstar_n"),tier:"A",sub:t("e_bigstar_s")};
+    // A — 준수
+    if(solid) return {emoji:"✨",name:t("e_solid_n"),tier:"A",sub:t("e_solid_s")};
+    // B — 얇고 길게
+    return {emoji:"🌱",name:t("e_longrun_n"),tier:"B",sub:t("e_longrun_s")};
+  },
+
+  finish(reachedWorld, finalRank, shared){
+    if(!shared) this.clearSave();   // 게임 종료 — 이어하기 삭제
+    const s=this.st;
+    const statTotal=STATS.reduce((a,st)=>a+s[st.k],0);
+    if(!shared) s.fans+=Math.round(statTotal*35 + s.mental*8);  // 공유 결과는 이미 최종 팬
+    const end=this.ending(reachedWorld, finalRank);
+    const dexNew=shared ? false : this.dexAdd(dexIdOf(end));   // 엔딩 도감 기록 (첫 달성이면 true)
+    if(!shared && end.tier==="SS") this.logPrestige(s, statTotal, finalRank);  // 프레스티지 배출 로깅(실측·조임용)
+    // 레이더 라벨은 짧은 형(작곡 등 긴 라벨 캔버스 밖 잘림 방지). creative만 별도 단축키.
+    const statVals=STATS.map(st=>({n:t(st.k==="creative"?"st_creative_short":"st_"+st.k),k:st.k,c:st.c,v:Math.round(s[st.k]),g:grade(Math.round(s[st.k]))}));
+    const overall=grade(Math.round(statTotal/STATS.length));
+    const spStat=STATS.find(x=>x.k===s.idol.spec)||STATS[0];
+    this.lastResult={name:idolName(s.idol),grp:idolGrp(s.idol),ending:end.name,emoji:end.emoji,
+      tier:end.tier,fans:s.fans,reachedWorld,statVals,overall,finalRank:finalRank||null,
+      spec:s.idol.spec, specName:spStat.n, specIco:spStat.ico, specColor:spStat.c, img:s.idol.img||"",
+      stage:reachedWorld?(finalRank?`글로벌 대상 ${finalRank}위`:"WORLD TOUR · WEEK 52"):"DOMESTIC 탈락"};
+    document.getElementById("endIdolBox").style.display="";
+    const eav=document.getElementById("endAvatar");
+    if(s.idol.img){ eav.src=s.idol.img; eav.style.display=""; } else { eav.style.display="none"; }
+    const isCustom = s.idol.grp===t("custom_idol") || s.idol.grp==="커스텀 아이돌";
+    document.getElementById("endIdolName").innerHTML=
+      esc(idolName(s.idol))+(s.idol.grp && !isCustom?` <small>${esc(idolGrp(s.idol))}</small>`:` <small>${t("custom_short")}</small>`);
+    document.getElementById("endEmoji").textContent=end.emoji;
+    document.getElementById("endName").textContent=end.name;
+    const dexChip = dexNew ? `<div class="dex-unlock">${t("end_dex_unlock")}</div>` : "";
+    document.getElementById("endSub").innerHTML=`${dexChip}${end.sub}<br><br>${t("end_fans",{fans:fmt(s.fans)})}`;
+    document.getElementById("oGrade").innerHTML=
+      t("end_overall",{g:overall,c:spStat.c,ico:spStat.ico,spec:t("st_"+spStat.k)});
+    const gbox=document.getElementById("growthBox");
+    if(s.log && s.log.length){ gbox.style.display="";
+      gbox.innerHTML=`<h3>${t("end_growth_title",{name:esc(idolName(s.idol))})}</h3>`+s.log.map(l=>`<div class="gl">${l}</div>`).join(""); }
+    else gbox.style.display="none";
+    const sharedBanner=document.getElementById("sharedBanner");
+    if(shared){
+      // 공유 링크로 열린 결과: 리더보드/등록 숨기고 '나도 해보기' CTA
+      ["shareLinkBtn","shareBtn","nameInput","saveBtn","lbBox","dgOfficeBtn","dgResult"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});
+      sharedBanner.style.display="";
+      sharedBanner.innerHTML=`<b>${esc(s.idol.name)}</b>${t("shared_banner")}`;
+      document.getElementById("againBtn").textContent=t("shared_cta");
+      document.getElementById("againBtn").onclick=()=>Game.goSelect();
+    } else {
+      sharedBanner.style.display="none";
+      ["shareLinkBtn","shareBtn","nameInput","saveBtn","lbBox"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="";});
+      document.getElementById("nameInput").value="";
+      // 등록 버튼 상태 리셋(이전 게임의 '완료' 잔류 방지)
+      const sb=document.getElementById("saveBtn"); if(sb){ sb.disabled=false; sb.textContent=t("save_btn"); sb.classList.remove("saved-done"); }
+      const ni2=document.getElementById("nameInput"); if(ni2) ni2.disabled=false;
+      document.getElementById("againBtn").textContent=t("again_btn");
+      document.getElementById("againBtn").onclick=()=>Game.confirmReset();
+      this._boardCache=null; this.loadBoard(null);   // 서버 리더보드 조회
+      this.prepCard();   // 카드 미리 생성 (저장 버튼 제스처 소진 방지)
+      // 드림그룹: 육성카드 드랍 + 자리 등록
+      const _dg=DG.onFinish(s, statVals, end);
+      const _dgr=document.getElementById("dgResult"); if(_dgr){ _dgr.style.display=""; DG.renderResult(_dgr, _dg); }
+      const _ob=document.getElementById("dgOfficeBtn"); if(_ob) _ob.style.display="";
+    }
+    document.getElementById("endStage").textContent=
+      reachedWorld?(finalRank?t("end_stage_world",{rank:finalRank}):t("end_stage_world_nr")):t("end_stage_out");
+    drawRadar(document.getElementById("radar"), statVals, {dark:false, big:true});  // 온스크린 육각형 라벨 키움(재율애비: 항목 폰트 너무 작음)
+    show("s-end");
+  },
+  // 결과 → 공유 링크 인코딩/디코딩
+  encodeResult(){
+    const r=this.lastResult; if(!r) return "";
+    const arr=[r.name, r.grp, r.spec, ...r.statVals.map(v=>v.v), Math.round(r.fans),
+      r.finalRank||0, r.reachedWorld?1:0];
+    try{ return "r="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(arr))))); }
+    catch(e){ return ""; }
+  },
+  decodeResult(enc){
+    try{ const arr=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(enc)))));
+      return {name:arr[0], grp:arr[1], spec:arr[2], v:arr.slice(3,9).map(Number),
+        fans:+arr[9], rank:+arr[10]||null, world:!!arr[11]}; }
+    catch(e){ return null; }
+  },
+  shareLink(){
+    const enc=this.encodeResult(); if(!enc){ toast(t("toast_save_broken")); return; }
+    const url=location.origin+location.pathname+"?"+enc;
+    const r=this.lastResult;
+    const shareData={title:t("t_title"), text:t("share_text",{name:r.name,ending:r.ending}), url};
+    if(navigator.share){
+      navigator.share(shareData).catch(e=>{ if(e.name!=="AbortError") this.copyLink(url); });
+    } else { this.copyLink(url); }
+  },
+  copyLink(url){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(()=>toast(t("toast_link_copied"))).catch(()=>this.promptLink(url));
+    } else this.promptLink(url);
+  },
+  promptLink(url){ window.prompt(t("toast_link_copied"), url); },
+  // 공유 링크로 열렸을 때 결과 재현
+  showSharedResult(d){
+    const st=STATS.map(x=>x.k);
+    this.st={idol:{name:d.name, grp:d.grp||t("custom_idol"), spec:d.spec, img:""},
+      mental:60, fans:d.fans, week:52, log:[]};
+    st.forEach((k,i)=>this.st[k]=d.v[i]||0);
+    this.lastResult=null;
+    this.finish(d.world, d.rank, true);
+  },
+
+  // ===== 결과 카드 이미지 =====
+  async makeCard(){
+    const r=this.lastResult; const W=1080,H=1350;
+    // 기기 무관 일관 렌더: 웹폰트(Jua) 로드 보장 후 그림. 없으면 sans-serif 폴백.
+    const FF="'Jua','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+    try{ await Promise.all([document.fonts.load("40px 'Jua'"), document.fonts.load("bold 40px 'Jua'")]); await document.fonts.ready; }catch(e){}
+    const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+    const x=cv.getContext("2d");
+    x.textBaseline="alphabetic";
+    // 긴 텍스트는 폭에 맞게 자동 축소(기기별 폰트 차 흡수)
+    const fit=(text,maxW,weight,startSize)=>{ let s=startSize;
+      x.font=`${weight} ${s}px ${FF}`;
+      while(s>20 && x.measureText(text).width>maxW){ s-=2; x.font=`${weight} ${s}px ${FF}`; }
+      return s; };
+    // 밝은 앱톤 배경
+    const bg=x.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,"#ffe4ea"); bg.addColorStop(.5,"#fff2f4"); bg.addColorStop(1,"#ffffff");
+    x.fillStyle=bg; x.fillRect(0,0,W,H);
+    const rg=x.createRadialGradient(W/2,-120,60,W/2,-120,780);
+    rg.addColorStop(0,"rgba(236,58,92,.16)"); rg.addColorStop(1,"rgba(236,58,92,0)");
+    x.fillStyle=rg; x.fillRect(0,0,W,660);
+    x.textAlign="center";
+    x.fillStyle="#ec3a5c"; fit(t("card_brand"),W-160,"700",30); x.fillText(t("card_brand"), W/2, 76);
+    // 아이돌 원형 사진 (로컬/커스텀만 — 원격 URL은 canvas 오염 방지로 생략)
+    const cis = cardImgSrc(r.img);
+    const face = cis.src ? await loadImg(cis.src, cis.cross) : null;
+    const CY=232, R=96;
+    if(face){
+      x.save(); x.beginPath(); x.arc(W/2,CY,R,0,7); x.closePath(); x.clip();
+      const iw=face.naturalWidth, ih=face.naturalHeight, m=Math.min(iw,ih);
+      x.drawImage(face,(iw-m)/2,(ih-m)/2,m,m,W/2-R,CY-R,R*2,R*2); x.restore();
+    } else {
+      x.fillStyle="#ffe0e6"; x.beginPath(); x.arc(W/2,CY,R,0,7); x.fill();
+      x.font="86px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText("🎤",W/2,CY+30);
+    }
+    x.beginPath(); x.arc(W/2,CY,R,0,7); x.lineWidth=6; x.strokeStyle="#ec3a5c"; x.stroke();
+    // 이름 (긴 이름 자동 축소)
+    x.fillStyle="#2b2530"; fit(r.name,W-180,"800",66); x.fillText(r.name, W/2, 404);
+    // 그룹
+    x.fillStyle="#9a8f9a"; fit(r.grp,W-220,"600",32); x.fillText(r.grp, W/2, 450);
+    // 엔딩 이모지
+    x.fillStyle="#2b2530"; x.font="60px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText(r.emoji, W/2, 536);
+    // 엔딩명 (긴 엔딩명 자동 축소)
+    x.fillStyle="#ec3a5c"; fit(r.ending,W-140,"800",46); x.fillText(r.ending, W/2, 590);
+    // 타고난 재능
+    x.fillStyle="#9a8f9a"; fit(t("card_talent",{spec:t("st_"+r.spec)}),W-160,"600",28); x.fillText(t("card_talent",{spec:t("st_"+r.spec)}), W/2, 632);
+    // radar — 아래로 내리고 축소해 상단 꼭짓점 라벨이 위 텍스트와 안 겹치게
+    drawRadarCtx(x, W/2, 884, 164, r.statVals, {dark:false, big:true});
+    // 하단 바 (흰 카드)
+    x.fillStyle="#ffffff"; x.strokeStyle="#ffd9de"; x.lineWidth=2.5;
+    roundRect(x,80,1132,W-160,148,24); x.fill(); x.stroke();
+    x.textAlign="left";
+    x.fillStyle="#9a8f9a"; x.font=`600 30px ${FF}`; x.fillText(t("card_overall"), 130, 1192);
+    x.fillStyle=GRADE_COLOR[r.overall]; x.font=`900 64px ${FF}`; x.fillText(r.overall, 130, 1258);
+    x.textAlign="right";
+    x.fillStyle="#9a8f9a"; x.font=`600 30px ${FF}`; x.fillText(t("card_fans"), W-130, 1192);
+    x.fillStyle="#f0a01e"; fit(fmt(r.fans),380,"900",58); x.fillText(fmt(r.fans), W-130, 1258);
+    x.textAlign="center"; x.fillStyle="#b9adb4"; x.font=`600 25px ${FF}`; x.fillText(t("card_footer"), W/2, 1326);
+    return cv;
+  },
+  // 결과화면 진입 시 카드 이미지를 미리 만들어 캐시 (저장 버튼의 제스처 소진 방지)
+  prepCard(){
+    const r=this.lastResult; if(!r) return;
+    r.cardFile=null;
+    this.makeCard().then(cv=>{
+      cv.toBlob(blob=>{
+        if(!blob || this.lastResult!==r) return;
+        r.cardBlob=blob;
+        r.cardFile=new File([blob],`idol-tycoon-${r.name}.png`,{type:"image/png"});
+      },"image/png");
+    }).catch(()=>{});
+  },
+  downloadCard(file){
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(file); a.download=file.name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast(t("toast_saved_img"));
+  },
+  isMobile(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||""); },
+  // share가 안 되는 모바일: a.download는 사진첩에 안 들어감 → 이미지 띄워 '길게 눌러 저장' 유도
+  fallbackSave(file){
+    if(this.isMobile()){ this.showCardImage(file); }
+    else { this.downloadCard(file); }
+  },
+  showCardImage(file){
+    const url=URL.createObjectURL(file);
+    const inApp=/KAKAOTALK|FBAN|FBAV|Instagram|Line|NAVER/i.test(navigator.userAgent||"");
+    const ov=document.getElementById("ov"); ov.className="ov on";
+    ov.innerHTML=`<div class="cardsave">
+        <div class="cardsave-tip">${t("cardsave_tip")}</div>
+        <img class="cardsave-img" src="${url}" alt="card">
+        ${inApp?`<div class="cardsave-sub">${t("cardsave_sub")}</div>`:""}
+        <button class="btn ghost" style="margin-top:14px" id="cardsaveClose">${t("cardsave_close")}</button>
+      </div>`;
+    ov.onclick=null;
+    document.getElementById("cardsaveClose").onclick=(e)=>{ e.stopPropagation();
+      ov.className="ov"; ov.onclick=null; setTimeout(()=>URL.revokeObjectURL(url),1000); };
+  },
+  // 저장·공유: 미리 만든 파일을 await 없이 즉시 사용 → 사용자 제스처 유지(안드 크롬 대응)
+  shareCard(){
+    const r=this.lastResult; if(!r) return;
+    const file=r.cardFile;
+    if(!file){ this.shareCardSlow(); return; }   // 아직 생성 전이면 폴백
+    const shareData={files:[file],title:"아이돌 육성 타이쿤",
+      text:`${r.name} → ${r.ending} (팬 ${fmt(r.fans)}명)`};
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share(shareData).catch(e=>{ if(e.name!=="AbortError") this.fallbackSave(file); });
+      return;
+    }
+    this.fallbackSave(file);
+  },
+  // 폴백(카드 미완성 시): 기존 비동기 경로 — 데스크탑 등에서 동작
+  async shareCardSlow(){
+    const cv=await this.makeCard();
+    cv.toBlob(async (blob)=>{
+      const file=new File([blob],`idol-tycoon-${this.lastResult.name}.png`,{type:"image/png"});
+      const shareData={files:[file],title:"아이돌 육성 타이쿤",
+        text:`${this.lastResult.name} → ${this.lastResult.ending} (팬 ${fmt(this.lastResult.fans)}명)`};
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share(shareData); return; }catch(e){ if(e.name==="AbortError") return; }
+      }
+      this.fallbackSave(file);
+    },"image/png");
+  },
+
+  // ===== 리더보드 (Firestore REST — 서버 공유. 오프라인이면 로컬 폴백) =====
+  localBoard(){ try{return JSON.parse(localStorage.getItem("idol_lb")||"[]");}catch(e){return[];} },
+  // 서버에서 상위 20 가져와 캐시. 실패 시 로컬 폴백.
+  async fetchBoard(){
+    try{
+      const body={structuredQuery:{from:[{collectionId:"leaderboard"}],
+        orderBy:[{field:{fieldPath:"fans"},direction:"DESCENDING"}], limit:20}};
+      const res=await fetch(`${FS_BASE}:runQuery?key=${FB_KEY}`,
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(!res.ok) throw new Error("http "+res.status);
+      const arr=await res.json();
+      this._boardCache=(arr||[]).filter(x=>x.document).map(x=>fsParse(x.document));
+      this._boardServer=true;
+    }catch(e){ this._boardServer=false; this._boardCache=this.localBoard(); }
+    return this._boardCache;
+  },
+  // 로딩 표시 → 서버 조회 → 렌더
+  loadBoard(hl){
+    const box=document.getElementById("lbBox");
+    if(box && !this._boardCache) box.innerHTML=`<div class="lb-row"><span class="who muted">${t("hall_loading")}</span></div>`;
+    this.fetchBoard().then(()=>this.renderBoard(hl));
+  },
+  renderBoard(hl){
+    const src=this._boardCache || this.localBoard();
+    const list=src.slice().sort((a,b)=>b.fans-a.fans).slice(0,10);
+    const box=document.getElementById("lbBox");
+    if(!box) return;
+    if(!list.length){box.innerHTML=`<div class="lb-row"><span class="who muted">${t("hall_empty")}</span></div>`;return;}
+    const meName=this.lastResult&&this.lastResult.name;
+    box.innerHTML=list.map((r,i)=>{
+      const me=hl!=null && r.fans===hl && (r._me || r.name===meName);
+      const medal=["🥇","🥈","🥉"][i]||`${i+1}`;
+      return `<div class="lb-row ${me?"me":""}"><span class="r">${medal}</span>
+        <span class="who">${r.emoji||"⭐"} ${esc(r.player||t("hall_anon"))}
+          <small>· ${esc(r.name)} · ${esc(r.ending)}</small></span>
+        <span class="sc">${fmt(r.fans)}</span></div>`;
+    }).join("");
+  },
+  _markSaved(){  // 버튼을 '✅ 등록 완료'로 전환·잠금 — 등록됐는지 한눈에(재율애비)
+    const btn=document.getElementById("saveBtn");
+    if(btn){ btn.textContent=t("save_done"); btn.disabled=true; btn.classList.add("saved-done"); }
+    const ni=document.getElementById("nameInput"); if(ni) ni.disabled=true;
+  },
+  async saveScore(){
+    if(!this.lastResult) return;
+    if(this.lastResult._saved){toast(t("toast_hall_dup"));this._markSaved();return;}
+    const r=this.lastResult;
+    const player=(document.getElementById("nameInput").value||t("hall_anon")).slice(0,10);
+    const fans=Math.max(0,Math.min(5000000,Math.round(r.fans)));   // 서버 규칙 상한과 일치
+    r._saved=true; this._markSaved();   // 중복 등록 방지 (낙관적)
+    let ok=false;
+    try{
+      const body={fields:{player:fsStr(player),name:fsStr(r.name),ending:fsStr(r.ending),
+        emoji:fsStr(r.emoji||"⭐"),fans:{integerValue:String(fans)},lang:fsStr(window.LANG||"ko")}};
+      const res=await fetch(`${FS_BASE}/leaderboard?key=${FB_KEY}`,
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      ok=res.ok;
+    }catch(e){ ok=false; }
+    if(ok){ toast(t("toast_hall_saved")); await this.fetchBoard(); this.renderBoard(r.fans); }
+    else {  // 오프라인/실패 → 이 기기에만 저장
+      const lb=this.localBoard(); lb.forEach(x=>x._me=false);
+      lb.push({player,name:r.name,ending:r.ending,emoji:r.emoji,fans,_me:true});
+      localStorage.setItem("idol_lb", JSON.stringify(lb.slice(-200)));
+      this._boardServer=false; this._boardCache=lb;
+      toast(t("toast_hall_local")); this.renderBoard(r.fans);
+    }
+  },
+  showBoard(){
+    document.getElementById("endStage").textContent=t("hall_title");
+    document.getElementById("endEmoji").textContent="🏆";
+    document.getElementById("endName").textContent=t("hall_top");
+    document.getElementById("endSub").innerHTML=t("hall_sub");
+    document.getElementById("oGrade").innerHTML="";
+    document.getElementById("endIdolBox").style.display="none";
+    document.getElementById("growthBox").style.display="none";
+    const rc=document.getElementById("radar").getContext("2d");
+    rc.clearRect(0,0,580,580);
+    ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});
+    const abtn=document.getElementById("againBtn");
+    abtn.textContent=t("home_btn");
+    abtn.onclick=()=>Game.reset();   // 명전은 결과가 아니라 랭킹 뷰 → 이탈 경고 없이 바로 홈으로(결과화면의 confirmReset 가드 덮어씀)
+    this.lastResult=null; this._boardCache=null; this.loadBoard(null); show("s-end");
+  },
+  reset(){
+    ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="";});
+    this.st=null;this.selId=null;this.lastResult=null; show("s-title");
+    this.refreshTitle();
+  },
+  refreshTitle(){ const b=document.getElementById("continueBtn"); if(b) b.style.display=this.hasSave()?"":"none"; },
+
+  // ===== 플레이 중 메뉴 / 나가기 확인 (시트 모달) =====
+  inPlay(){ return document.getElementById("s-play").classList.contains("on") && !!this.st; },
+  openSheet(html){ const s=document.getElementById("sheet");
+    document.getElementById("sheetCard").innerHTML=html; s.classList.add("on"); },
+  closeSheet(){ document.getElementById("sheet").classList.remove("on"); },
+  toggleSfx(){ localStorage.setItem("idol_sfx", sfxOn()?"off":"on"); if(sfxOn()) sfx("click"); this.openMenu(); },
+  toggleBgm(){ const on=bgmOn(); localStorage.setItem("idol_bgm", on?"off":"on");
+    if(on) stopBgm(); else startBgm(); this.openMenu(); },
+  // 결과화면 나가기 가드: 저장/공유 안 했는데 나가면 결과 유실 → 확인 시트
+  confirmReset(){
+    this.openSheet(`
+      <div class="sheet-title">${t("leave_title")}</div>
+      <div class="sheet-sub">${t("leave_sub")}</div>
+      <button class="sheet-btn primary" onclick="Game.closeSheet();Game.shareCard()">${t("leave_save")}</button>
+      <button class="sheet-btn danger" onclick="Game.closeSheet();Game.reset()">${t("leave_go")}</button>
+      <button class="sheet-btn plain" onclick="Game.closeSheet()">${t("exit_cancel")}</button>`);
+  },
+  openMenu(){
+    const langs=(typeof langList==="function"?langList():[{code:"ko",name:"한국어"},{code:"en",name:"EN"}]);
+    const langBtns=langs.map(l=>`<button class="${l.code===window.LANG?"sel":""}" onclick="Game.changeLang('${l.code}');Game.openMenu()">${l.name}</button>`).join("");
+    this.openSheet(`
+      <div class="sheet-title">${t("menu_title")}</div>
+      <div class="sheet-sub">${t("menu_settings")} · ${t("menu_lang")}</div>
+      <div class="sheet-lang">${langBtns}</div>
+      <div class="sheet-lang">
+        <button onclick="Game.toggleSfx()">${sfxOn()?t("sfx_on"):t("sfx_off")}</button>
+        <button onclick="Game.toggleBgm()">${bgmOn()?t("bgm_on"):t("bgm_off")}</button>
+      </div>
+      <button class="sheet-btn primary" onclick="Game.saveFromMenu()">${t("menu_save")}</button>
+      <button class="sheet-btn danger" onclick="Game.confirmExit()">${t("menu_quit")}</button>
+      <button class="sheet-btn plain" onclick="Game.closeSheet()">${t("exit_cancel")}</button>`);
+  },
+  // 유저 매뉴얼 팝업: which='intro'(게임 목적, 타이틀) / 'play'(플레이 방법, 인게임)
+  showManual(which){
+    document.getElementById("manualEmoji").textContent = which==="play" ? "🎮" : "🌟";
+    document.getElementById("manualTitle").textContent = t("manual_"+which+"_title");
+    document.getElementById("manualBody").innerHTML = t("manual_"+which+"_body");
+    document.getElementById("manual").classList.add("on");
+    try{ sfx("click"); }catch(e){}
+  },
+  closeManual(ev){ if(ev && ev.currentTarget!==ev.target) return; document.getElementById("manual").classList.remove("on"); },
+  saveFromMenu(){ this.save(); this.closeSheet(); toast(t("menu_saved")); },
+  // 3지선다: 저장하고 나가기 / 그냥 끄기 / 취소 — 뒤로가기·끝내기 공용
+  confirmExit(){
+    this.openSheet(`
+      <div class="sheet-title">${t("exit_title")}</div>
+      <div class="sheet-sub">${t("exit_sub")}</div>
+      <button class="sheet-btn primary" onclick="Game.exitSave()">${t("exit_save")}</button>
+      <button class="sheet-btn danger" onclick="Game.exitQuit()">${t("exit_quit")}</button>
+      <button class="sheet-btn plain" onclick="Game.closeSheet()">${t("exit_cancel")}</button>`);
+  },
+  exitSave(){ this.save(); this.closeSheet(); this.reset(); toast(t("menu_saved")); },
+  exitQuit(){ this.clearSave(); this.closeSheet(); this.reset(); },
+  // 뒤로가기 가드: 플레이 진입 시 history state 하나 쌓아 뒤로가기를 popstate로 가로챔
+  armBackGuard(){ try{ history.pushState({play:1},""); }catch(e){} },
+
+  // ===== 프레스티지(육각형슈퍼스타) 배출 로깅 =====
+  // localStorage는 로컬이라 전역집계 불가 → 출시 후 실제 배출률 관찰용.
+  // PRESTIGE_LOG_URL 설정 시에만 원격 전송(fire-and-forget). 미설정이면 로컬 카운트만.
+  logPrestige(s, statTotal, finalRank){
+    try{
+      const n=(parseInt(localStorage.getItem("idol_prestige_count")||"0",10)||0)+1;
+      localStorage.setItem("idol_prestige_count", String(n));
+      const rec={total:Math.round(statTotal), minV:Math.round(Math.min(...STATS.map(x=>s[x.k]))),
+        rank:finalRank||null, at:new Date().toISOString(), local_n:n};
+      console.log("[PRESTIGE] 육각형슈퍼스타 배출", rec);
+      const URL=window.PRESTIGE_LOG_URL;   // 엔드포인트 생기면 여기 지정
+      if(URL && navigator.sendBeacon){ navigator.sendBeacon(URL, JSON.stringify(rec)); }
+    }catch(e){}
+  },
+
+  // ===== 엔딩 도감 =====
+  dexGot(){ try{ return new Set(JSON.parse(localStorage.getItem("idol_dex")||"[]")); }catch(e){ return new Set(); } },
+  dexAdd(id){ if(!id) return false; const g=this.dexGot(); if(g.has(id)) return false;
+    g.add(id); try{ localStorage.setItem("idol_dex", JSON.stringify([...g])); }catch(e){} return true; },
+  showDex(){
+    const got=this.dexGot();
+    document.getElementById("dexLine").innerHTML=t("dex_count",{n:got.size,total:ENDING_DEX.length});
+    document.getElementById("dexGrid").innerHTML=ENDING_DEX.map(d=>{
+      const has=got.has(d.id);
+      return `<div class="dexcell ${has?"got":"lock"}">
+        <div class="dex-emoji">${has?d.emoji:"🔒"}</div>
+        <div class="dex-tier" style="background:${GRADE_COLOR[d.tier]}">${d.tier}</div>
+        <div class="dex-name">${has?esc(t("d_"+d.id+"_n")):t("dex_locked")}</div>
+        <div class="dex-hint">${esc(t("d_"+d.id+"_h"))}</div></div>`;
+    }).join("");
+    show("s-dex");
+  },
+};
+
+// ===== 레이더 차트 =====
+function drawRadar(canvas, statVals, opts){
+  const x=canvas.getContext("2d");
+  x.clearRect(0,0,canvas.width,canvas.height);
+  drawRadarCtx(x, canvas.width/2, canvas.height/2+8, canvas.width*0.31, statVals, opts||{});
+}
+function drawRadarCtx(x, cx, cy, R, vals, opts){
+  const N=vals.length, dark=opts.dark, big=opts.big;
+  const ang=i=>-Math.PI/2 + i*(2*Math.PI/N);
+  const grid = dark?"rgba(255,255,255,.13)":"rgba(0,0,0,.12)";
+  // 그리드 링
+  x.lineWidth=1.2;
+  for(let k=1;k<=4;k++){
+    x.beginPath();
+    for(let i=0;i<N;i++){ const r=R*k/4, px=cx+Math.cos(ang(i))*r, py=cy+Math.sin(ang(i))*r;
+      i?x.lineTo(px,py):x.moveTo(px,py); }
+    x.closePath(); x.strokeStyle=grid; x.stroke();
+  }
+  // 축
+  for(let i=0;i<N;i++){ x.beginPath(); x.moveTo(cx,cy);
+    x.lineTo(cx+Math.cos(ang(i))*R, cy+Math.sin(ang(i))*R); x.strokeStyle=grid; x.stroke(); }
+  // 데이터 폴리곤 (스탯은 누적 P 0~800 스케일)
+  const MAXV=800;
+  x.beginPath();
+  for(let i=0;i<N;i++){ const r=R*Math.min(MAXV,vals[i].v)/MAXV;
+    const px=cx+Math.cos(ang(i))*r, py=cy+Math.sin(ang(i))*r; i?x.lineTo(px,py):x.moveTo(px,py); }
+  x.closePath();
+  const fill=x.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
+  fill.addColorStop(0,"rgba(255,95,162,.42)"); fill.addColorStop(1,"rgba(139,91,255,.42)");
+  x.fillStyle=fill; x.fill();
+  x.strokeStyle="#ff5fa2"; x.lineWidth=big?3:2.2; x.stroke();
+  // 꼭짓점 + 라벨
+  const lf=big?"700 26px":"700 12px";
+  const gf=big?"900 30px":"900 14px";
+  for(let i=0;i<N;i++){
+    const r=R*Math.min(MAXV,vals[i].v)/MAXV;
+    const px=cx+Math.cos(ang(i))*r, py=cy+Math.sin(ang(i))*r;
+    x.beginPath(); x.arc(px,py,big?6:4,0,7); x.fillStyle=vals[i].c; x.fill();
+    const lr=R+(big?52:26), lx=cx+Math.cos(ang(i))*lr, ly=cy+Math.sin(ang(i))*lr;
+    x.textAlign = Math.abs(Math.cos(ang(i)))<0.3 ? "center" : (Math.cos(ang(i))>0?"left":"right");
+    const cjk="'Apple SD Gothic Neo','Hiragino Sans','PingFang SC','PingFang TC','Noto Sans CJK',sans-serif";
+    x.fillStyle=dark?"#d9d2f0":"#333"; x.font=lf+" "+cjk;
+    x.fillText(vals[i].n, lx, ly-(big?6:3));
+    x.fillStyle=vals[i].c; x.font=gf+" "+cjk;
+    x.fillText(t("radar_grade",{g:vals[i].g}), lx, ly+(big?26:12));
+  }
+  x.textAlign="left";
+}
+function roundRect(x,rx,ry,w,h,r){ x.beginPath();
+  x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r);
+  x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
+  // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-roster"||id==="s-assign"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
+function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
+  s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
+function loadImg(src, cross){ return new Promise(res=>{ if(!src){res(null);return;}
+  const i=new Image(); if(cross) i.crossOrigin="anonymous";
+  i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
+// 원격 사진(gcdn 등)은 CORS 미개방 → 이미지 프록시 경유로 canvas 오염 없이 로드(실사진 카드용)
+function cardImgSrc(url){
+  if(!url) return {src:null,cross:false};
+  if(url.startsWith('assets/')||url.startsWith('data:')) return {src:url,cross:false};
+  if(/^https?:/.test(url)) return {src:"https://images.weserv.nl/?url="+encodeURIComponent(url.replace(/^https?:\/\//,''))+"&w=240&h=240&fit=cover&output=png", cross:true};
+  return {src:null,cross:false};
+}
+// ===== 오디오 엔진 (절차적 Web Audio — 애돌톤 효과음 + BGM. 바이너리 에셋·CORS 없음, 오프라인 OK) =====
+// 밝은 최애돌 앱톤에 맞춘 벨/아르페지오 신스. Kenney interface음(맥빠짐) 폐기.
+let AC=null, MASTER=null, SFXBUS=null, BGMBUS=null;
+function ensureAudio(){
+  if(AC){ if(AC.state==="suspended"){ try{AC.resume();}catch(e){} } return AC; }
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    MASTER=AC.createGain(); MASTER.gain.value=0.9; MASTER.connect(AC.destination);
+    SFXBUS=AC.createGain(); SFXBUS.gain.value=0.9; SFXBUS.connect(MASTER);
+    BGMBUS=AC.createGain(); BGMBUS.gain.value=0.0001; BGMBUS.connect(MASTER);
+  }catch(e){ AC=null; }
+  return AC;
+}
+const NOTE={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00,B5:987.77,
+  C6:1046.50,D6:1174.66,E6:1318.51,F6:1396.91,G6:1567.98};
+// 한 음 (ADSR 간이 envelope)
+function tone(freq,t0,dur,o={}){
+  if(!AC) return;
+  const type=o.type||'triangle', gain=o.gain==null?0.2:o.gain, bus=o.bus||SFXBUS,
+        attack=o.attack||0.008, release=o.release==null?0.12:o.release;
+  const osc=AC.createOscillator(), g=AC.createGain();
+  osc.type=type; osc.frequency.setValueAtTime(freq,t0);
+  if(o.detune) osc.detune.setValueAtTime(o.detune,t0);
+  if(o.glideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.glideTo),t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001,gain),t0+attack);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur+release);
+  osc.connect(g); g.connect(bus);
+  osc.start(t0); osc.stop(t0+dur+release+0.02);
+}
+// 밝은 벨(기음+옥타브 배음) — 애돌톤 반짝임
+function bell(freq,t0,dur,gain,bus){ gain=gain==null?0.18:gain;
+  tone(freq,t0,dur,{type:'sine',gain,bus,release:0.25});
+  tone(freq*2.01,t0,dur*0.6,{type:'sine',gain:gain*0.34,bus,release:0.18}); }
+function sfxOn(){ return localStorage.getItem("idol_sfx")!=="off"; }   // 기본 켜짐
+function sfx(k){
+  if(!sfxOn()) return;
+  const ac=ensureAudio(); if(!ac) return;
+  maybeStartBgm();
+  const n=ac.currentTime+0.002, N=NOTE;
+  switch(k){
+    case 'click': tone(N.A5,n,0.05,{type:'triangle',gain:0.09,release:0.05}); break;
+    case 'rest':  bell(N.A4,n,0.24,0.12); bell(N.E4,n+0.11,0.30,0.10); break;          // 편안한 하강
+    case 'ok':    bell(N.G5,n,0.18,0.15); bell(N.C6,n+0.09,0.28,0.13); break;
+    case 'great': [N.C5,N.E5,N.G5,N.C6].forEach((f,i)=>bell(f,n+i*0.075,0.30,0.15)); break;  // 상승 아르페지오
+    case 'fail':  [N.E5,N.C5,N.A4].forEach((f,i)=>tone(f,n+i*0.10,0.20,{type:'sine',gain:0.12,release:0.14})); break;
+    case 'dbad':  tone(N.A4,n,0.5,{type:'sine',gain:0.16,glideTo:N.C4,release:0.3});
+                  tone(N.A3,n,0.5,{type:'triangle',gain:0.10,glideTo:110,release:0.3}); break;
+    case 'perfect':                                                                    // 각성: 반짝 상승 + 화음
+                  [N.C5,N.E5,N.G5,N.C6,N.E6,N.G6].forEach((f,i)=>bell(f,n+i*0.06,0.42,0.15));
+                  [N.C5,N.E5,N.G5,N.C6].forEach(f=>tone(f,n+0.44,0.5,{type:'sine',gain:0.08,release:0.4})); break;
+    case 'win':   [N.C5,N.E5,N.G5,N.C6].forEach((f,i)=>bell(f,n+i*0.10,0.30,0.16));
+                  [N.C5,N.E5,N.G5,N.C6].forEach(f=>tone(f,n+0.5,0.7,{type:'triangle',gain:0.10,release:0.5})); break;
+    case 'fanfare':                                                                    // 관문/대상 팡파레
+                  [N.G4,N.C5,N.E5,N.G5].forEach((f,i)=>bell(f,n+i*0.09,0.28,0.17));
+                  [N.C5,N.E5,N.G5,N.C6,N.E6].forEach((f,i)=>bell(f,n+0.42+i*0.05,0.5,0.16));
+                  [N.C4,N.E4,N.G4,N.C5].forEach(f=>tone(f,n+0.42,0.9,{type:'triangle',gain:0.09,release:0.6})); break;
+    case 'lose':  [N.E5,N.D5,N.C5,N.B3].forEach((f,i)=>tone(f,n+i*0.15,0.28,{type:'sine',gain:0.12,glideTo:f*0.93,release:0.2})); break;
+    case 'tick':  tone(N.C6,n,0.03,{type:'square',gain:0.05,release:0.03}); break;      // 순위 리빌 서스펜스
+    case 'sparkle': [N.C6,N.E6,N.G6].forEach((f,i)=>tone(f,n+i*0.04,0.10,{type:'sine',gain:0.08,release:0.10})); break;
+    case 'whoosh': tone(600,n,0.22,{type:'sine',gain:0.06,glideTo:1500,release:0.1}); break;  // 화면 전환
+    default: tone(N.C5,n,0.1,{gain:0.1});
+  }
+}
+// ── BGM: 밝은 K-pop풍 루프(I–V–vi–IV, 패드+아르페지오+베이스). Web Audio 스케줄러 ──
+let BGM_ON=false, bgmTimer=null, bgmStep=0, bgmNextTime=0;
+const BGM_BPM=112, EIGHTH=60/BGM_BPM/2, BGM_BARS=4, BGM_LEN=BGM_BARS*8;
+const BGM_CHORDS=[[NOTE.C4,NOTE.E4,NOTE.G4],[NOTE.G4,NOTE.B4,NOTE.D5],[NOTE.A4,NOTE.C5,NOTE.E5],[NOTE.F4,NOTE.A4,NOTE.C5]];
+const BGM_BASS=[NOTE.C3,NOTE.G3,NOTE.A3,NOTE.F3];
+const ARP=[0,1,2,1,0,2,1,2];   // 코드 인덱스 패턴(8분음표)
+function bgmOn(){ return localStorage.getItem("idol_bgm")!=="off"; }   // 기본 켜짐
+function bgmStepPlay(step,t){
+  const bar=Math.floor(step/8)%BGM_BARS, beat=step%8, ch=BGM_CHORDS[bar];
+  // 아르페지오(밝은 pluck)
+  tone(ch[ARP[beat]]*2,t,EIGHTH*0.9,{type:'triangle',gain:0.05,bus:BGMBUS,release:0.14});
+  if(beat===0){   // 마디 시작: 패드 화음 + 베이스
+    ch.forEach(f=>tone(f,t,EIGHTH*7.5,{type:'sine',gain:0.035,bus:BGMBUS,attack:0.08,release:0.4}));
+    tone(BGM_BASS[bar],t,EIGHTH*3.6,{type:'triangle',gain:0.06,bus:BGMBUS,release:0.2});
+  } else if(beat===4){ tone(BGM_BASS[bar],t,EIGHTH*3.2,{type:'triangle',gain:0.05,bus:BGMBUS,release:0.2}); }
+}
+function bgmSchedule(){
+  if(!BGM_ON||!AC){ return; }
+  while(bgmNextTime < AC.currentTime+0.18){ bgmStepPlay(bgmStep,bgmNextTime); bgmStep=(bgmStep+1)%BGM_LEN; bgmNextTime+=EIGHTH; }
+  bgmTimer=setTimeout(bgmSchedule,60);
+}
+function startBgm(){
+  const ac=ensureAudio(); if(!ac||BGM_ON) return;
+  BGM_ON=true; bgmStep=0; bgmNextTime=ac.currentTime+0.1;
+  try{ BGMBUS.gain.cancelScheduledValues(ac.currentTime);
+       BGMBUS.gain.setValueAtTime(Math.max(0.0001,BGMBUS.gain.value),ac.currentTime);
+       BGMBUS.gain.exponentialRampToValueAtTime(0.6,ac.currentTime+1.2); }catch(e){}
+  bgmSchedule();
+}
+function stopBgm(){
+  BGM_ON=false; if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; }
+  if(AC&&BGMBUS){ try{ BGMBUS.gain.cancelScheduledValues(AC.currentTime);
+    BGMBUS.gain.setValueAtTime(BGMBUS.gain.value,AC.currentTime);
+    BGMBUS.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.4); }catch(e){} }
+}
+function maybeStartBgm(){ if(bgmOn()&&!BGM_ON) startBgm(); }
+// 첫 탭에서 오디오 unlock + BGM 시작(자동재생 정책 대응)
+document.addEventListener('pointerdown',function _once(){ ensureAudio(); maybeStartBgm();
+  document.removeEventListener('pointerdown',_once); },{once:true});
+function countUp(el, from, to, dur){
+  const t0=performance.now();
+  const step=(t)=>{ const p=Math.min(1,(t-t0)/dur);
+    el.textContent=Math.round(from+(to-from)*p); if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function esc(s){return (s||"").replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));}
+let toastTimer;
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className="toast",1900);}
+
+// ===== 다국어 적용 =====
+function applyI18n(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent=t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach(el=>{ el.innerHTML=t(el.dataset.i18nHtml); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{ el.placeholder=t(el.dataset.i18nPh); });
+  document.title=t("t_title");
+}
+function initLangSwitch(){
+  const sel=document.getElementById("langSel"); if(!sel) return;
+  sel.innerHTML=langList().map(l=>`<option value="${l.code}"${l.code===window.LANG?" selected":""}>${l.name}</option>`).join("");
+}
+Game.changeLang=function(l){ setLang(l); applyI18n(); initLangSwitch();
+  document.getElementById("customName")&&(document.getElementById("customName").placeholder=t("sel_name_ph"));
+  if(this.refreshTitle) this.refreshTitle();
+  this.refreshLang();   // 동적 렌더 화면(플레이·선택·도감·결과)은 applyI18n이 못 건드림 → 현재 화면 재렌더
+};
+Game.refreshLang=function(){
+  const on=id=>{const e=document.getElementById(id);return e&&e.classList.contains("on");};
+  if(this.st && on("s-play")){ this.render(); return; }
+  if(on("s-select")){ this.renderSpecPick(); this.search(); this.updateStartFab(); return; }
+  if(on("s-dex")){ this.showDex(); return; }
+  if(on("s-end")){ this.refreshEndTexts(); return; }
+};
+// 결과화면 언어 재적용(부작용 없이 표시 텍스트만 재계산)
+Game.refreshEndTexts=function(){
+  const r=this.lastResult;
+  if(!r){ this.showBoard(); return; }        // 명예의 전당(리더보드) 뷰
+  if(!this.st) return;
+  const end=this.ending(r.reachedWorld, r.finalRank);
+  const spStat=STATS.find(x=>x.k===this.st.idol.spec)||STATS[0];
+  const isCustom=this.st.idol.grp===t("custom_idol")||this.st.idol.grp==="커스텀 아이돌";
+  document.getElementById("endEmoji").textContent=end.emoji;
+  document.getElementById("endName").textContent=end.name;
+  document.getElementById("endSub").innerHTML=`${end.sub}<br><br>${t("end_fans",{fans:fmt(r.fans)})}`;
+  document.getElementById("oGrade").innerHTML=t("end_overall",{g:r.overall,c:spStat.c,ico:spStat.ico,spec:t("st_"+spStat.k)});
+  document.getElementById("endStage").textContent=
+    r.reachedWorld?(r.finalRank?t("end_stage_world",{rank:r.finalRank}):t("end_stage_world_nr")):t("end_stage_out");
+  document.getElementById("endIdolName").innerHTML=
+    esc(idolName(this.st.idol))+(this.st.idol.grp&&!isCustom?` <small>${esc(idolGrp(this.st.idol))}</small>`:` <small>${t("custom_short")}</small>`);
+  const gbox=document.getElementById("growthBox");
+  if(this.st.log&&this.st.log.length) gbox.querySelector("h3")&&(gbox.querySelector("h3").textContent=t("end_growth_title",{name:idolName(this.st.idol)}));
+  const sv=r.statVals.map(v=>({...v, n:t(v.k==='creative'?'st_creative_short':'st_'+v.k)}));
+  drawRadar(document.getElementById("radar"), sv, {dark:false, big:true});
+  this.renderBoard(null);
+};
+
+// 초기화
+initLangSwitch();
+applyI18n();
+Game.refreshTitle();
+// 첫 방문 시 게임 소개 1회 자동(공유링크 ?r= 진입은 제외)
+if(!new URLSearchParams(location.search).get("r") && !localStorage.getItem("idol_seen_intro")){
+  localStorage.setItem("idol_seen_intro","1");
+  setTimeout(()=>{ if(document.getElementById("s-title").classList.contains("on")) Game.showManual("intro"); }, 700);
+}
+// 뒤로가기 가드: 플레이 중이면 페이지를 떠나지 않고 나가기 확인 시트 노출
+window.addEventListener("popstate", ()=>{
+  const manualOn=document.getElementById("manual").classList.contains("on");
+  const sheetOn=document.getElementById("sheet").classList.contains("on");
+  if(Game.inPlay()){
+    Game.armBackGuard();   // 다시 state 쌓아 페이지에 머무름
+    if(manualOn){ Game.closeManual(); return; }   // 도움말 열려있으면 그것부터 닫기
+    if(sheetOn){ Game.closeSheet(); return; }
+    Game.confirmExit();
+    return;
+  }
+  // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go()};
+  const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
+  if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
+    if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
+    dgBack[dgCur](); return; }
+  // 서브화면(선택·도감·명전·결과)에서 폰 뒤로가기 → 게임 밖 이탈 대신 타이틀로 복귀
+  const cur=["s-select","s-dex","s-end"].find(id=>document.getElementById(id).classList.contains("on"));
+  if(cur){
+    try{ history.pushState({scr:cur},""); }catch(e){}   // 페이지 이탈 방지(다시 쌓기)
+    if(manualOn){ Game.closeManual(); return; }         // 열린 모달/시트 먼저 닫기
+    if(sheetOn){ Game.closeSheet(); return; }
+    // 저장·공유 안 한 실제 결과화면이면 유실 확인, 그 외(명전·도감·선택)는 바로 타이틀
+    if(cur==="s-end" && Game.lastResult){ Game.confirmReset(); }
+    else { Game.reset(); }
+  }
+});
+// 공유 링크(?r=...)로 열렸으면 그 결과를 바로 재현
+(function(){
+  const enc=new URLSearchParams(location.search).get("r");
+  if(!enc) return;
+  const d=Game.decodeResult(enc);
+  if(d && d.name && d.v && d.v.length===6) Game.showSharedResult(d);
+})();
+</script>
+
+<!-- ===== 드림그룹 메타 (육성카드 유전 + 기획사) ===== -->
+<style>
+  #s-office .sub-head h2{margin:0}
+  .dg-head{background:#fff;border:1px solid #ffe0e8;border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+  .dg-h-l{font-size:13px;color:#8a8a97}
+  .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
+  .dg-h-s{font-size:13px}
+  .dg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+  .dg-slot{background:#fff;border:1.5px dashed #ffc7d5;border-radius:14px;padding:9px 5px;text-align:center;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .dg-slot.filled{border-style:solid;border-color:#ffe0e8}
+  .dg-pos{font-size:11px;color:#8a8a97}
+  .dg-av{width:46px;height:46px;border-radius:50%;background:#ffe7ee center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .dg-av.empty{background:none;color:#ffb3c6;font-size:26px}
+  .dg-nm{font-size:12px;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dg-gr{font-size:12px;color:#ec3a5c;font-weight:bold}
+  .dg-sub{display:flex;justify-content:space-between;align-items:center;margin:16px 0 7px;font-size:15px}
+  .dg-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .dg-chip{display:inline-block;background:#fff;border:1.5px solid #ffe0e8;border-radius:999px;padding:6px 11px;font-size:12.5px;line-height:1.35}
+  .dg-chip.rare{border-color:#ffb43e;background:#fff8ec}
+  .dg-chip.pick{cursor:pointer}
+  .dg-chip.pick.on{border-color:#ec3a5c;background:#fff0f4;box-shadow:0 0 0 2px rgba(236,58,92,.15)}
+  .dg-res{margin:16px 0 4px;text-align:left}
+  .dg-res-slot{background:#fff0f4;border-radius:12px;padding:12px;text-align:center;font-size:14px}
+  .dg-res-cards{background:#fffdf7;border:1px solid #ffe6c2;border-radius:12px;padding:12px;margin-top:9px}
+  .dg-equip{background:#fff;border:1px solid #ffe0e8;border-radius:14px;padding:12px;text-align:left;margin-top:8px}
+  .card-row{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #ffe0e8;border-radius:14px;padding:12px;margin-top:9px}
+  .card-row.rare{border-color:#ffb43e;background:#fff8ec}
+  .card-row .cr-em{font-size:26px;flex:0 0 auto}
+  .card-row .cr-m{flex:1;min-width:0}
+  .card-row .cr-nm{font-size:15px}
+  .card-row .cr-max{color:#f0a01e;font-size:12px}
+  .card-row .cr-r{flex:0 0 auto}
+  .cr-btn{font-family:inherit;border:none;border-radius:12px;padding:8px 12px;font-size:14px;line-height:1.15;color:#fff;background:linear-gradient(135deg,#ec3a5c,#ff6b8a);cursor:pointer;text-align:center}
+  .cr-btn small{font-size:10px;opacity:.9}
+  .cr-btn.off{background:#e6e6ea;color:#a9a9b2;cursor:not-allowed}
+  .cr-maxb{font-size:24px}
+  .ag-logo{display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:#fff0f4;border:2px solid #ffe0e8;font-size:44px;cursor:pointer;overflow:hidden}
+  .ag-emojis{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
+  .ag-emo{font-size:22px;width:44px;height:44px;border-radius:12px;border:2px solid #ffe0e8;background:#fff;cursor:pointer;padding:0}
+  .ag-emo.on{border-color:#ec3a5c;background:#fff0f4}
+  .ros-row{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #ffe0e8;border-radius:14px;padding:10px 12px;margin-top:8px}
+  .ros-row.cur{border-color:#18b06e;background:#f2fbf6}
+  .ros-av{flex:0 0 auto;width:48px;height:48px;border-radius:50%;background:#ffe7ee center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .ros-m{flex:1;min-width:0}
+  .ros-nm{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+<script>
+(function(){
+  const POS   = {vocal:'메인보컬', acting:'메인래퍼', dance:'메인댄서', visual:'비주얼', charm:'예능', creative:'프로듀서'};
+  const ORDER = ['vocal','acting','dance','visual','charm','creative'];
+  const ICO   = {vocal:'🎵',acting:'🎤',dance:'💃',visual:'✨',charm:'🎭',creative:'🎼'};
+  // rr = 레어도 인덱스(고정). N=0 R=1 SR=2 (SSR/UR은 향후 이벤트·조합카드)
+  const CARDS = {
+    effort:  {nm:'노력파',   em:'💪', rr:0, eff:{all:15}},
+    vocalC:  {nm:'황금성대', em:'🎵', rr:1, eff:{stat:{vocal:55}}},
+    danceC:  {nm:'리듬천재', em:'💃', rr:1, eff:{stat:{dance:55}}},
+    visualC: {nm:'비주얼신', em:'✨', rr:1, eff:{stat:{visual:55}}},
+    charmC:  {nm:'예능감', em:'🎭', rr:1, eff:{stat:{charm:55}}},
+    actingC: {nm:'라임장인', em:'🎤', rr:1, eff:{stat:{acting:55}}},
+    creatC:  {nm:'작곡센스', em:'🎼', rr:1, eff:{stat:{creative:55}}},
+    genius:  {nm:'천재',     em:'👑', rr:2, eff:{all:35}},
+  };
+  const STATCARD = {vocal:'vocalC',dance:'danceC',visual:'visualC',charm:'charmC',acting:'actingC',creative:'creatC'};
+  // 2축 분리(카드게임 국룰): 레어도(고정) × 강화 별(★1~5, 머지)
+  const RARITY=['N','R','SR','SSR','UR'];
+  const RAR_COLOR=['#9aa0a6','#3d7bd6','#a855f7','#f0a01e','#ff3b5c'];
+  const STAR_MULT=[1,1.4,1.9,2.5,3.2];   // ★1~★5 효과배수
+  const MAXSTAR=5;
+  // 포지션 = 주스탯(70%)+보조스탯(30%) 블렌드 → 몰빵 비최적화(2번 A)
+  // 포지션 주+보조 (acting=랩, charm=예능): 메인보컬=보컬+랩 / 메인래퍼=랩+보컬 / 메인댄서=댄스+비주얼 / 비주얼=비주얼+예능 / 예능=예능+비주얼 / 프로듀서=크리+보컬
+  const POSFIT={ vocal:{pri:'vocal',sec:'acting'}, acting:{pri:'acting',sec:'vocal'}, dance:{pri:'dance',sec:'visual'},
+    visual:{pri:'visual',sec:'charm'}, charm:{pri:'charm',sec:'visual'}, creative:{pri:'creative',sec:'vocal'} };
+  const STATNM={vocal:'보컬',dance:'댄스',visual:'비주얼',charm:'예능',acting:'랩',creative:'크리에이티브'};
+  // 데뷔조 9포지션(보컬·랩·댄스 각2 + 비주얼·예능·프로듀서 각1). 각 자리 = 한 스탯으로 평가(POSFIT 블렌드).
+  const POSITIONS=[
+    {id:'vocal1',stat:'vocal',nm:'메인보컬'}, {id:'vocal2',stat:'vocal',nm:'리드보컬'},
+    {id:'rap1',stat:'acting',nm:'메인래퍼'}, {id:'rap2',stat:'acting',nm:'리드래퍼'},
+    {id:'dance1',stat:'dance',nm:'메인댄서'}, {id:'dance2',stat:'dance',nm:'리드댄서'},
+    {id:'visual',stat:'visual',nm:'비주얼'}, {id:'variety',stat:'charm',nm:'예능'}, {id:'producer',stat:'creative',nm:'프로듀서'},
+  ];
+  const GR = ['F','E','D','C','B','A','S','SS'];
+  const grank = g => Math.max(0, GR.indexOf(g));
+
+  function pid(){ let id=localStorage.getItem('idol_pid'); if(!id){ id='local-'+Date.now(); localStorage.setItem('idol_pid',id);} return id; }
+  const KEY = ()=>'dg_save_'+pid();
+  function blank(){ return {v:3, roster:[], lineup:{}, cards:{}, ridSeq:0, runs:0}; }   // roster=육성한 아이돌, lineup={slotId:rid}
+
+  const DG = {
+    data: blank(), equipped: [],
+    load(){
+      var d; try{ d=JSON.parse(localStorage.getItem(KEY()))||{}; }catch(e){ d={}; }
+      d.roster = Array.isArray(d.roster)? d.roster : [];
+      d.lineup = (d.lineup&&typeof d.lineup==='object'&&!Array.isArray(d.lineup))? d.lineup : {};
+      if(typeof d.runs!=='number') d.runs=0;
+      // 카드: v<2 레거시 → ★모델
+      if(!(d.v>=2)){
+        let cards={}; const put=(id,star,n)=>{ if(!CARDS[id]||!n||n<=0)return; star=Math.min(MAXSTAR,Math.max(1,star)); cards[id]=cards[id]||{}; cards[id][star]=(cards[id][star]||0)+n; };
+        if(Array.isArray(d.cards)){ d.cards.forEach(id=>put(id,1,1)); }
+        else if(d.cards&&typeof d.cards==='object'){ Object.keys(d.cards).forEach(id=>{ const m=d.cards[id]; if(m&&typeof m==='object') Object.keys(m).forEach(k=>put(id,(+k)+1,m[k])); }); }
+        if(d.lv&&typeof d.lv==='object'){ Object.keys(d.lv).forEach(id=>put(id,Math.ceil((d.lv[id]||1)/2),1)); }
+        if(d.mat&&typeof d.mat==='object'){ Object.keys(d.mat).forEach(id=>put(id,1,d.mat[id]||0)); }
+        d.cards=cards;
+      } else if(!d.cards||typeof d.cards!=='object'||Array.isArray(d.cards)){ d.cards={}; }
+      if(typeof d.ridSeq!=='number') d.ridSeq = d.roster.reduce((m,r)=>Math.max(m,r.rid||0),0);
+      // v<3: 옛 자동슬롯 group{stat:rec} → 창고 아이돌로 이관(알려진 스탯 1개만)
+      if(d.group && typeof d.group==='object' && !(d.v>=3)){
+        Object.keys(d.group).forEach(sk=>{ const r=d.group[sk]; if(!r)return; const stats={}; ORDER.forEach(k=>stats[k]=0); stats[sk]=r.value||0;
+          d.roster.push({rid:++d.ridSeq, idkey:'legacy'+d.ridSeq, name:r.name||'연습생', img:r.img||'', spec:sk, cat:'F', stats, grade:r.grade||'F'}); });
+      }
+      delete d.group; delete d.lv; delete d.mat; d.v=3;
+      this.data=d; return d;
+    },
+    persist(){ try{ localStorage.setItem(KEY(), JSON.stringify(this.data)); }catch(e){} },
+
+    // 카드 = 레어도(고정) × 강화 별(★1~5, 머지). 장착 효과는 보유 최고 별 기준.
+    add(type,star,n){ const cs=this.data.cards; if(!cs[type])cs[type]={}; cs[type][star]=(cs[type][star]||0)+n; if(cs[type][star]<=0)delete cs[type][star]; if(!Object.keys(cs[type]).length)delete cs[type]; },
+    countAt(type,star){ return (this.data.cards[type]&&this.data.cards[type][star])||0; },
+    bestStar(type){ const c=this.data.cards[type]; if(!c)return 0; let b=0; for(const k in c){ if(c[k]>0&&+k>b)b=+k; } return b; },
+    owned(type){ return this.bestStar(type)>0; },
+    ownedTypes(){ return Object.keys(this.data.cards).filter(t=>this.bestStar(t)>0).sort((a,b)=>{ const r=CARDS[b].rr-CARDS[a].rr; if(r)return r; return this.bestStar(b)-this.bestStar(a); }); },
+    rarBadge(type){ const r=CARDS[type].rr; return `<b style="color:${RAR_COLOR[r]}">${RARITY[r]}</b>`; },
+    starStr(star){ return star>0?'★'+star:''; },
+    cardDesc(type, star){ const c=CARDS[type]; const m=STAR_MULT[(star||this.bestStar(type)||1)-1]||1;
+      if(c.eff.all!=null) return `전 재능 +${Math.round(c.eff.all*m)}로 시작`;
+      if(c.eff.stat){ const k=Object.keys(c.eff.stat)[0]; return `${STATNM[k]||k} +${Math.round(c.eff.stat[k]*m)}로 시작`; }
+      return ''; },
+    effOf(types){ const e={stat:{},all:0}; (types||[]).forEach(id=>{ const c=CARDS[id]; if(!c)return; const m=STAR_MULT[Math.max(1,this.bestStar(id))-1]||1; const x=c.eff;
+      if(x.all)e.all+=x.all*m; if(x.stat)for(const k in x.stat)e.stat[k]=(e.stat[k]||0)+x.stat[k]*m; }); return e; },
+    applyEquipped(st){ if(!this.equipped||!this.equipped.length) return; const e=this.effOf(this.equipped);
+      ORDER.forEach(k=>{ st[k]=Math.min(800,Math.round((st[k]||0)+(e.all||0)+(e.stat[k]||0))); }); },
+
+    // ===== 데뷔조 로스터/라인업 =====
+    posScore(stats, statKey){ const f=POSFIT[statKey]; return Math.round((stats[f.pri]||0)*0.7+(stats[f.sec]||0)*0.3); },
+    idolTop(stats){ let bk=ORDER[0], bv=-1; ORDER.forEach(k=>{ const s=this.posScore(stats,k); if(s>bv){bv=s;bk=k;} }); return {stat:bk, score:bv}; },
+    rosterById(rid){ return (this.data.roster||[]).find(r=>r.rid===rid); },
+    lineupRids(){ return Object.keys(this.data.lineup||{}).map(k=>this.data.lineup[k]); },
+    idkeyInLineup(idkey, exceptSlot){ for(const sid in this.data.lineup){ if(sid===exceptSlot)continue; const r=this.rosterById(this.data.lineup[sid]); if(r&&r.idkey===idkey)return true; } return false; },
+    filledCount(){ let n=0; POSITIONS.forEach(p=>{ if(this.rosterById(this.data.lineup[p.id])) n++; }); return n; },
+    groupInfo(){ let sum=0,n=0; POSITIONS.forEach(p=>{ const r=this.rosterById(this.data.lineup[p.id]); if(r){ sum+=this.posScore(r.stats,p.stat); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
+    assign(slotId, rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
+      if(this.idkeyInLineup(r.idkey, slotId)) return {err:'dup', name:r.name};
+      this.data.lineup[slotId]=rid; this.persist(); return {ok:true}; },
+    unassign(slotId){ this.load(); delete this.data.lineup[slotId]; this.persist(); },
+    quickAssign(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
+      if(this.idkeyInLineup(r.idkey,null)) return {err:'dup', name:r.name};
+      let best=null, bv=-1; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id])return; const s=this.posScore(r.stats,p.stat); if(s>bv){bv=s;best=p.id;} });
+      if(!best) return {err:'full'};
+      this.data.lineup[best]=rid; this.persist(); return {ok:true, slot:best}; },
+    discard(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
+      for(const sid in this.data.lineup){ if(this.data.lineup[sid]===rid) delete this.data.lineup[sid]; }
+      const top=this.idolTop(r.stats), cardType=STATCARD[top.stat], rk=grank(grade(top.score));
+      const cnt = rk>=6?3 : rk>=4?2 : 1;   // S+↑=3 · B~A=2 · 그외=1
+      this.add(cardType,1,cnt);
+      this.data.roster=this.data.roster.filter(x=>x.rid!==rid); this.persist();
+      return {ok:true, card:CARDS[cardType].nm, cnt}; },
+
+    onFinish(st, statVals, end){
+      this.load();
+      const stats={}; ORDER.forEach(k=>stats[k]=0); statVals.forEach(v=>{ if(stats[v.k]!=null) stats[v.k]=Math.round(v.v); });
+      const top=this.idolTop(stats), gr=grade(top.score), debuted=top.score>=55;
+      const idkey = st.idol.id==='custom' ? 'c:'+st.idol.name : 'i:'+(st.idol.id!=null?st.idol.id:st.idol.name);
+      let joinMsg, newRid=null;
+      if(debuted){
+        newRid=++this.data.ridSeq;
+        this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr});
+        joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 창고 합류<br><span class="muted">대표 ${STATNM[top.stat]} · ${gr}·${top.score}</span>`;
+      } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 창고에 못 들어감`; }
+      const drops=this.rollCards(top.stat, gr, debuted);
+      const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
+      this.data.runs++; this.persist();
+      return {drops:dropInfo, joinMsg, debuted, newRid};
+    },
+    rollCards(topK, topG, debuted){
+      const out=[]; const gr=grank(topG);
+      if(!debuted){ out.push('effort'); return out; }
+      if(gr>=3 || Math.random()<0.6) out.push(STATCARD[topK]);
+      if(Math.random()<0.5) out.push('effort');
+      if(gr>=6 && Math.random()<0.5) out.push('genius');
+      if(!out.length) out.push('effort');
+      return out.slice(0,3);
+    },
+
+    go(){ this.load(); if(!this.data.agency){ this.renderAgency(); show('s-agency'); return; } this.renderOffice(); show('s-office'); },
+    renderOffice(){
+      this.load();
+      const a=this.agency(); const ot=document.getElementById('officeTitle');
+      if(ot) ot.innerHTML=`${this.logoHtml(a.logo,26)} ${esc(a.name)}`;
+      const gi=this.groupInfo();
+      const slots=POSITIONS.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
+        if(r){ const val=this.posScore(r.stats,p.stat), av=r.img?`style="background-image:url('${r.img}')"`:'';
+          return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
+            <span class="dg-av" ${av}>${r.img?'':'🎤'}</span>
+            <div class="dg-nm">${esc(r.name)}</div><div class="dg-gr">${grade(val)} · ${val}</div></div>`; }
+        return `<div class="dg-slot" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
+          <span class="dg-av empty">＋</span><div class="dg-nm muted">배치</div></div>`;
+      }).join('');
+      document.getElementById('dgGroup').innerHTML=
+        `<div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=2?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
+          <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
+          <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '창고에서 2명 이상 편성하면 활동 시작'}</div></div>
+         <div class="dg-grid nine">${slots}</div>
+         <div style="display:flex;gap:8px;margin-top:11px">
+           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 창고 (${this.data.roster.length})</button>
+           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.shareGroupCard()">📸 데뷔조 카드</button>`:''}
+         </div>`;
+      const types=this.ownedTypes();
+      const cardHtml=types.length? types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
+        return `<span class="dg-chip ${c.rr>=2?'rare':''}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')
+        : '<span class="muted">아직 없어요 — 육성을 마치면 생겨요</span>';
+      document.getElementById('dgCards').innerHTML=
+        `<div class="dg-sub"><b>🎴 보유 육성카드</b><span class="muted">${types.length}종</span></div>
+         <div class="dg-chips">${cardHtml}</div>
+         ${types.length?'<button class="btn ghost" onclick="DG.goCards()" style="margin-top:9px">🔧 카드 합치기 · 도감</button>':''}
+         <p class="muted" style="font-size:12px;margin-top:6px">육성을 마치면 남는 재능. 같은 카드 2장을 합쳐 ★을 올려(★1~★5). 레어도(N/R/SR)는 카드 고유.</p>`;
+    },
+    // ===== 편성(포지션 배치) =====
+    openAssign(slotId){ this.load(); this._slot=slotId; this.renderAssign(); show('s-assign'); },
+    renderAssign(){
+      const slot=POSITIONS.find(p=>p.id===this._slot); if(!slot) return;
+      const cur=this.rosterById(this.data.lineup[slot.id]);
+      const t=document.getElementById('assignTitle'); if(t) t.innerHTML=`${ICO[slot.stat]} ${slot.nm} 배치`;
+      const list=(this.data.roster||[]).slice().sort((a,b)=>this.posScore(b.stats,slot.stat)-this.posScore(a.stats,slot.stat));
+      let html='';
+      if(cur) html+=`<button class="btn ghost" onclick="DG.unassign('${slot.id}');DG.renderAssign()" style="margin-bottom:9px">✕ 이 자리 비우기 (현재 ${esc(cur.name)})</button>`;
+      if(!list.length) html+='<p class="muted" style="text-align:center;padding:20px">창고에 연습생이 없어. 먼저 육성해!</p>';
+      else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.stat), dup=this.idkeyInLineup(r.idkey,slot.id), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
+        return `<div class="ros-row${isCur?' cur':''}"><span class="ros-av" ${av}>${r.img?'':'🎤'}</span>
+          <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span></div>
+            <div class="muted" style="font-size:12px">${slot.nm} 적합 <b style="color:#ec3a5c">${grade(val)}·${val}</b></div></div>
+          <button class="cr-btn${dup&&!isCur?' off':''}" ${dup&&!isCur?'disabled':''} onclick="DG.pickForSlot(${r.rid})">${isCur?'배치됨':(dup?'중복':'배치')}</button></div>`;}).join('');
+      document.getElementById('assignList').innerHTML=html;
+    },
+    pickForSlot(rid){ const r=this.assign(this._slot, rid); if(r.err==='dup'){ toast(`${r.name}은(는) 이미 데뷔조에 있어`); return; } if(r.err){ toast('배치 실패'); return; } this.go(); },
+    // ===== 연습생 창고 =====
+    goRoster(){ this.load(); this.renderRoster(); show('s-roster'); },
+    renderRoster(){
+      const box=document.getElementById('rosterList'); if(!box) return;
+      const list=(this.data.roster||[]).slice().sort((a,b)=>grank(b.grade)-grank(a.grade));
+      if(!list.length){ box.innerHTML='<p class="muted" style="text-align:center;padding:24px">아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!</p>'; return; }
+      box.innerHTML=list.map(r=>{ const top=this.idolTop(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
+        return `<div class="ros-row${inup?' cur':''}"><span class="ros-av" ${av}>${r.img?'':'🎤'}</span>
+          <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${inup?' <span style="color:#18b06e;font-size:11px">편성됨</span>':''}</div>
+            <div class="muted" style="font-size:12px">대표 ${STATNM[top.stat]} ${top.score}</div></div>
+          <div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto">
+            ${inup?'':`<button class="cr-btn" style="padding:6px 11px;font-size:12px" onclick="DG.doQuick(${r.rid})">편성</button>`}
+            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">폐기<br><small>${STATNM[top.stat]}★1×${cnt}</small></button>
+          </div></div>`;}).join('');
+    },
+    doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
+    doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 폐기하고 카드로 바꿀까?`))return; const res=this.discard(rid); if(res.ok) toast(`폐기 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
+
+    renderResult(box, res){
+      if(!box) return;
+      const chips=res.drops.length? res.drops.map(d=>{ const id=d.id, c=CARDS[id], bs=this.bestStar(id);
+        return `<span class="dg-chip ${c.rr>=2?'rare':''}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${d.isNew?'✨새 카드':'＋★1'}</span></span>`;}).join('')
+        : '<span class="muted">이번엔 육성카드를 못 얻었어요</span>';
+      box.innerHTML=`<div class="dg-res"><div class="dg-res-slot">${res.joinMsg}</div>
+        <div class="dg-res-cards"><b>🎴 획득한 육성카드</b><div class="dg-chips" style="margin-top:6px">${chips}</div></div>
+        ${res.debuted?`<button class="btn ghost" onclick="DG.goRoster()" style="margin-top:10px">📋 연습생 창고에서 편성하기</button>`:''}</div>`;
+      if(res.debuted) setTimeout(()=>{ try{toast('연습생 창고 합류! 📋');}catch(e){} }, 450);
+    },
+    // 캐릭터 선택 → 육성카드 선택 단계로 (없으면 바로 시작)
+    toCardPick(){
+      this.load(); this.equipped=[];
+      if(!this.ownedTypes().length){ Game.start(); return; }
+      this.renderCardPick(); show('s-cardpick');
+    },
+    renderCardPick(){
+      const box=document.getElementById('cardPickList'); if(!box) return;
+      const types=this.ownedTypes();
+      box.innerHTML=`<div class="dg-chips" style="margin-top:12px">${types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
+        return `<span class="dg-chip pick ${c.rr>=2?'rare':''}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)}<br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
+    },
+    toggle(id, el){
+      const i=this.equipped.indexOf(id);
+      if(i>=0){ this.equipped.splice(i,1); el.classList.remove('on'); }
+      else { if(this.equipped.length>=2){ try{toast('육성카드는 최대 2개까지');}catch(e){} return; }
+        this.equipped.push(id); el.classList.add('on'); }
+    },
+
+    // ===== 합치기(머지) — 같은 별 2장 → ★+1 (최대 ★5), 확률 4단계 =====
+    // 🌟대성공(승급+1장보존) / ✨성공(승급) / 💦실패(1장 소실) / 💥대실패(2장 소실). ★↑일수록 어려움.
+    mergeOdds(star){
+      const sTot=[92,78,62,46][star-1]!=null?[92,78,62,46][star-1]:40;   // ★1→2 … ★4→5 총 성공률
+      const gs=Math.round(sTot*0.18), s=sTot-gs;
+      const fTot=100-sTot;
+      const gf=Math.round(fTot*Math.min(0.55,0.14*star)), f=fTot-gf;
+      return {gs,s,f,gf};
+    },
+    merge(type,star){
+      this.load();
+      if(star>=MAXSTAR) return {err:'max'};
+      if(this.countAt(type,star)<2) return {err:'need2'};
+      const p=this.mergeOdds(star), r=Math.random()*100; let o;
+      if(r<p.gs)o='gsuccess'; else if(r<p.gs+p.s)o='success'; else if(r<p.gs+p.s+p.f)o='fail'; else o='gfail';
+      if(o==='gsuccess'){ this.add(type,star,-1); this.add(type,star+1,1); }        // 1장만 소모 + 승급(보존)
+      else if(o==='success'){ this.add(type,star,-2); this.add(type,star+1,1); }   // 2장 소모 + 승급
+      else if(o==='fail'){ this.add(type,star,-1); }                               // 1장 소실
+      else { this.add(type,star,-2); }                                            // 2장 소실
+      this.persist();
+      return {outcome:o, type, from:star};
+    },
+    goCards(){ this.renderCards(); show('s-cards'); },
+    renderCards(){
+      this.load(); const box=document.getElementById('cardsList'); if(!box) return;
+      const types=this.ownedTypes();
+      if(!types.length){ box.innerHTML='<p class="muted" style="text-align:center;padding:24px">아직 보유한 육성카드가 없어요.<br>육성을 마치면 생겨요!</p>'; return; }
+      box.innerHTML=types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
+        const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
+        let ms=-1; for(let s=1;s<MAXSTAR;s++){ if(this.countAt(id,s)>=2){ ms=s; break; } }
+        const btn = ms>0
+          ? (o=>`<button class="cr-btn" onclick="DG.doMerge('${id}',${ms})">합치기<br><small>★${ms}→★${ms+1} · ${o.gs+o.s}%</small></button>`)(this.mergeOdds(ms))
+          : (bs>=MAXSTAR?'<span class="cr-maxb">👑</span>':'<span class="muted" style="font-size:11px;text-align:center;display:inline-block">2장 모으면<br>합치기</span>');
+        return `<div class="card-row ${c.rr>=2?'rare':''}">
+          <span class="cr-em">${c.em}</span>
+          <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${c.nm} <span style="color:#f0a01e">${this.starStr(bs)}</span></div>
+            <div class="muted" style="font-size:12px">${this.cardDesc(id,bs)}</div>
+            <div style="font-size:12px;margin-top:3px">${schips.join('')}</div></div>
+          <div class="cr-r">${btn}</div>
+        </div>`;}).join('');
+    },
+    doMerge(type,star){
+      const r=this.merge(type,star);
+      if(r.err==='need2'){ toast('같은 별 카드 2장이 필요해'); return; }
+      if(r.err==='max'){ toast('이미 ★5 (최대)'); return; }
+      if(r.err){ toast('합칠 수 없어'); return; }
+      const nm=CARDS[type].nm;
+      toast({gsuccess:`🌟 대성공! ${nm} ★${r.from+1} 승급 · 1장 보존!`,
+             success:`✨ 성공! ${nm} ★${r.from}→★${r.from+1}`,
+             fail:`💦 실패… 카드 1장 소실`,
+             gfail:`💥 대실패! 카드 2장 소실`}[r.outcome]);
+      this.renderCards();
+    },
+
+    // ===== 기획사 이름·로고 =====
+    agency(){ return this.data.agency || {name:'우리 기획사', logo:'🏢'}; },
+    logoHtml(logo, px){ px=px||26; return (logo&&logo.indexOf('data:')===0)
+      ? `<img src="${logo}" style="width:${px}px;height:${px}px;border-radius:50%;object-fit:cover;vertical-align:middle">` : (logo||'🏢'); },
+    editAgency(){ this.renderAgency(); show('s-agency'); },
+    exitAgency(){ this.load(); if(this.data.agency) this.go(); else Game.reset(); },   // 첫 설정 중이면 타이틀로
+    groupName(){ return (this.data && this.data.groupName) || '우리 데뷔조'; },
+    _agSel:'🏢',
+    renderAgency(){
+      this.load(); const a=this.agency(); this._agSel=a.logo||'🏢';
+      const nm=document.getElementById('agName'); if(nm) nm.value=(a.name&&a.name!=='우리 기획사')?a.name:'';
+      const gp=document.getElementById('agGroup'); if(gp) gp.value=(this.data.groupName&&this.data.groupName!=='우리 데뷔조')?this.data.groupName:'';
+      this.renderAgLogo();
+      const EMO=['🏢','🏯','🎪','🌟','🎬','🎤','🎧','🎹','🔥','💎','👑','🌈','🍀','🐣','🐰','🦆','🚀','🎯'];
+      const box=document.getElementById('agEmojis'); if(box) box.innerHTML=EMO.map(e=>
+        `<button class="ag-emo${this._agSel===e?' on':''}" onclick="DG.pickAgLogo('${e}')">${e}</button>`).join('');
+    },
+    renderAgLogo(){ const v=document.getElementById('agLogoView'); if(v) v.innerHTML=this.logoHtml(this._agSel,84); },
+    pickAgLogo(e){ this._agSel=e; this.renderAgLogo();   // 리로드 없이 로고뷰+하이라이트만(이름·선택 보존)
+      document.querySelectorAll('#agEmojis .ag-emo').forEach(b=>b.classList.toggle('on', b.textContent===e)); },
+    agencyPhoto(ev){ const f=ev.target.files&&ev.target.files[0]; if(!f) return;
+      const rd=new FileReader(); rd.onload=e=>{ const img=new Image();
+        img.onload=()=>{ const S=220,cv=document.createElement('canvas'); cv.width=S;cv.height=S;
+          const x=cv.getContext('2d'),m=Math.min(img.width,img.height);
+          x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
+          this._agSel=cv.toDataURL('image/jpeg',0.82); this.renderAgLogo();
+          document.querySelectorAll('.ag-emo.on').forEach(b=>b.classList.remove('on')); };
+        img.src=e.target.result; }; rd.readAsDataURL(f); },
+    saveAgencyFromUI(){ this.load();
+      const name=(((document.getElementById('agName')||{}).value)||'').trim().slice(0,14) || '우리 기획사';
+      const gname=(((document.getElementById('agGroup')||{}).value)||'').trim().slice(0,14) || '우리 데뷔조';
+      this.data.agency={name, logo:this._agSel||'🏢'}; this.data.groupName=gname; this.persist();
+      try{toast('저장 완료! 🏢');}catch(e){} this.go();
+    },
+
+    // ===== 데뷔조 그룹카드 (인스타 공유) =====
+    async makeGroupCard(){
+      this.load(); const a=this.agency();
+      const W=1080,H=1350, FF="'Jua','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+      try{ await document.fonts.load("40px 'Jua'"); await document.fonts.load("700 40px 'Jua'"); await document.fonts.ready; }catch(e){}
+      let aLogo=null; if(a.logo && a.logo.indexOf('data:')===0){ try{ aLogo=await loadImg(a.logo,false); }catch(e){} }
+      const mem=POSITIONS.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]); return r?{p,r,val:this.posScore(r.stats,p.stat)}:{p,r:null}; });
+      const faces=await Promise.all(mem.map(async m=>{ if(!m.r||!m.r.img) return null; try{ const cis=cardImgSrc(m.r.img); return cis.src? await loadImg(cis.src,cis.cross): null; }catch(e){ return null; } }));
+      const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d'); x.textBaseline='alphabetic';
+      const fit=(txt,mw,w,s)=>{ x.font=`${w} ${s}px ${FF}`; while(s>14 && x.measureText(txt).width>mw){ s-=2; x.font=`${w} ${s}px ${FF}`; } return s; };
+      const rr=(xx,yy,w,h,r)=>{ x.beginPath(); x.moveTo(xx+r,yy); x.arcTo(xx+w,yy,xx+w,yy+h,r); x.arcTo(xx+w,yy+h,xx,yy+h,r); x.arcTo(xx,yy+h,xx,yy,r); x.arcTo(xx,yy,xx+w,yy,r); x.closePath(); };
+      const gcolor=(gr)=>(typeof GRADE_COLOR!=='undefined'&&GRADE_COLOR[gr])||'#ec3a5c';
+      const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#ffe4ea'); bg.addColorStop(.5,'#fff2f4'); bg.addColorStop(1,'#fff'); x.fillStyle=bg; x.fillRect(0,0,W,H);
+      const rg=x.createRadialGradient(W/2,-120,60,W/2,-120,820); rg.addColorStop(0,'rgba(236,58,92,.16)'); rg.addColorStop(1,'rgba(236,58,92,0)'); x.fillStyle=rg; x.fillRect(0,0,W,700);
+      x.textAlign='center';
+      const AY=132, AR=56;
+      if(aLogo){ x.save(); x.beginPath(); x.arc(W/2,AY,AR,0,7); x.clip(); const m=Math.min(aLogo.naturalWidth,aLogo.naturalHeight);
+        x.drawImage(aLogo,(aLogo.naturalWidth-m)/2,(aLogo.naturalHeight-m)/2,m,m,W/2-AR,AY-AR,AR*2,AR*2); x.restore();
+        x.beginPath(); x.arc(W/2,AY,AR,0,7); x.lineWidth=5; x.strokeStyle='#ec3a5c'; x.stroke(); }
+      else { x.font="82px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText(a.logo||'🏢', W/2, AY+28); }
+      x.fillStyle='#2b2530'; fit(a.name,W-220,'800',52); x.fillText(a.name, W/2, 246);
+      x.fillStyle='#ec3a5c'; fit(this.groupName(),W-240,'700',32); x.fillText(this.groupName(), W/2, 292);
+      const cols=[W*0.2, W*0.5, W*0.8], rowY=[470,742,1014], R=76; let sum=0, filled=0;
+      mem.forEach((m,i)=>{ const cx=cols[i%3], cy=rowY[(i/3)|0], face=faces[i];
+        x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${ICO[m.p.stat]} ${m.p.nm}`, cx, cy-R-12);
+        if(m.r){ sum+=m.val; filled++;
+          if(face){ x.save(); x.beginPath(); x.arc(cx,cy,R,0,7); x.clip(); const mm=Math.min(face.naturalWidth,face.naturalHeight);
+            x.drawImage(face,(face.naturalWidth-mm)/2,(face.naturalHeight-mm)/2,mm,mm,cx-R,cy-R,R*2,R*2); x.restore(); }
+          else { x.fillStyle='#ffe0e6'; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); x.font="52px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText('🎤',cx,cy+18); }
+          x.beginPath(); x.arc(cx,cy,R,0,7); x.lineWidth=4.5; x.strokeStyle='#ec3a5c'; x.stroke();
+          x.fillStyle='#2b2530'; fit(m.r.name,R*2+34,'800',28); x.fillText(m.r.name, cx, cy+R+38);
+          x.fillStyle=gcolor(grade(m.val)); x.font=`900 26px ${FF}`; x.fillText(`${grade(m.val)}·${m.val}`, cx, cy+R+70);
+        } else {
+          x.strokeStyle='#ffc7d5'; x.lineWidth=3.5; x.setLineDash([9,8]); x.beginPath(); x.arc(cx,cy,R,0,7); x.stroke(); x.setLineDash([]);
+          x.fillStyle='#ffb3c6'; x.font=`800 46px ${FF}`; x.fillText('＋', cx, cy+16);
+        }
+      });
+      x.fillStyle='#fff'; x.strokeStyle='#ffd9de'; x.lineWidth=2.5; rr(80,1188,W-160,116,24); x.fill(); x.stroke();
+      const gAll = filled? grade(Math.round(sum/filled)) : '–';
+      x.textAlign='left'; x.fillStyle='#9a8f9a'; x.font=`600 26px ${FF}`; x.fillText('데뷔조 종합', 128, 1236);
+      x.fillStyle='#ec3a5c'; x.font=`900 48px ${FF}`; x.fillText(gAll, 128, 1288);
+      x.textAlign='right'; x.fillStyle='#9a8f9a'; x.font=`600 26px ${FF}`; x.fillText('멤버', W-128, 1236);
+      x.fillStyle='#f0a01e'; x.font=`900 42px ${FF}`; x.fillText(`${filled}/9`, W-128, 1288);
+      x.textAlign='center'; x.fillStyle='#b9adb4'; x.font=`600 23px ${FF}`; x.fillText('최애돌 · 아이돌 육성 타이쿤', W/2, 1332);
+      return cv;
+    },
+    async shareGroupCard(){
+      let cv; try{ cv=await this.makeGroupCard(); }catch(e){ try{toast('카드 생성 실패');}catch(_){}; return; }
+      cv.toBlob(function(blob){
+        if(!blob){ try{toast('카드 생성 실패');}catch(_){}; return; }
+        const file=new File([blob], 'debut-group.png', {type:'image/png'});
+        try{
+          if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file], title:'우리 데뷔조'}).catch(function(){ (Game.isMobile&&Game.isMobile())?Game.showCardImage(file):Game.downloadCard(file); });
+          } else if(Game.isMobile && Game.isMobile()){ Game.showCardImage(file); }
+          else { Game.downloadCard(file); }
+        }catch(e){ try{ Game.downloadCard(file); }catch(_){} }
+      }, 'image/png');
+    },
+  };
+  window.DG = DG; DG.load();
+})();
+</script>
