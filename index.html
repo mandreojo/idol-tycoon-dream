@@ -513,7 +513,8 @@
     <div id="dgGroup"></div>
     <div id="dgGroups"></div>
     <div id="dgCards"></div>
-    <button class="btn" onclick="Game.goSelect()" style="margin-top:16px">＋ 새 연습생 육성</button>
+    <button class="btn ghost" onclick="DG.goAchv()" style="margin-top:14px">🏅 업적 <span id="officeAchv" class="muted" style="font-size:13px"></span></button>
+    <button class="btn" onclick="Game.goSelect()" style="margin-top:9px">＋ 새 연습생 육성</button>
   </section>
 
   <!-- SELECT -->
@@ -569,6 +570,17 @@
     </div>
     <p class="muted" style="margin:2px 0 6px">레어도(N·R·SR)는 카드 고유. 같은 <b>★</b> 2장을 합쳐 별을 올려(★1→★5).<br>확률 4단계: 🌟대성공(1장보존)·✨성공·💦실패·💥대실패.</p>
     <div id="cardsList"></div>
+  </section>
+
+  <!-- 업적 -->
+  <section class="screen" id="s-achv">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2>🏅 업적</h2>
+      <span id="achvHead" class="muted" style="margin-left:auto;font-size:13px"></span>
+    </div>
+    <p class="muted" style="margin:2px 0 10px">프로듀서의 발자취. 목표를 하나씩 달성해봐.</p>
+    <div id="achvList"></div>
   </section>
 
   <!-- 기획사 설정 (이름·로고) -->
@@ -2554,6 +2566,22 @@ window.addEventListener("popstate", ()=>{
   const GR = ['F','E','D','C','B','A','S','SS'];
   const grank = g => Math.max(0, GR.indexOf(g));
 
+  // ===== 업적 (목표·진행감 = 상용게임 필수 레이어). 보상=뱃지형(밸런싱 무관). cur(d)=현재 진행값 =====
+  const ACHV = [
+    {id:'agency',  ic:'✍️', nm:'창업',         desc:'기획사를 설립',         goal:1,  cur:d=>d.data.agency?1:0},
+    {id:'first',   ic:'👣', nm:'첫 발걸음',     desc:'연습생 1명 육성 완주',   goal:1,  cur:d=>(d.data.roster||[]).length},
+    {id:'debut',   ic:'🎬', nm:'데뷔 신고식',   desc:'그룹 1팀 데뷔',         goal:1,  cur:d=>(d.data.groups||[]).length},
+    {id:'runs10',  ic:'🔁', nm:'열혈 프로듀서', desc:'육성 10회 완주',        goal:10, cur:d=>d.data.runs||0},
+    {id:'roster8', ic:'📋', nm:'인재 창고',     desc:'연습생 8명 보유',       goal:8,  cur:d=>(d.data.roster||[]).length},
+    {id:'sclass',  ic:'⭐', nm:'스타 발굴',     desc:'S급 이상 연습생 육성',   goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=6).length},
+    {id:'ssclass', ic:'🌟', nm:'육각형 스타',   desc:'SS급 연습생 육성',      goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=7).length},
+    {id:'full9',   ic:'💃', nm:'완전체',        desc:'9인 완성 그룹 데뷔',     goal:1,  cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
+    {id:'groups3', ic:'🏢', nm:'대형 기획사',   desc:'그룹 3팀 데뷔',         goal:3,  cur:d=>(d.data.groups||[]).length},
+    {id:'cards5',  ic:'🎴', nm:'수집가',        desc:'육성카드 5종 보유',      goal:5,  cur:d=>d.ownedTypes().length},
+    {id:'star5',   ic:'👑', nm:'강화 장인',     desc:'★5 카드 달성',          goal:1,  cur:d=>d.ownedTypes().filter(t=>d.bestStar(t)>=5).length},
+    {id:'gradeA',  ic:'🏆', nm:'명문 그룹',     desc:'A등급 이상 그룹 데뷔',    goal:1,  cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=5).length},
+  ];
+
   function pid(){ let id=localStorage.getItem('idol_pid'); if(!id){ id='local-'+Date.now(); localStorage.setItem('idol_pid',id);} return id; }
   const KEY = ()=>'dg_save_'+pid();
   function blank(){ return {v:4, roster:[], lineup:{}, groups:[], groupSeq:0, cards:{}, ridSeq:0, runs:0}; }   // roster=육성한 아이돌, lineup=편성중 데뷔조{slotId:rid}, groups=데뷔(저장)한 그룹 프리셋(멤버 전속)
@@ -2723,6 +2751,9 @@ window.addEventListener("popstate", ()=>{
          <div class="dg-chips">${cardHtml}</div>
          ${types.length?'<button class="btn ghost" onclick="DG.goCards()" style="margin-top:9px">🔧 카드 합치기 · 도감</button>':''}
          <p class="muted" style="font-size:12px;margin-top:6px">육성을 마치면 남는 재능. 같은 카드 2장을 합쳐 ★을 올려(★1~★5). 레어도(N/R/SR)는 카드 고유.</p>`;
+      // 업적: 홈 진입 시 새 달성 감지 + 진행수 표시
+      this.checkAchv();
+      const oa=document.getElementById('officeAchv'); if(oa) oa.textContent=`(${this.achvDone()}/${ACHV.length})`;
     },
     // ===== 편성(포지션 배치) =====
     openAssign(slotId){ this.load(); this._slot=slotId; this.renderAssign(); show('s-assign'); },
@@ -2750,6 +2781,28 @@ window.addEventListener("popstate", ()=>{
       if(r0){ for(const sid in this.data.lineup){ if(sid===this._slot)continue; const rr=this.rosterById(this.data.lineup[sid]); if(rr&&rr.idkey===r0.idkey) delete this.data.lineup[sid]; } this.persist(); }
       const r=this.assign(this._slot, rid); if(r.err==='committed'){ toast('전속 멤버라 배치 못 해'); return; } if(r.err){ toast('배치 실패'); return; } this.go(); },
     // ===== 연습생 창고 =====
+    // ===== 업적 =====
+    achvState(){ return ACHV.map(a=>{ const val=a.cur(this), done=val>=a.goal; return {a, val, done, pct:Math.min(100,Math.round(val/a.goal*100))}; }); },
+    achvDone(){ return this.achvState().filter(x=>x.done).length; },
+    checkAchv(){ this.load(); if(!this.data.achvSeen) this.data.achvSeen={};
+      const newly=[]; ACHV.forEach(a=>{ if(a.cur(this)>=a.goal && !this.data.achvSeen[a.id]){ this.data.achvSeen[a.id]=1; newly.push(a); } });
+      if(newly.length){ this.persist(); let i=0; newly.forEach(a=>setTimeout(()=>{ try{ toast(`🏅 업적 달성! ${a.ic} ${a.nm}`); sfx('win'); }catch(e){} }, (i++)*750)); }
+      return newly; },
+    goAchv(){ this.load(); this.checkAchv(); this.renderAchv(); show('s-achv'); },
+    renderAchv(){ const box=document.getElementById('achvList'); if(!box) return;
+      const st=this.achvState(), done=st.filter(x=>x.done).length;
+      const head=document.getElementById('achvHead'); if(head) head.innerHTML=`달성 <b style="color:var(--accent)">${done} / ${st.length}</b>`;
+      box.innerHTML=st.map(x=>{ const a=x.a;
+        return `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid ${x.done?'#ffd9a0':'#f1e3e7'};border-radius:14px;padding:12px 14px;margin-bottom:8px;${x.done?'':'opacity:.7'}">
+          <span style="font-size:26px;flex:0 0 auto;${x.done?'':'filter:grayscale(1)'}">${a.ic}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:bold">${a.nm}${x.done?' <span style="color:#e8890c;font-size:12px">달성 ✓</span>':''}</div>
+            <div class="muted" style="font-size:12px">${a.desc}</div>
+            <div style="height:6px;background:#f1e3e7;border-radius:4px;margin-top:6px;overflow:hidden"><div style="height:100%;width:${x.pct}%;background:${x.done?'#f0a01e':'#ec3a5c'}"></div></div>
+          </div>
+          <span class="muted" style="flex:0 0 auto;font-size:12px;font-weight:bold">${Math.min(x.val,a.goal)}/${a.goal}</span>
+        </div>`; }).join('');
+    },
     goRoster(){ this.load(); this.renderRoster(); show('s-roster'); },
     renderRoster(){
       const box=document.getElementById('rosterList'); if(!box) return;
