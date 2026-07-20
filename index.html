@@ -598,13 +598,18 @@
     <button class="btn" onclick="Game.start()" style="margin-top:16px">육성 시작 🔥</button>
   </section>
 
-  <!-- 육성카드 강화·도감 -->
+  <!-- 카드 보관함 (보유·강화 | 도감) -->
   <section class="screen" id="s-cards">
     <div class="sub-head">
       <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
-      <h2>🔧 카드 합치기 · 도감</h2>
+      <h2>🎴 카드 보관함</h2>
     </div>
-    <p class="muted" style="margin:2px 0 6px">레어도(N·R·SR)는 카드 고유. 같은 <b>★</b> 2장을 합쳐 별을 올려(★1→★5).<br>확률 4단계: 🌟대성공(1장보존)·✨성공·💦실패·💥대실패.</p>
+    <div class="segtab" style="margin-bottom:9px">
+      <button class="seg on" id="cseg-own" onclick="DG.cardsTab('own')">🎴 보유 · 강화</button>
+      <button class="seg" id="cseg-dex" onclick="DG.cardsTab('dex')">📖 도감</button>
+    </div>
+    <p class="muted" id="cardsHint" style="margin:0 0 8px"></p>
+    <div id="cardsFilter"></div>
     <div id="cardsList"></div>
   </section>
 
@@ -2652,6 +2657,15 @@ window.addEventListener("popstate", ()=>{
   .cr-btn small{font-size:10px;opacity:.9}
   .cr-btn.off{background:#e6e6ea;color:#a9a9b2;cursor:not-allowed}
   .cr-maxb{font-size:24px}
+  /* 카드 보관함: 필터칩 · 도감 미보유 */
+  .cfilter{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+  .cf-chip{border:1px solid #ffdbe1;background:#fff;color:#9a8f9a;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  .cf-chip.on{background:#ec3a5c;color:#fff;border-color:#ec3a5c}
+  .card-row.locked{opacity:.62;filter:grayscale(.75)}
+  .cr-own{color:#18b06e;font-weight:800;font-size:13px}
+  .cr-miss{color:#c7bcc7;font-weight:700;font-size:12px}
+  .cdex-prog{text-align:center;font-size:13px;color:#9a8f9a;margin:2px 0 10px}
+  .cdex-prog b{color:#ec3a5c}
   .ag-logo{display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:#fff0f4;border:2px solid #ffe0e8;font-size:44px;cursor:pointer;overflow:hidden}
   .ag-emojis{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
   .ag-emo{font-size:22px;width:44px;height:44px;border-radius:12px;border:2px solid #ffe0e8;background:#fff;cursor:pointer;padding:0}
@@ -2873,15 +2887,10 @@ window.addEventListener("popstate", ()=>{
                 <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명 · 전속</div></div>
               <span style="flex:0 0 auto;opacity:.55">📸</span>
             </div>`).join('')}</div>` : '';
-      const types=this.ownedTypes();
-      const cardHtml=types.length? types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
-        return `<span class="dg-chip ${c.rr>=2?'rare':''}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')
-        : '<span class="muted">아직 없어요 — 육성을 마치면 생겨요</span>';
+      // F5/C: 기획사 화면은 카드 '진입 버튼'만(상세 나열·합치기·도감은 s-cards 카드 보관함으로 분리 → 화면 간소화)
+      const cardTypes=this.ownedTypes();
       document.getElementById('dgCards').innerHTML=
-        `<div class="dg-sub"><b>🎴 보유 육성카드</b><span class="muted">${types.length}종</span></div>
-         <div class="dg-chips">${cardHtml}</div>
-         ${types.length?'<button class="btn ghost" onclick="DG.goCards()" style="margin-top:9px">🔧 카드 합치기 · 도감</button>':''}
-         <p class="muted" style="font-size:12px;margin-top:6px">육성을 마치면 남는 재능. 같은 카드 2장을 합쳐 ★을 올려(★1~★5). 레어도(N/R/SR)는 카드 고유.</p>`;
+        `<button class="btn ghost" style="margin-top:13px" onclick="DG.goCards()">🎴 카드 보관함${cardTypes.length?` <span class="muted">(${cardTypes.length}종)</span>`:''}</button>`;
       // 업적: 홈 진입 시 새 달성 감지 + 진행수 표시
       this.checkAchv();
       const oa=document.getElementById('officeAchv'); if(oa) oa.textContent=`(${this.achvDone()}/${ACHV.length})`;
@@ -3126,11 +3135,22 @@ window.addEventListener("popstate", ()=>{
       this.persist();
       return {outcome:o, type, from:star};
     },
-    goCards(){ this.renderCards(); show('s-cards'); },
-    renderCards(){
-      this.load(); const box=document.getElementById('cardsList'); if(!box) return;
-      const types=this.ownedTypes();
-      if(!types.length){ box.innerHTML='<p class="muted" style="text-align:center;padding:24px">아직 보유한 육성카드가 없어요.<br>육성을 마치면 생겨요!</p>'; return; }
+    // ===== 카드 보관함 (보유·강화 탭 | 도감 탭) =====
+    goCards(){ this.load(); this._cardTab='own'; this._cardFilter='all'; show('s-cards'); this.syncCardTab(); this.renderCards(); },
+    cardsTab(tab){ this._cardTab=tab; this.syncCardTab(); this.renderCards(); },
+    syncCardTab(){ const t=this._cardTab||'own';
+      const o=document.getElementById('cseg-own'), d=document.getElementById('cseg-dex');
+      if(o)o.classList.toggle('on',t==='own'); if(d)d.classList.toggle('on',t==='dex'); },
+    setCardFilter(f){ this._cardFilter=f; this.renderCardsOwned(); },
+    renderCards(){ this.load(); return (this._cardTab||'own')==='dex' ? this.renderCardsDex() : this.renderCardsOwned(); },
+    renderCardsOwned(){
+      const box=document.getElementById('cardsList'), fbox=document.getElementById('cardsFilter'), hint=document.getElementById('cardsHint');
+      if(hint) hint.innerHTML='같은 <b>★</b> 2장을 합쳐 별을 올려(★1→★5). 🌟대성공(1장보존)·✨성공·💦실패·💥대실패.';
+      const all=this.ownedTypes(); const f=this._cardFilter||'all';
+      if(fbox) fbox.innerHTML=`<div class="cfilter">${['all','N','R','SR'].map(x=>
+        `<button class="cf-chip ${f===x?'on':''}" onclick="DG.setCardFilter('${x}')">${x==='all'?'전체':x}</button>`).join('')}</div>`;
+      const types = f==='all'? all : all.filter(id=>RARITY[CARDS[id].rr]===f);
+      if(!types.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${all.length?'이 레어도 카드가 없어':'아직 보유한 육성카드가 없어.<br>육성을 마치면 생겨!'}</p>`; return; }
       box.innerHTML=types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
         const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
         let ms=-1; for(let s=1;s<MAXSTAR;s++){ if(this.countAt(id,s)>=2){ ms=s; break; } }
@@ -3145,6 +3165,20 @@ window.addEventListener("popstate", ()=>{
           <div class="cr-r">${btn}</div>
         </div>`;}).join('');
     },
+    renderCardsDex(){
+      const box=document.getElementById('cardsList'), fbox=document.getElementById('cardsFilter'), hint=document.getElementById('cardsHint');
+      if(fbox) fbox.innerHTML='';
+      const all=Object.keys(CARDS).sort((a,b)=>CARDS[a].rr-CARDS[b].rr);
+      const ownedN=all.filter(id=>this.owned(id)).length;
+      if(hint) hint.innerHTML=`<span class="cdex-prog">카드 도감 · 수집 <b>${ownedN}</b> / ${all.length}</span>`;
+      box.innerHTML=all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
+        return `<div class="card-row ${c.rr>=2?'rare':''} ${owned?'':'locked'}">
+          <span class="cr-em">${owned?c.em:'❔'}</span>
+          <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${owned?c.nm:'???'}${owned?` <span style="color:#f0a01e">${this.starStr(bs)}</span>`:''}</div>
+            <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):'육성으로 획득'}</div></div>
+          <div class="cr-r">${owned?'<span class="cr-own">보유</span>':'<span class="cr-miss">미보유</span>'}</div>
+        </div>`;}).join('');
+    },
     doMerge(type,star){
       const r=this.merge(type,star);
       if(r.err==='need2'){ toast('같은 별 카드 2장이 필요해'); return; }
@@ -3155,7 +3189,7 @@ window.addEventListener("popstate", ()=>{
              success:`✨ 성공! ${nm} ★${r.from}→★${r.from+1}`,
              fail:`💦 실패… 카드 1장 소실`,
              gfail:`💥 대실패! 카드 2장 소실`}[r.outcome]);
-      this.renderCards();
+      this.renderCardsOwned();
     },
 
     // ===== 기획사 이름·로고 =====
