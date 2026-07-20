@@ -120,9 +120,9 @@ window.I18N = {
     load_s1:"전 세계 투표 취합 중…", load_s2:"글로벌 차트 반영 중…",
     load_s3:"최종 팬덤 규모 확정 중…", load_s4:"결과 카드 생성 중…",
     // 엔딩 화면
-    end_stage_world:"글로벌 대상 {rank}위 · 파이널 종료",
-    end_stage_world_nr:"WORLD TOUR · 파이널 종료",
-    end_stage_out:"DOMESTIC 탈락 · 육성 종료",
+    end_stage_world:"🎉 데뷔 자격 획득 · 파이널 {rank}위",
+    end_stage_world_nr:"🎉 데뷔 자격 획득",
+    end_stage_out:"데뷔 무산 · 서바이벌 탈락",
     end_dex_unlock:"🎉 새 엔딩 해금! · 도감에 기록됐어",
     end_fans:"최종 팬 <b style=\"color:var(--gold)\">{fans}</b>명",
     end_overall:"종합 등급 <b>{g}</b> &nbsp;·&nbsp; 타고난 재능 <b style=\"color:{c}\">{ico} {spec}</b>",
