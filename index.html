@@ -719,7 +719,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f2"></script>
+<script src="i18n.js?v=20260720f"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -2331,7 +2331,9 @@ function roundRect(x,rx,ry,w,h,r){ x.beginPath();
   x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r);
   x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
 
-function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+function show(id){
+  const _ov=document.getElementById("ov"); if(_ov&&_ov.classList.contains("on")){ _ov.className="ov"; _ov.onclick=null; }  // 화면 전환 시 열린 오버레이(자리추가·상세 등) 정리 → 다음 화면 덮음 방지
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
   if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"){ try{ history.pushState({scr:id},""); }catch(e){} }}
