@@ -2778,10 +2778,8 @@ window.addEventListener("popstate", ()=>{
       const gi=this.groupInfo();
       // 동적 슬롯: 최소 2칸, 채운 자리+열어둔 만큼만 노출(최대 9). "9칸 다 채워야 할 것 같은" 압박 제거
       const filled=this.filledCount();
-      const openN=Math.min(9, Math.max(2, this.data.openSlots||2, filled));
-      const filledIdxs=POSITIONS.map((p,i)=>this.data.lineup[p.id]?i:-1).filter(i=>i>=0);
-      const lastNeeded=Math.max(openN-1, filledIdxs.length?Math.max.apply(null,filledIdxs):0);
-      const shown=POSITIONS.slice(0, lastNeeded+1);
+      const openSet=this.openSlotSet();                 // 열어둔 포지션(+채운 자리+최소2칸). 순서 아닌 '선택'식
+      const shown=POSITIONS.filter(p=>openSet.has(p.id));
       const slots=shown.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
         if(r){ const val=this.posScore(r.stats,p.stat), av=r.img?`style="background-image:url('${r.img}')"`:'';
           return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
@@ -2896,9 +2894,9 @@ window.addEventListener("popstate", ()=>{
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
     autoFill(){ this.load();
       const used=new Set(this.lineupRids());
-      const openN=Math.min(9, Math.max(2, this.data.openSlots||2, this.filledCount()));
+      const openSet=this.openSlotSet();
       let placed=0;
-      POSITIONS.slice(0,openN).forEach(p=>{ if(this.data.lineup[p.id])return;
+      POSITIONS.filter(p=>openSet.has(p.id)).forEach(p=>{ if(this.data.lineup[p.id])return;
         let best=null,bv=-1;
         (this.data.roster||[]).forEach(r=>{ if(this.isCommitted(r.rid)||used.has(r.rid))return;
           if(this.idkeyInLineup(r.idkey,p.id))return;
@@ -2907,10 +2905,27 @@ window.addEventListener("popstate", ()=>{
       this.persist(); this.renderOffice();
       toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어');
     },
-    // 자리(슬롯) 추가 — 최대 9
-    addSlot(){ this.load(); const cur=Math.min(9, Math.max(2, this.data.openSlots||2, this.filledCount()));
-      if(cur>=9){ toast('멤버는 최대 9명이야'); return; }
-      this.data.openSlots=cur+1; this.persist(); this.renderOffice();
+    // 열린 포지션 집합 = 명시적으로 연 것(openPos) + 채운 자리(항상) + 최소 2칸. 순서 아닌 '선택'식
+    openSlotSet(){ const s=new Set(this.data.openPos||[]);
+      POSITIONS.forEach(p=>{ if(this.data.lineup[p.id]) s.add(p.id); });
+      for(const p of POSITIONS){ if(s.size>=2) break; s.add(p.id); }
+      return s; },
+    // 자리 추가 — 어느 포지션 열지 고르게(댄서 잘 키웠는데 5칸째까지 열어야 하던 문제 해결)
+    addSlot(){ this.load(); const openSet=this.openSlotSet();
+      if(openSet.size>=9){ toast('멤버는 최대 9명이야'); return; }
+      const avail=POSITIONS.filter(p=>!openSet.has(p.id));
+      const ov=document.getElementById('ov'); ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
+      ov.innerHTML=`<div class="ev-card"><div class="ev-title">＋ 어느 자리를 추가할까?</div>
+        <p class="muted" style="margin:2px 0 12px">추가할 포지션을 골라</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px">
+        ${avail.map(p=>`<button class="btn ghost" style="flex:0 0 auto;padding:9px 15px" onclick="DG.pickSlot('${p.id}')">${ICO[p.stat]} ${esc(p.nm)}</button>`).join('')}</div>
+        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
+    },
+    pickSlot(id){ this.load(); const s=this.openSlotSet(); s.add(id);
+      this.data.openPos=[...s]; this.persist();
+      const ov=document.getElementById('ov'); ov.className='ov'; ov.onclick=null;
+      this.renderOffice();
     },
     doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 폐기하고 카드로 바꿀까?`))return; const res=this.discard(rid); if(res.ok) toast(`폐기 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
