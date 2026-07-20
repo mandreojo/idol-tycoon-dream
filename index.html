@@ -496,7 +496,7 @@
     <button class="btn" onclick="DG.go()">🏢 우리 기획사</button>
     <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">연습생 발굴 →</button>
     <div style="display:flex;gap:9px;margin-top:9px">
-      <button class="btn ghost" style="flex:1" onclick="Game.showDex()" data-i18n="t_dex">📖 엔딩 도감</button>
+      <button class="btn ghost" style="flex:1" onclick="DG.showGroupDex()">📖 그룹 도감</button>
       <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏆 명예의 전당</button>
     </div>
     <button class="btn ghost" style="margin-top:9px" onclick="Game.showManual('intro')" data-i18n="t_intro">❓ 게임 소개</button>
@@ -693,9 +693,9 @@
   <!-- ENDING DEX -->
   <section class="screen" id="s-dex">
     <div class="spacer" style="max-height:8px"></div>
-    <h2 class="center" style="font-size:22px" data-i18n="dex_title">📖 엔딩 도감</h2>
-    <p class="muted center" id="dexLine" style="margin:4px 0 14px">지금까지 배출한 결말 <b id="dexCount" style="color:var(--accent)">0 / 0</b><br>다른 육성으로 새로운 엔딩을 모아봐!</p>
-    <div class="dex-grid" id="dexGrid"></div>
+    <h2 class="center" style="font-size:22px">📖 그룹 도감</h2>
+    <p class="muted center" id="dexLine" style="margin:4px 0 14px">데뷔시킨 그룹 컬렉션</p>
+    <div id="dexGrid"></div>
     <button class="btn ghost" style="margin-top:14px" onclick="Game.reset()" data-i18n="home_btn">홈으로</button>
     <div class="spacer" style="max-height:12px"></div>
   </section>
@@ -2429,7 +2429,7 @@ Game.refreshLang=function(){
   const on=id=>{const e=document.getElementById(id);return e&&e.classList.contains("on");};
   if(this.st && on("s-play")){ this.render(); return; }
   if(on("s-select")){ this.renderSpecPick(); this.search(); this.updateStartFab(); return; }
-  if(on("s-dex")){ this.showDex(); return; }
+  if(on("s-dex")){ DG.showGroupDex(); return; }
   if(on("s-end")){ this.refreshEndTexts(); return; }
 };
 // 결과화면 언어 재적용(부작용 없이 표시 텍스트만 재계산)
@@ -2900,6 +2900,25 @@ window.addEventListener("popstate", ()=>{
       try{ sfx('win'); }catch(e){}
       toast(`🎉 ${nm} 데뷔! 멤버 ${r.g.n}명 전속 확정`);
       this.renderOffice(); show('s-office');
+    },
+    // 그룹 도감 = 데뷔시킨 그룹 컬렉션(홈 📖). 개인 엔딩도감을 대체한 반복플레이 수집 훅.
+    showGroupDex(){ this.load();
+      const groups=this.data.groups||[];
+      const line=document.getElementById('dexLine');
+      if(line) line.innerHTML = groups.length
+        ? `데뷔시킨 그룹 <b style="color:var(--accent)">${groups.length}팀</b> · 새 그룹을 데뷔시켜 채워봐`
+        : '데뷔시킨 그룹 컬렉션';
+      const grid=document.getElementById('dexGrid');
+      if(grid) grid.innerHTML = groups.length
+        ? `<div style="display:flex;flex-direction:column;gap:9px">${groups.map(g=>
+           `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #f4dde3;border-radius:14px;padding:12px 14px;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">
+              <span style="flex:0 0 auto">${this.logoHtml(g.logo,40)}</span>
+              <div style="flex:1;min-width:0"><div style="font-weight:bold;font-size:15px">${esc(g.name)}</div>
+                <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명 · 전속</div></div>
+              <span style="flex:0 0 auto;opacity:.55">📸</span>
+            </div>`).join('')}</div>`
+        : `<p class="muted center" style="padding:34px 12px;line-height:1.75">아직 데뷔시킨 그룹이 없어.<br>연습생을 키워 데뷔조를 짜고<br><b>데뷔 세리머니</b>로 첫 그룹을 만들어봐! 🎬</p>`;
+      show('s-dex');
     },
     // 저장된 그룹 카드 공유: 현 편성버퍼를 잠시 그룹으로 스왑 후 카드 생성, 끝나면 복구
     shareSavedGroup(gid){ const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return;
