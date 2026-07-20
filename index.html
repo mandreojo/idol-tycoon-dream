@@ -2882,13 +2882,30 @@ window.addEventListener("popstate", ()=>{
       const commitSet=this.committedRids();
       box.innerHTML=list.map(r=>{ const top=this.idolTop(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
         const badge = commit? ` <span style="color:#c98a00;font-size:11px">🏆 ${esc(cg?cg.name:'전속')}</span>` : (inup? ' <span style="color:#18b06e;font-size:11px">편성됨</span>' : '');
-        return `<div class="ros-row${inup||commit?' cur':''}"><span class="ros-av" ${av}>${r.img?'':'🎤'}</span>
-          <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${badge}</div>
+        return `<div class="ros-row${inup||commit?' cur':''}"><span class="ros-av" ${av} onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer">${r.img?'':'🎤'}</span>
+          <div class="ros-m" onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${badge}</div>
             <div class="muted" style="font-size:12px">대표 ${STATNM[top.stat]} ${top.score}</div></div>
           ${commit? '' : `<div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto">
             ${inup?'':`<button class="cr-btn" style="padding:6px 11px;font-size:12px" onclick="DG.doQuick(${r.rid})">편성</button>`}
             <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">폐기<br><small>${STATNM[top.stat]}★1×${cnt}</small></button>
           </div>`}</div>`;}).join('');
+    },
+    // 창고에서 연습생 눌러 육성 결과 다시 보기 (레이더 + 스탯 등급). 로스터에 저장된 stats 재활용
+    showRosterDetail(rid){ this.load(); const r=this.rosterById(rid); if(!r||!r.stats) return;
+      const it=this.idolTop(r.stats);
+      const sv=STATS.map(st=>({n:t(st.k==='creative'?'st_creative_short':'st_'+st.k),k:st.k,c:st.c,v:Math.round(r.stats[st.k]||0),g:grade(Math.round(r.stats[st.k]||0))}));
+      const rows=STATS.map(st=>{ const v=Math.round(r.stats[st.k]||0); return `<div style="display:flex;justify-content:space-between;padding:1px 0"><span>${st.ico} ${t('st_'+st.k)}</span><b style="color:${GRADE_COLOR[grade(v)]}">${grade(v)} · ${v}</b></div>`; }).join('');
+      const commit=this.committedRids().has(rid), cg=commit?this.groupOfRid(rid):null;
+      const tag = commit? `🏆 ${esc(cg?cg.name:'전속')}` : (this.lineupRids().indexOf(rid)>=0?'편성됨':'무소속');
+      const ov=document.getElementById('ov'); ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
+      ov.innerHTML=`<div class="ev-card" style="max-width:330px">
+        <div class="ev-title">${esc(r.name)}</div>
+        <div class="muted" style="margin:2px 0 6px">${STATNM[it.stat]}형 · ${r.grade}등급 <span style="opacity:.7">· ${tag}</span></div>
+        <canvas id="rosRadar" width="420" height="420" style="width:220px;height:220px;margin:0 auto"></canvas>
+        <div style="margin:6px 2px 12px;font-size:13px">${rows}</div>
+        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
+      try{ drawRadar(document.getElementById('rosRadar'), sv, {dark:false, big:true}); }catch(e){}
     },
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
