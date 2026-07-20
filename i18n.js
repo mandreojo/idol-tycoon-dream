@@ -14,7 +14,7 @@ window.I18N = {
     t_intro:"❓ 게임 소개",
     manual_ok:"알겠어!",
     manual_intro_title:"어떤 게임이야?",
-    manual_intro_body:"<p>넌 지금부터 신생 기획사 <b>프로듀서</b>야! <b>원석</b>을 발굴해 6가지 재능을 키우고, 라이벌과 겨뤄 최고의 스타로 키운 뒤 신인 그룹으로 데뷔시키는 육성 시뮬이지.</p><div class='mrow'><span class='mi'>🎯</span><span class='mt'>관문(데뷔·음방·월드·대상)을 하나씩 통과하며 정상을 노려봐.</span></div><div class='mrow'><span class='mi'>🎲</span><span class='mt'>매 판 다른 원석·다른 이벤트·다른 엔딩이 기다려.</span></div><div class='mrow'><span class='mi'>🌟</span><span class='mt'>어떤 전설이 태어날지는 네 선택에 달렸어.</span></div><p>자, 원석 발굴하러 가볼까?</p>",
+    manual_intro_body:"<p>넌 지금부터 신생 기획사 <b>프로듀서</b>야! <b>원석</b>을 발굴해 6가지 재능을 키우고, 대국민 서바이벌 오디션을 뚫어 신인 그룹으로 데뷔시키는 육성 시뮬이지.</p><div class='mrow'><span class='mi'>🎯</span><span class='mt'>관문(1차 오디션·예선·서바이벌·데뷔 파이널)을 통과하며 데뷔 자격을 따내.</span></div><div class='mrow'><span class='mi'>🎲</span><span class='mt'>매 판 다른 원석·다른 이벤트가 기다려.</span></div><div class='mrow'><span class='mi'>🌟</span><span class='mt'>모은 연습생으로 최고의 데뷔조를 짜는 게 목표야.</span></div><p>자, 원석 발굴하러 가볼까?</p>",
     manual_play_title:"어떻게 플레이해?",
     manual_play_body:"<div class='mrow'><span class='mi'>🎓</span><span class='mt'><b>훈련</b> — 6가지 활동으로 재능을 키워. 등급은 F부터 SS까지!</span></div><div class='mrow'><span class='mi'>⚡</span><span class='mt'><b>컨디션</b> — 낮으면 훈련 대실패가 늘어. 휴식으로 회복해.</span></div><div class='mrow'><span class='mi'>🧠</span><span class='mt'><b>멘탈</b> — 바닥나면 흔들려. 멘탈 케어로 챙겨줘.</span></div><div class='mrow'><span class='mi'>🎲</span><span class='mt'><b>이벤트</b> — 갈림길 선택이 팬과 스탯을 좌우해. 리스크를 노려볼까?</span></div><div class='mrow'><span class='mi'>🏆</span><span class='mt'><b>관문</b> — 라이벌과 순위 대결. 통과해야 다음 단계로!</span></div><p>💡 한 재능만 파도, 고루 키워도 좋아. 나만의 스타를 만들어봐!</p>",
     // 선택 화면
