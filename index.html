@@ -600,6 +600,24 @@
     <button class="btn" onclick="DG.saveAgencyFromUI()" style="margin-top:12px">저장 →</button>
   </section>
 
+  <!-- 데뷔 세리머니 -->
+  <section class="screen" id="s-debut">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2>🎬 데뷔 세리머니</h2>
+    </div>
+    <div style="text-align:center;font-size:24px;font-weight:800;color:#ec3a5c;margin:6px 0">🎉 데뷔 확정!</div>
+    <p class="muted" style="margin:2px 0 12px;text-align:center">대국민 서바이벌을 뚫은 최종 데뷔조.<br>그룹 이름과 로고를 지어 데뷔시키자.</p>
+    <div id="debutMembers" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:6px"></div>
+    <div style="text-align:center;margin:14px 0 6px">
+      <label class="ag-logo" id="dbLogo"><input type="file" accept="image/*" id="dbFile" hidden onchange="DG.debutPhoto(event)"><span id="dbLogoView">🏢</span></label>
+      <div class="muted" style="font-size:12px;margin-top:4px">그룹 로고 · 탭해서 사진 올리기 · 또는 아래에서 고르기</div>
+    </div>
+    <div class="ag-emojis" id="dbEmojis"></div>
+    <input class="srch" id="dbGroupName" placeholder="그룹 이름 (예: STELLAR, 최대 14자)" maxlength="14" style="margin-top:12px">
+    <button class="btn" onclick="DG.confirmDebut()" style="margin-top:12px">🎬 데뷔 시키기!</button>
+  </section>
+
   <!-- 연습생 창고 -->
   <section class="screen" id="s-roster">
     <div class="sub-head">
@@ -2261,7 +2279,7 @@ function roundRect(x,rx,ry,w,h,r){ x.beginPath();
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
-  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-roster"||id==="s-assign"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"){ try{ history.pushState({scr:id},""); }catch(e){} }}
 function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
 function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
   s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
@@ -2458,7 +2476,7 @@ window.addEventListener("popstate", ()=>{
     return;
   }
   // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
-  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go()};
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go()};
   const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
   if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
     if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
@@ -2665,9 +2683,9 @@ window.addEventListener("popstate", ()=>{
       return {ok:true, card:CARDS[cardType].nm, cnt}; },
 
     // ===== 그룹 데뷔(저장) = 프리셋 스냅샷. 멤버는 전속 확정, 현 편성버퍼는 비워 새 데뷔조 시작 =====
-    debutGroup(name){ this.load(); const gi=this.groupInfo(); if(gi.n<2) return {err:'few'};
+    debutGroup(name, logo){ this.load(); const gi=this.groupInfo(); if(gi.n<2) return {err:'few'};
       const lineup={}; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id]) lineup[p.id]=this.data.lineup[p.id]; });
-      const g={gid:++this.data.groupSeq, name:(name||this.groupName()).slice(0,14), logo:this.agency().logo,
+      const g={gid:++this.data.groupSeq, name:(name||this.groupName()).slice(0,14), logo:logo||this.agency().logo,
                lineup, grade:gi.grade, sum:gi.sum, n:gi.n, savedAt:Date.now()};
       this.data.groups.push(g); this.data.lineup={}; this.persist(); return {ok:true, g}; },
 
@@ -2841,11 +2859,47 @@ window.addEventListener("popstate", ()=>{
     },
     doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 폐기하고 카드로 바꿀까?`))return; const res=this.discard(rid); if(res.ok) toast(`폐기 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
+    // 데뷔 = 전용 세리머니 화면(그룹명·로고 짓기). 기존 prompt 1줄 → s-debut 승격.
     doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
-      const nm=(prompt('데뷔할 그룹 이름을 정해줘 (최대 14자)', this.groupName())||'').trim().slice(0,14);
-      if(!nm) return;
-      const r=this.debutGroup(nm); if(r.err){ toast('데뷔할 수 없어'); return; }
-      toast(`🎉 ${nm} 데뷔! 멤버 ${r.g.n}명 전속 확정`); this.renderOffice();
+      this.renderDebut(); show('s-debut');
+    },
+    _debutLogo:'🏢',
+    renderDebut(){ this.load();
+      this._debutLogo=this.agency().logo||'🏢';
+      // 편성 멤버 미리보기 (포지션 순)
+      const mem=POSITIONS.map(p=>{ const rid=this.data.lineup[p.id]; if(!rid) return null;
+        const r=this.rosterById(rid); if(!r) return null;
+        const av=r.img?`style="background-image:url('${r.img}')"`:'';
+        return `<div style="width:84px;text-align:center"><span class="dg-av" ${av} style="margin:0 auto">${r.img?'':'🎤'}</span>
+          <div class="dg-nm" style="margin-top:3px">${esc(r.name)}</div><div class="muted" style="font-size:11px">${ICO[p.stat]} ${p.nm}</div></div>`;
+      }).filter(Boolean).join('');
+      const box=document.getElementById('debutMembers'); if(box) box.innerHTML=mem;
+      // 그룹명 기본값 (편성버퍼 이름이 기본이면 비움)
+      const gn=document.getElementById('dbGroupName'); if(gn) gn.value=(this.data.groupName&&this.data.groupName!=='우리 데뷔조')?this.data.groupName:'';
+      this.renderDebutLogo();
+      const EMO=['🏢','🏯','🎪','🌟','🎬','🎤','🎧','🎹','🔥','💎','👑','🌈','🍀','🐣','🐰','🦆','🚀','🎯'];
+      const eb=document.getElementById('dbEmojis'); if(eb) eb.innerHTML=EMO.map(e=>
+        `<button class="ag-emo${this._debutLogo===e?' on':''}" onclick="DG.pickDebutLogo('${e}')">${e}</button>`).join('');
+    },
+    renderDebutLogo(){ const v=document.getElementById('dbLogoView'); if(v) v.innerHTML=this.logoHtml(this._debutLogo,84); },
+    pickDebutLogo(e){ this._debutLogo=e; this.renderDebutLogo();
+      document.querySelectorAll('#dbEmojis .ag-emo').forEach(b=>b.classList.toggle('on', b.textContent===e)); },
+    debutPhoto(ev){ const f=ev.target.files&&ev.target.files[0]; if(!f) return;
+      const rd=new FileReader(); rd.onload=e=>{ const img=new Image();
+        img.onload=()=>{ const S=220,cv=document.createElement('canvas'); cv.width=S;cv.height=S;
+          const x=cv.getContext('2d'),m=Math.min(img.width,img.height);
+          x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
+          this._debutLogo=cv.toDataURL('image/jpeg',0.82); this.renderDebutLogo();
+          document.querySelectorAll('#dbEmojis .ag-emo.on').forEach(b=>b.classList.remove('on')); };
+        img.src=e.target.result; }; rd.readAsDataURL(f); },
+    confirmDebut(){ this.load();
+      const nm=(((document.getElementById('dbGroupName')||{}).value)||'').trim().slice(0,14);
+      if(!nm){ toast('그룹 이름을 지어줘'); return; }
+      const r=this.debutGroup(nm, this._debutLogo); if(r.err){ toast('데뷔할 수 없어'); return; }
+      try{ Game.confetti(60,true); }catch(e){}
+      try{ sfx('win'); }catch(e){}
+      toast(`🎉 ${nm} 데뷔! 멤버 ${r.g.n}명 전속 확정`);
+      this.renderOffice(); show('s-office');
     },
     // 저장된 그룹 카드 공유: 현 편성버퍼를 잠시 그룹으로 스왑 후 카드 생성, 끝나면 복구
     shareSavedGroup(gid){ const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return;
