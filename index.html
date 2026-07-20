@@ -268,6 +268,15 @@
   .lb-row .who{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lb-row .who small{color:var(--sub)}
   .lb-row .sc{font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+  /* 데뷔조 순위전 */
+  .lb{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .lg-head{background:linear-gradient(135deg,#fff,var(--panel2));border:1px solid var(--line);border-radius:18px;padding:16px 14px;text-align:center;box-shadow:0 8px 22px -12px rgba(236,58,92,.35)}
+  .lg-tier-ic{font-size:42px;line-height:1}
+  .lg-tier-nm{font-size:20px;font-weight:800;margin-top:5px}
+  .lg-tier-sub{color:var(--sub);font-size:12.5px;margin-top:4px;line-height:1.5}
+  .lg-rank-badge{display:inline-block;margin-top:10px;background:var(--accent);color:#fff;font-weight:800;font-size:13.5px;padding:5px 14px;border-radius:999px}
+  .lb-row .lg-logo{margin-right:2px}
+  .lb-row .who small{margin-left:5px}
   input.name{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
     color:var(--txt);padding:12px 14px;font-size:16px;margin-top:12px}
   .center{text-align:center}
@@ -510,10 +519,13 @@
     <button class="btn" onclick="DG.go()">🏢 우리 기획사</button>
     <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">연습생 발굴 →</button>
     <div style="display:flex;gap:9px;margin-top:9px">
-      <button class="btn ghost" style="flex:1" onclick="DG.showGroupDex()">📖 그룹 도감</button>
-      <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏆 명예의 전당</button>
+      <button class="btn ghost" style="flex:1" onclick="DG.showLeague()" data-i18n="t_league">🏆 데뷔조 순위전</button>
+      <button class="btn ghost" style="flex:1" onclick="DG.showGroupDex()" data-i18n="t_groupdex">📖 그룹 도감</button>
     </div>
-    <button class="btn ghost" style="margin-top:9px" onclick="Game.showManual('intro')" data-i18n="t_intro">❓ 게임 소개</button>
+    <div style="display:flex;gap:9px;margin-top:9px">
+      <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏅 명예의 전당</button>
+      <button class="btn ghost" style="flex:1" onclick="Game.showManual('intro')" data-i18n="t_intro">❓ 게임 소개</button>
+    </div>
     <div class="spacer"></div>
   </section>
 
@@ -724,6 +736,19 @@
     <div class="spacer" style="max-height:12px"></div>
   </section>
 
+  <!-- 데뷔조 순위전 (그룹 리더보드) -->
+  <section class="screen" id="s-league">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <h2 data-i18n="lg_title">🏆 데뷔조 순위전</h2>
+    </div>
+    <div id="leagueHead"></div>
+    <p class="muted" style="margin:2px 2px 9px" id="leagueNote"></p>
+    <div class="lb" id="leagueBoard"></div>
+    <button class="btn ghost" style="margin-top:14px" onclick="DG.go()" data-i18n="lg_to_office">🏢 기획사로</button>
+    <div class="spacer" style="max-height:12px"></div>
+  </section>
+
   <div class="ov" id="ov"></div>
   <div class="manual" id="manual" onclick="Game.closeManual(event)">
     <div class="manual-card" onclick="event.stopPropagation()">
@@ -740,7 +765,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f1"></script>
+<script src="i18n.js?v=20260720f2"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -2369,7 +2394,7 @@ function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
-  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"){ try{ history.pushState({scr:id},""); }catch(e){} }}
 function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
 function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
   s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
@@ -2566,7 +2591,7 @@ window.addEventListener("popstate", ()=>{
     return;
   }
   // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
-  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go()};
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>DG.go()};
   const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
   if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
     if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
@@ -3018,6 +3043,7 @@ window.addEventListener("popstate", ()=>{
       const nm=(((document.getElementById('dbGroupName')||{}).value)||'').trim().slice(0,14);
       if(!nm){ toast('그룹 이름을 지어줘'); return; }
       const r=this.debutGroup(nm, this._debutLogo); if(r.err){ toast('데뷔할 수 없어'); return; }
+      this.submitGroup(r.g);   // 순위전 서버 등록(규칙 열리면 전국 공유, 지금은 조용히 실패)
       try{ Game.confetti(60,true); }catch(e){}
       try{ sfx('win'); }catch(e){}
       toast(`🎉 ${nm} 데뷔! 멤버 ${r.g.n}명 전속 확정`);
@@ -3136,6 +3162,87 @@ window.addEventListener("popstate", ()=>{
     agency(){ return this.data.agency || {name:'우리 기획사', logo:'🏢'}; },
     logoHtml(logo, px){ px=px||26; return (logo&&logo.indexOf('data:')===0)
       ? `<img src="${logo}" style="width:${px}px;height:${px}px;border-radius:50%;object-fit:cover;vertical-align:middle">` : (logo||'🏢'); },
+
+    // ===== 데뷔조 순위전 (그룹 리더보드) — 서버(group_board) 우선 + 로컬 시드 폴백 =====
+    // ⚠️ 서버 공유는 Firestore 규칙에 group_board 쓰기 허용 추가해야 켜짐(현재 403 → 자동 로컬 폴백).
+    LEAGUE_TIERS: [
+      {min:0,    ic:'🥉', nm:'브론즈'},
+      {min:1200, ic:'🥈', nm:'실버'},
+      {min:2000, ic:'🥇', nm:'골드'},
+      {min:2800, ic:'💠', nm:'플래티넘'},
+      {min:3600, ic:'💎', nm:'다이아몬드'},
+    ],
+    groupScore(g){ return Math.round(g.sum||0); },   // ⚠️임시(내일 밸런싱): 멤버 posScore 합
+    tierOf(sc){ let t=this.LEAGUE_TIERS[0]; for(const x of this.LEAGUE_TIERS){ if(sc>=x.min)t=x; } return t; },
+    // 시드 라이벌 그룹(서버 규칙 열리기 전 로컬 순위 체감용). 첫 생성 후 고정.
+    _leagueSeed(){
+      let s=null; try{ s=JSON.parse(localStorage.getItem('dg_league_seed')||'null'); }catch(e){}
+      if(!Array.isArray(s)||!s.length){
+        const base=[4300,3750,3200,2850,2500,2150,1850,1550,1300,1050];   // RIVAL_POOL 10개와 1:1(이름 중복 방지)
+        s=base.map((sc,i)=>({name:RIVAL_POOL[i]+' 프로젝트', logo:RIVAL_EMOJI[i]||'🎤', score:sc, n:5+((i*3)%5), seed:true}));
+        try{ localStorage.setItem('dg_league_seed', JSON.stringify(s)); }catch(e){}
+      }
+      return s;
+    },
+    async fetchGroupBoard(){
+      try{
+        const q={structuredQuery:{from:[{collectionId:"group_board"}],
+          orderBy:[{field:{fieldPath:"score"},direction:"DESCENDING"}], limit:50}};
+        const res=await fetch(`${FS_BASE}:runQuery?key=${FB_KEY}`,
+          {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(q)});
+        if(res.ok){ const arr=await res.json();
+          const list=(arr||[]).filter(x=>x.document).map(x=>{ const f=x.document.fields||{};
+            const g=k=>{ const c=f[k]; if(!c)return ""; return c.stringValue!=null?c.stringValue:(c.integerValue!=null?+c.integerValue:0); };
+            return {name:g("name"), logo:g("emoji")||"🎤", score:+g("score")||0, n:+g("n")||0, server:true}; });
+          this._leagueServer=true; return list;
+        }
+      }catch(e){}
+      this._leagueServer=false; return null;
+    },
+    submitGroup(g){   // 서버 규칙 열리면 자동 공유(fire&forget). 지금은 403이라 조용히 실패 → 로컬 표시로 충분.
+      if(!g) return;
+      try{
+        const body={fields:{name:fsStr(g.name), emoji:fsStr(g.logo||'🎤'),
+          score:{integerValue:String(this.groupScore(g))}, n:{integerValue:String(g.n||0)},
+          agency:fsStr((this.agency&&this.agency().name)||''), lang:fsStr(window.LANG||'ko')}};
+        fetch(`${FS_BASE}/group_board?key=${FB_KEY}`,
+          {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).catch(()=>{});
+      }catch(e){}
+    },
+    showLeague(){ this.load(); show('s-league'); this.renderLeague(); this.fetchGroupBoard().then(list=>this.renderLeague(list)); },
+    renderLeague(serverList){
+      this.load();
+      const mine=(this.data.groups||[]).map(g=>({name:g.name, logo:g.logo||'🎤', score:this.groupScore(g), n:g.n||0, me:true}));
+      const others=(Array.isArray(serverList)&&serverList.length)? serverList : this._leagueSeed();
+      const board=others.concat(mine).sort((a,b)=>b.score-a.score);
+      const myBest = mine.length? mine.reduce((a,b)=>b.score>a.score?b:a) : null;
+      const head=document.getElementById('leagueHead');
+      if(head){
+        if(myBest){
+          const tier=this.tierOf(myBest.score);
+          const rank=board.findIndex(r=>r===myBest)+1;
+          head.innerHTML=`<div class="lg-head">
+            <div class="lg-tier-ic">${tier.ic}</div><div class="lg-tier-nm">${esc(tier.nm)}</div>
+            <div class="lg-tier-sub">${this.logoHtml(myBest.logo,20)} ${esc(myBest.name)} · ${myBest.score.toLocaleString()}점 · ${myBest.n}/9명</div>
+            <div class="lg-rank-badge">${t("lg_rank",{r:rank})}</div></div>`;
+        } else {
+          head.innerHTML=`<div class="lg-head"><div class="lg-tier-ic">🎬</div>
+            <div class="lg-tier-nm">${t("lg_none_t")}</div>
+            <div class="lg-tier-sub">${t("lg_none_d")}</div></div>`;
+        }
+      }
+      const box=document.getElementById('leagueBoard');
+      if(box){
+        box.innerHTML=board.slice(0,30).map((r,i)=>{
+          const medal=["🥇","🥈","🥉"][i]||`${i+1}`;
+          return `<div class="lb-row ${r.me?'me':''}"><span class="r">${medal}</span>
+            <span class="who"><span class="lg-logo">${this.logoHtml(r.logo,24)}</span> ${esc(r.name)}${r.me?' <b style="color:var(--accent)">·'+t("lg_me")+'</b>':''}<small>${r.n}/9</small></span>
+            <span class="sc">${r.score.toLocaleString()}</span></div>`;
+        }).join("");
+      }
+      const note=document.getElementById('leagueNote');
+      if(note) note.textContent = this._leagueServer ? t("lg_note_server") : t("lg_note_local");
+    },
     editAgency(){ this.renderAgency(); show('s-agency'); },
     exitAgency(){ this.load(); if(this.data.agency) this.go(); else Game.reset(); },   // 첫 설정 중이면 타이틀로
     groupName(){ return (this.data && this.data.groupName) || '우리 데뷔조'; },
