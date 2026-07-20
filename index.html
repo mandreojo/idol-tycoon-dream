@@ -72,6 +72,8 @@
     box-shadow:0 10px 26px -6px rgba(236,58,92,.6);
     transition:transform .28s cubic-bezier(.2,.9,.3,1.3),opacity .2s}
   .startfab.hide{opacity:0;transform:translateX(-50%) translateY(24px);pointer-events:none}
+  .fast-fab{bottom:74px;background:#fff;color:#ec3a5c;border:1.5px solid #ec3a5c;box-shadow:0 8px 20px -8px rgba(236,58,92,.4)}
+  .fast-fab.hide{transform:translateX(-50%) translateY(24px)}
   .srch{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
     color:var(--txt);padding:12px 14px;font-size:15px;margin-bottom:10px;-webkit-appearance:none}
   .srch:focus{outline:none;border-color:var(--accent)}
@@ -548,6 +550,7 @@
       <div class="specpick" id="specPick"></div>
     </div>
 
+    <button class="btn ghost startfab fast-fab hide" id="fastBtn" onclick="Game.fastRun()">⚡ 빠른 육성 — 재료 바로 뽑기</button>
     <button class="btn startfab hide" id="startBtn" disabled onclick="DG.toCardPick()" data-i18n="sel_start">육성 시작 →</button>
   </section>
 
@@ -1204,6 +1207,10 @@ const Game = {
         : this.selIdol.name;
       btn.textContent=t("sel_start_named",{name:nm});
     } else btn.textContent=t("sel_start");
+    // 빠른 육성: 캐릭터 준비됨 + 로스터에 완주 연습생이 있을 때만(첫 육성은 24턴 풀=온보딩)
+    const fb=document.getElementById("fastBtn");
+    if(fb){ let hasRoster=false; try{ DG.load(); hasRoster=(DG.data.roster||[]).length>0; }catch(e){}
+      fb.classList.toggle("hide", !(ready && hasRoster)); }
   },
   start(){
     let idol;
@@ -1224,6 +1231,34 @@ const Game = {
     this.cutscene({act:t("cs_act1"), emoji:"🎬", title:t("cs1_title"), sub:t("cs1_sub"),
       talk:t("cs1_talk",{name:idolName(idol)})},
       ()=>{ show("s-play"); this.startWeek(); this.armBackGuard(); toast(t("start_toast",{name:idolName(idol)})); });
+  },
+  // D-4 빠른 육성: 첫 육성(24턴 풀)을 겪은 뒤 언락. 캐릭터만 고르면 자동으로 완주까지 굴려 '재료'를 바로 뽑음.
+  //   수동 육성처럼 st를 세팅하되 24턴 플레이를 자동 성장으로 대체 → finish로 점프(결과화면·로스터 합류 재활용).
+  //   ⚠️성장/통과 수치는 임시(밸런싱=맨 마지막). 지금은 구조/UX 검증용.
+  fastRun(){
+    let idol;
+    if(this.curMode==="custom"){
+      const nm=(document.getElementById("customName").value||t("my_idol")).trim().slice(0,10) || t("my_idol");
+      if(!this.customSpec) return;
+      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); return; } }catch(e){}
+      idol={id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
+    } else { idol=this.selIdol; if(!idol) return; }
+    const {base}=talentOf(idol.spec);
+    this.st={idol, ...base, cond:70, mental:70, fans:0, week:TOTAL_W, busy:false, log:[]};
+    DG.applyEquipped(this.st);        // 장착 육성카드 시작 보정 재활용
+    this._fastGrow();
+    const s=this.st;
+    const total=STATS.reduce((a,st)=>a+s[st.k],0), peak=Math.max(...STATS.map(st=>s[st.k]));
+    const reachedWorld = total>=1100 || peak>=400;                 // 재료 생산이니 웬만하면 데뷔 자격 통과
+    const finalRank = reachedWorld ? (peak>=580?1 : peak>=460?2 : 3) : null;
+    this.clearSave();
+    this.resultLoading(()=>this.finish(reachedWorld, finalRank));
+  },
+  _fastGrow(){
+    const s=this.st, spec=s.idol.spec;
+    STATS.forEach(st=>{ const g=(st.k===spec)?300+Math.random()*250:90+Math.random()*190;
+      s[st.k]=Math.round((s[st.k]||0)+g); });
+    s.cond=70; s.mental=70;
   },
   actName(w){ return w<=DEBUT_W?t("act_debut"):w<=Math.round(TOTAL_W*0.72)?t("act_domestic"):t("act_world"); },
   // 다음 관문 돌파 예상(runCompet/debutJudge 공식에서 랜덤 뺀 기대치 vs 기준선). 스탯 변할 때마다 실시간 갱신.
@@ -1757,15 +1792,18 @@ const Game = {
     const raw=this._endingRaw(reachedWorld, finalRank);
     const s=this.st;
     const arr=STATS.map(st=>({...st, v:s[st.k]})).sort((a,b)=>b.v-a.v);
-    const topE=arr[0], gapE=topE.v-arr[1].v, minE=arr[arr.length-1].v;
+    const gapE=arr[0].v-arr[1].v, minE=arr[arr.length-1].v;
     const total=arr.reduce((a,b)=>a+b.v,0);
     const overall=grade(Math.round(total/STATS.length));
     const allround = gapE<120 && minE>=230;                        // 고르게 성장 = 올라운더
-    const stName = topE.k==='creative' ? t('st_creative_short') : t('st_'+topE.k);
+    // 대표 스탯·등급은 DG.idolTop(포지션 적합도) 기준 = 로스터에 저장되는 재료 등급과 100% 일치
+    let topK=arr[0].k, topScore=arr[0].v;
+    try{ const so={}; STATS.forEach(st=>so[st.k]=Math.round(s[st.k])); const it=DG.idolTop(so); topK=it.stat; topScore=it.score; }catch(e){}
+    const stObj=STATS.find(x=>x.k===topK)||STATS[0];
+    const stName = topK==='creative' ? t('st_creative_short') : t('st_'+topK);
     const typeName = allround ? '올라운더' : stName+'형';
-    const typeEmoji = allround ? '🌈' : topE.ico;
-    // 등급: 올라운더=종합, 특화형=대표스탯 등급(로스터 재료 등급과 일치)
-    const gradeLabel = allround ? overall : grade(topE.v);
+    const typeEmoji = allround ? '🌈' : stObj.ico;
+    const gradeLabel = allround ? overall : grade(topScore);       // idolTop.score 기반 = 로스터 등급과 일치
     return {...raw, name:`${typeName} · ${gradeLabel}등급`, emoji:typeEmoji};
   },
   _endingRaw(reachedWorld, finalRank){
