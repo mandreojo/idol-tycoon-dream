@@ -65,15 +65,27 @@
   .seg{flex:1;appearance:none;border:1px solid var(--line);border-radius:12px;padding:11px 8px;
     background:var(--panel);color:var(--sub);font-size:14px;font-weight:700;cursor:pointer;transition:.1s}
   .seg.on{background:var(--panel2);color:var(--txt);border-color:var(--accent)}
-  .modebox{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:78px}
+  .modebox{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:150px}
   /* 플로팅 시작 버튼 */
   .startfab{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
     width:calc(100% - 32px);max-width:448px;z-index:26;
     box-shadow:0 10px 26px -6px rgba(236,58,92,.6);
     transition:transform .28s cubic-bezier(.2,.9,.3,1.3),opacity .2s}
   .startfab.hide{opacity:0;transform:translateX(-50%) translateY(24px);pointer-events:none}
-  .fast-fab{bottom:96px;background:#fff;color:#ec3a5c;border:1.5px solid #ec3a5c;box-shadow:0 8px 20px -8px rgba(236,58,92,.4)}
-  .fast-fab.hide{transform:translateX(-50%) translateY(24px)}
+  /* 하단 도크: 육성 방식 세그(정식/간이) + 시작 버튼을 세로로 묶음. 세그는 토글이라 오탭해도 모드만 바뀜(화면전환 X) → 실행버튼 1개로 오탭 근본차단 */
+  .startdock{display:flex;flex-direction:column;gap:9px;padding:11px;border-radius:20px;
+    background:var(--panel);border:1px solid var(--line);box-shadow:0 14px 34px -8px rgba(236,58,92,.42)}
+  .startdock .btn{width:100%;box-shadow:0 6px 18px -6px rgba(236,58,92,.5)}
+  .modeseg{display:flex;gap:8px}
+  .mseg{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.22;
+    border:1.5px solid var(--line);border-radius:12px;padding:8px 6px;
+    background:var(--panel2);color:var(--sub);cursor:pointer;transition:.12s}
+  .mseg b{font-size:13.5px;font-weight:800;color:var(--txt)}
+  .mseg small{font-size:10.5px;opacity:.72}
+  .mseg.on{background:var(--panel);border-color:var(--accent);box-shadow:0 4px 14px -6px rgba(236,58,92,.5)}
+  .mseg.on b{color:var(--accent)}
+  .mseg:disabled{opacity:.5;cursor:not-allowed}
+  .mseg:disabled b{color:var(--sub)}
   .srch{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
     color:var(--txt);padding:12px 14px;font-size:15px;margin-bottom:10px;-webkit-appearance:none}
   .srch:focus{outline:none;border-color:var(--accent)}
@@ -550,8 +562,17 @@
       <div class="specpick" id="specPick"></div>
     </div>
 
-    <button class="btn ghost startfab fast-fab hide" id="fastBtn" onclick="Game.fastRun()">⚡ 빠른 육성 — 재료 바로 뽑기</button>
-    <button class="btn startfab hide" id="startBtn" disabled onclick="DG.toCardPick()" data-i18n="sel_start">육성 시작 →</button>
+    <div class="startfab startdock hide" id="startDock">
+      <div class="modeseg">
+        <button class="mseg on" id="mseg-full" onclick="Game.setTrainMode('full')">
+          <b data-i18n="mode_full">정식 육성</b><small data-i18n="mode_full_sub">24턴 · 정공법</small>
+        </button>
+        <button class="mseg" id="mseg-quick" onclick="Game.setTrainMode('quick')">
+          <b data-i18n="mode_quick">간이 육성</b><small id="msegQuickSub" data-i18n="mode_quick_lock">완주하면 열려</small>
+        </button>
+      </div>
+      <button class="btn" id="startBtn" disabled onclick="DG.toCardPick()" data-i18n="sel_start">육성 시작 →</button>
+    </div>
   </section>
 
   <!-- 육성카드 선택 (캐릭터 선택 다음 단계) -->
@@ -719,7 +740,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f"></script>
+<script src="i18n.js?v=20260720f1"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -1084,16 +1105,36 @@ const RIVAL_EMOJI = ["💫","⚡","🌙","🥀","🌸","🔮","🌌","🖤","✴
 //   ※ 연말 시상식(대상)은 1년에 한 번 → 52주에만. 36주는 '월드 진출 심사'이지 대상 아님.
 const AWARD_PEAK_K = 0.34;   // 시상식에서 원톱 스탯 반영 계수(낮을수록 몰빵 불리)
 // ===== 턴/관문 스케줄 (드림그룹 프로토) =====
-// ⚡ 24턴 = 월2턴(초/말)×12개월. 관문은 분기(3·6·9·12월말)에 배치 → 6·12·18·24턴 균등.
-//    데뷔심사(6) → 음방1위 국내무대(12) → 월드진출 쇼케이스(18,gate=1위만 월드) → 연말 글로벌대상(24,final).
-//    ⚠️ base(라이벌 기준선)는 초기 추정값 — 플레이 피드백으로 세밀 튜닝 예정(gatesim 미도입).
-const TOTAL_W = 24;   // 총 턴 수
-const DEBUT_W = 6;    // 데뷔 심사 턴
-const COMPETS = {
-  12:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:140},
-  18:{type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:210},
-  24:{type:"award", emoji:"👑", tk:"cp_t_52", base:280, final:true},
+// ⚡ full=24턴(월2턴×12개월), 관문 6·12·18·24 균등 → 1차오디션(6)·예선무대(12)·서바이벌(18,gate)·데뷔파이널(24,final).
+//    quick(간이)=12턴, 관문 3·6·9·12(= full의 정확히 절반). 성장률은 그대로 두고 턴만 절반이라
+//    완주 스탯·재료등급이 자연히 낮음(정식과 트레이드오프 — 가속 아님). 그래서 관문 base·debutCut도 절반.
+//    ⚠️ base(라이벌 기준선)·debutCut은 초기 추정값 — 플레이 피드백으로 세밀 튜닝 예정(gatesim 미도입).
+const SCHEDULES = {
+  full: {
+    total:24, debut:6,
+    debutCut:{total:340, peak:150, min:100},
+    milestones:[{w:6,k:"ms_debut"},{w:12,k:"ms_music1"},{w:18,k:"ms_award"},{w:24,k:"ms_global_award"}],
+    compets:{
+      12:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:140},
+      18:{type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:210},
+      24:{type:"award", emoji:"👑", tk:"cp_t_52", base:280, final:true},
+    },
+  },
+  quick: {
+    total:12, debut:3,
+    debutCut:{total:170, peak:80, min:55},
+    milestones:[{w:3,k:"ms_debut"},{w:6,k:"ms_music1"},{w:9,k:"ms_award"},{w:12,k:"ms_global_award"}],
+    compets:{
+      6: {type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:70},
+      9: {type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:105},
+      12:{type:"award", emoji:"👑", tk:"cp_t_52", base:140, final:true},
+    },
+  },
 };
+// 하위호환: 전역 상수는 full 프로파일을 가리킴(st 없는 경로·초기 렌더·옛 세이브 안전)
+const TOTAL_W = SCHEDULES.full.total;
+const DEBUT_W = SCHEDULES.full.debut;
+const COMPETS = SCHEDULES.full.compets;
 
 // ===== 엔딩 도감 (반복 플레이 훅) =====
 const ENDING_DEX=[
@@ -1121,7 +1162,7 @@ function dexIdOf(end){ if(end.emoji==="🎭") return end.tier==="C"?"local":"sta
   return DEX_BY_EMOJI[end.emoji]||"local"; }
 
 const Game = {
-  st:null, lastResult:null, selIdol:null, curMode:"search", customSpec:null, customImg:null, customGender:"F",
+  st:null, lastResult:null, selIdol:null, curMode:"search", trainMode:"full", customSpec:null, customImg:null, customGender:"F",
 
   goSelect(){
     this.selIdol=null; this.customImg=null; this.customSpec=null; this.customGender="F";
@@ -1195,80 +1236,72 @@ const Game = {
   customValidate(){ this.updateStartFab(); },
   // 플로팅 시작 버튼: 선택되면 하단에 떠오르고, 선택된 이름 표시
   updateStartFab(){
-    const btn=document.getElementById("startBtn");
+    const btn=document.getElementById("startBtn"), dock=document.getElementById("startDock");
     const ready = this.curMode==="custom"
       ? !!((document.getElementById("customName").value||"").trim() && this.customSpec)
       : !!this.selIdol;
     btn.disabled=!ready;
-    btn.classList.toggle("hide", !ready);
+    if(dock) dock.classList.toggle("hide", !ready);   // 도크 전체(세그+시작버튼) 노출은 캐릭터 준비되면
     if(ready){
       const nm = this.curMode==="custom"
         ? ((document.getElementById("customName").value||t("my_idol")).trim()||t("my_idol"))
         : this.selIdol.name;
       btn.textContent=t("sel_start_named",{name:nm});
     } else btn.textContent=t("sel_start");
-    // 빠른 육성: 캐릭터 준비됨 + 로스터에 완주 연습생이 있을 때만(첫 육성은 24턴 풀=온보딩)
-    const fb=document.getElementById("fastBtn");
-    if(fb){ let hasRoster=false; try{ DG.load(); hasRoster=(DG.data.roster||[]).length>0; }catch(e){}
-      fb.classList.toggle("hide", !(ready && hasRoster)); }
+    // 육성 방식 세그: 로스터에 완주 연습생 있으면 '간이(12턴)' 언락(첫 육성은 24턴 풀=온보딩)
+    let hasRoster=false; try{ DG.load(); hasRoster=(DG.data.roster||[]).length>0; }catch(e){}
+    if(!hasRoster && this.trainMode==="quick") this.trainMode="full";   // 잠긴 모드 선택 잔존 방지
+    const q=document.getElementById("mseg-quick"), qsub=document.getElementById("msegQuickSub");
+    if(q){ q.disabled=!hasRoster; if(qsub) qsub.textContent = hasRoster ? t("mode_quick_sub") : t("mode_quick_lock"); }
+    const f=document.getElementById("mseg-full"), mode=this.trainMode||"full";
+    if(f) f.classList.toggle("on", mode==="full");
+    if(q) q.classList.toggle("on", mode==="quick");
+  },
+  // 육성 방식 토글(정식 24턴 / 간이 12턴). 실행이 아니라 선택 → 오탭해도 화면전환 없음.
+  setTrainMode(m){
+    if(m==="quick"){ let has=false; try{ DG.load(); has=(DG.data.roster||[]).length>0; }catch(e){}
+      if(!has){ toast(t("mode_quick_locktoast")); return; } }
+    this.trainMode=m; sfx("click");
+    this.updateStartFab();
   },
   start(){
-    let idol;
-    if(this.curMode==="custom"){
-      const nm=(document.getElementById("customName").value||t("my_idol")).trim().slice(0,10) || t("my_idol");
-      if(!this.customSpec) return;
-      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); show("s-select"); return; } }catch(e){}
-      idol={id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
-    } else {
-      idol=this.selIdol; if(!idol) return;
-    }
+    const idol=this._pickIdol(); if(!idol) return;
+    const mode=(this.trainMode==="quick")?"quick":"full";
     const {base} = talentOf(idol.spec);
-    this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[]};
+    this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode};   // mode=full(24턴)/quick(12턴 간이)
     DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
     this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
     this.logWeek(t("start_log",{name:esc(idolName(idol))}));
     this.save();
-    this.cutscene({act:t("cs_act1"), emoji:"🎬", title:t("cs1_title"), sub:t("cs1_sub"),
-      talk:t("cs1_talk",{name:idolName(idol)})},
-      ()=>{ show("s-play"); this.startWeek(); this.armBackGuard(); toast(t("start_toast",{name:idolName(idol)})); });
+    const go=()=>{ show("s-play"); this.startWeek(); this.armBackGuard(); toast(t("start_toast",{name:idolName(idol)})); };
+    // 간이 육성: 온보딩 컷씬 스킵하고 바로 12턴 플레이(재료 빠르게 뽑기). 정식은 오프닝 컷씬.
+    if(mode==="quick") go();
+    else this.cutscene({act:t("cs_act1"), emoji:"🎬", title:t("cs1_title"), sub:t("cs1_sub"),
+      talk:t("cs1_talk",{name:idolName(idol)})}, go);
   },
-  // D-4 빠른 육성: 첫 육성(24턴 풀)을 겪은 뒤 언락. 캐릭터만 고르면 자동으로 완주까지 굴려 '재료'를 바로 뽑음.
-  //   수동 육성처럼 st를 세팅하되 24턴 플레이를 자동 성장으로 대체 → finish로 점프(결과화면·로스터 합류 재활용).
-  //   ⚠️성장/통과 수치는 임시(밸런싱=맨 마지막). 지금은 구조/UX 검증용.
-  fastRun(){
-    let idol;
+  // 캐릭터 확정(검색/커스텀 공통). 실패 시 null(토스트/화면전환은 여기서).
+  _pickIdol(){
     if(this.curMode==="custom"){
       const nm=(document.getElementById("customName").value||t("my_idol")).trim().slice(0,10) || t("my_idol");
-      if(!this.customSpec) return;
-      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); return; } }catch(e){}
-      idol={id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
-    } else { idol=this.selIdol; if(!idol) return; }
-    const {base}=talentOf(idol.spec);
-    this.st={idol, ...base, cond:70, mental:70, fans:0, week:TOTAL_W, busy:false, log:[]};
-    DG.applyEquipped(this.st);        // 장착 육성카드 시작 보정 재활용
-    this._fastGrow();
-    const s=this.st;
-    const total=STATS.reduce((a,st)=>a+s[st.k],0), peak=Math.max(...STATS.map(st=>s[st.k]));
-    const reachedWorld = total>=1100 || peak>=400;                 // 재료 생산이니 웬만하면 데뷔 자격 통과
-    const finalRank = reachedWorld ? (peak>=580?1 : peak>=460?2 : 3) : null;
-    this.clearSave();
-    this.resultLoading(()=>this.finish(reachedWorld, finalRank));
+      if(!this.customSpec) return null;
+      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); show("s-select"); return null; } }catch(e){}
+      return {id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
+    }
+    return this.selIdol || null;
   },
-  _fastGrow(){
-    const s=this.st, spec=s.idol.spec;
-    STATS.forEach(st=>{ const g=(st.k===spec)?300+Math.random()*250:90+Math.random()*190;
-      s[st.k]=Math.round((s[st.k]||0)+g); });
-    s.cond=70; s.mental=70;
-  },
-  actName(w){ return w<=DEBUT_W?t("act_debut"):w<=Math.round(TOTAL_W*0.72)?t("act_domestic"):t("act_world"); },
+  // 현재 판(run)의 스케줄. st.mode(full/quick) 기준. st 없거나 옛 세이브면 full 폴백.
+  sch(){ return SCHEDULES[(this.st&&this.st.mode)||"full"] || SCHEDULES.full; },
+  actName(w){ const sc=this.sch(); return w<=sc.debut?t("act_debut"):w<=Math.round(sc.total*0.72)?t("act_domestic"):t("act_world"); },
   // 다음 관문 돌파 예상(runCompet/debutJudge 공식에서 랜덤 뺀 기대치 vs 기준선). 스탯 변할 때마다 실시간 갱신.
   gateForecast(s, nxw){
-    if(nxw===DEBUT_W){   // 데뷔 심사: total>=340 || peak>=150
+    const sc=this.sch();
+    if(nxw===sc.debut){   // 데뷔 심사(1차 오디션): total/peak 컷 대비
+      const cut=sc.debutCut;
       const total=STATS.reduce((a,st)=>a+s[st.k],0), peak=Math.max(...STATS.map(st=>s[st.k]));
-      const r=Math.max(total/340, peak/150);
+      const r=Math.max(total/cut.total, peak/cut.peak);
       return r>=1.12?'safe':r>=0.85?'tight':'risk';
     }
-    const c=COMPETS[nxw]; if(!c) return null;
+    const c=sc.compets[nxw]; if(!c) return null;
     let mine;
     if(c.type==="stage"){
       const f=c.field.reduce((a,k)=>a+s[k],0)/c.field.length;
@@ -1298,7 +1331,7 @@ const Game = {
     document.getElementById("pName").textContent=idolName(idol);
     document.getElementById("pChip").textContent=idolGrp(idol);
     this.setFans(s.fans);   // 팬 수 카운트업(변할 때 숫자가 굴러오며 강조)
-    document.getElementById("pWeek").textContent="턴 "+s.week+" / "+TOTAL_W;
+    document.getElementById("pWeek").textContent="턴 "+s.week+" / "+this.sch().total;
     document.getElementById("pAct").textContent=this.actName(s.week);
     // 활력 2열: 컨디션 + 멘탈 (한눈에 두 핵심 자원)
     const cond=Math.max(0,Math.round(s.cond)), mv=Math.max(0,Math.round(s.mental));
@@ -1318,7 +1351,7 @@ const Game = {
     }).join("");
     // 연습실 패널: 도트 버디 + 다음 관문 D-day + 진행바
     const sex=(idol.cat==="M")?"m":"f";
-    const MS=[{w:DEBUT_W,k:"ms_debut"},{w:12,k:"ms_music1"},{w:18,k:"ms_award"},{w:TOTAL_W,k:"ms_global_award"}];
+    const MS=this.sch().milestones;
     const nx=MS.find(m=>m.w>=s.week)||MS[MS.length-1];
     const prevW=(MS.filter(m=>m.w<nx.w).map(m=>m.w).pop())||0;
     const prog=Math.max(6,Math.min(100,Math.round((s.week-prevW)/(nx.w-prevW)*100)));
@@ -1521,10 +1554,10 @@ const Game = {
     this.save(); this.startWeek(); },
   // 주 시작: 데뷔/관문이면 바로 진행, 아니면 확률로 이벤트 → 닫으면 그 주 훈련 선택
   startWeek(){
-    const s=this.st, w=s.week;
+    const s=this.st, w=s.week, sc=this.sch();
     s.busy=false;
-    if(w===DEBUT_W){ this.render(); return this.debutJudge(); }
-    if(COMPETS[w]){ this.render(); return this.runCompet(w); }
+    if(w===sc.debut){ this.render(); return this.debutJudge(); }
+    if(sc.compets[w]){ this.render(); return this.runCompet(w); }
     this.render();
     if(w>=3 && Math.random()<0.25){ s.busy=true; this.showEvent(()=>{ s.busy=false; this.render(); }); }
   },
@@ -1593,10 +1626,10 @@ const Game = {
   },
 
   debutJudge(){
-    const s=this.st;
+    const s=this.st, cut=this.sch().debutCut;
     const total=STATS.reduce((a,st)=>a+s[st.k],0);
     const peak=Math.max(...STATS.map(st=>s[st.k]));
-    const pass = peak>=100 && (total>=340 || peak>=150);   // 올F 컷: 최소 한 스탯 F 탈출(100+) 없으면 데뷔 실패(훈련 안 하고 초기스탯·이벤트만으론 못 뚫음)
+    const pass = peak>=cut.min && (total>=cut.total || peak>=cut.peak);   // 올F 컷: 최소 한 스탯 F 탈출 없으면 데뷔 실패(훈련 안 하고 초기스탯·이벤트만으론 못 뚫음)
     const bonus = pass ? Math.round(1500+total*4) : Math.round(total*2);
     s.fans+=bonus;
     this.logWeek(pass?t("debut_pass_log"):t("debut_fail_log"));
@@ -1611,7 +1644,7 @@ const Game = {
 
   // 라이벌과 순위 대결 (필수 경쟁 이벤트)
   runCompet(week){
-    const c=COMPETS[week], s=this.st;
+    const c=this.sch().compets[week], s=this.st;
     let mine;
     if(c.type==="stage"){
       const f=c.field.reduce((a,k)=>a+s[k],0)/c.field.length;      // 무대 스탯(보컬·댄스·비주얼·끼) 평균
