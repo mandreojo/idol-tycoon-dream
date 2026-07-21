@@ -454,6 +454,10 @@
   .growth{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;
     margin-top:14px;text-align:left;box-shadow:0 4px 14px rgba(236,58,92,.08)}
   .growth h3{font-size:14px;margin:0 0 8px;color:var(--accent)}
+  .growth h3.growth-toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:0}
+  .growth h3.growth-toggle.open{margin:0 0 8px}
+  .growth-caret{font-size:11px;color:var(--sub);transition:transform .15s}
+  .growth-list{overflow:hidden}
   .growth .gl{font-size:12.5px;color:var(--sub);line-height:1.7;padding:3px 0;border-top:1px dashed var(--line)}
   .growth .gl:first-of-type{border-top:none}
   .growth .gl b{color:var(--txt)}
@@ -719,16 +723,18 @@
     <div class="endsub" id="endSub">—</div>
     <div id="radarWrap"><canvas id="radar" width="580" height="580"></canvas></div>
     <div class="ograde" id="oGrade"></div>
+    <button class="btn ghost" id="shareBtn" style="margin-top:12px" onclick="Game.shareCard()" data-i18n="share_btn">📸 이미지로 저장</button>
     <div class="growth" id="growthBox" style="display:none"></div>
     <div id="dgResult"></div>
-    <!-- 액션: 등록 → 공유 → 기획사 → 홈. 전당 랭킹(lbBox)은 결과화면선 숨김 = 홈>전설의 연습생 전용(중복 제거) -->
+    <!-- 액션: 등록 → 공유 → (기획사·다시하기 한 줄). 전당 랭킹(lbBox)은 결과화면선 숨김 = 홈>전설의 연습생 전용(중복 제거) -->
     <input class="name" id="nameInput" placeholder="이름을 남겨봐" maxlength="10" data-i18n-ph="name_ph">
     <button class="btn ghost" id="saveBtn" style="margin-top:9px" onclick="Game.saveScore()" data-i18n="save_btn">🏆 전설의 연습생 등록</button>
     <button class="btn" id="shareLinkBtn" style="margin-top:14px" onclick="Game.shareLink()" data-i18n="share_link_btn">🔗 결과 공유하기</button>
-    <button class="btn ghost" id="shareBtn" style="margin-top:9px" onclick="Game.shareCard()" data-i18n="share_btn">📸 이미지로 저장</button>
-    <button class="btn" id="dgOfficeBtn" style="margin-top:12px;display:none" onclick="DG.go()">🏢 기획사로 (드림그룹 보기)</button>
     <div class="lb" id="lbBox"></div>
-    <button class="btn ghost" id="againBtn" style="margin-top:12px" onclick="Game.reset()">홈으로</button>
+    <div class="end-btn-row" style="display:flex;gap:9px;margin-top:12px">
+      <button class="btn" id="dgOfficeBtn" style="flex:1;display:none" onclick="DG.go()">🏢 기획사</button>
+      <button class="btn ghost" id="againBtn" style="flex:1;margin:0" onclick="Game.reset()">다시 하기</button>
+    </div>
     <div class="spacer"></div>
   </section>
 
@@ -1969,8 +1975,9 @@ const Game = {
     document.getElementById("endSub").innerHTML=`${dexChip}${end.sub}<br><br>${t("end_fans",{fans:fmt(s.fans)})}`;
     document.getElementById("oGrade").innerHTML=t("end_overall",{g:overall});   // 종합 등급만(대표재능은 육각형에 있음)
     const gbox=document.getElementById("growthBox");
-    if(s.log && s.log.length){ gbox.style.display="";
-      gbox.innerHTML=`<h3>${t("end_growth_title",{name:esc(idolName(s.idol))})}</h3>`+s.log.map(l=>`<div class="gl">${l}</div>`).join(""); }
+    if(s.log && s.log.length){ gbox.style.display="";   // 기본 접힘 → 스크롤 길이 축소(재율애비). 제목 탭하면 펼침
+      gbox.innerHTML=`<h3 class="growth-toggle" onclick="Game.toggleGrowth()"><span>${t("end_growth_title",{name:esc(idolName(s.idol))})}</span><span class="growth-caret" id="growthCaret">▼</span></h3>`
+        +`<div class="growth-list" id="growthList" style="display:none">`+s.log.map(l=>`<div class="gl">${l}</div>`).join("")+`</div>`; }
     else gbox.style.display="none";
     const sharedBanner=document.getElementById("sharedBanner");
     if(shared){
@@ -2204,6 +2211,18 @@ const Game = {
         <span class="sc">${fmt(r.fans)}</span></div>`;
     }).join("");
   },
+  // 성장 서사 접기/펴기(기본 접힘) — 결과 스크롤 길이 축소
+  toggleGrowth(){ const l=document.getElementById("growthList"), c=document.getElementById("growthCaret"), h=document.querySelector("#growthBox .growth-toggle");
+    if(!l)return; const open=l.style.display!=="none"; l.style.display=open?"none":""; if(c)c.textContent=open?"▼":"▲"; if(h)h.classList.toggle("open",!open); },
+  // 전설의 연습생 등록 완료 → 순위 페이지로 유도 팝업(재율애비)
+  _afterSaveModal(local){
+    DG.confirmModal({
+      title:"🏆 전설의 연습생 등록 완료!",
+      body:(local?"이 기기에 기록했어.<br>":"명예의 전당에 이름을 올렸어!<br>")+"지금 순위를 확인하러 갈까?",
+      ok:"🏅 순위 보기", cancel:"닫기",
+      onOk:()=>Game.showBoard()
+    });
+  },
   _markSaved(){  // 버튼을 '✅ 등록 완료'로 전환·잠금 — 등록됐는지 한눈에(재율애비)
     const btn=document.getElementById("saveBtn");
     if(btn){ btn.textContent=t("save_done"); btn.disabled=true; btn.classList.add("saved-done"); }
@@ -2226,13 +2245,13 @@ const Game = {
         {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       ok=res.ok;
     }catch(e){ ok=false; }
-    if(ok){ toast(t("toast_hall_saved")); await this.fetchBoard(); this.renderBoard(r.fans); }
+    if(ok){ toast(t("toast_hall_saved")); await this.fetchBoard(); this.renderBoard(r.fans); this._afterSaveModal(false); }
     else {  // 오프라인/실패 → 이 기기에만 저장
       const lb=this.localBoard(); lb.forEach(x=>x._me=false);
       lb.push({player,name:r.name,ending:r.ending,emoji:r.emoji,fans,title:r.topTitle||"",_me:true});
       localStorage.setItem("idol_lb", JSON.stringify(lb.slice(-200)));
       this._boardServer=false; this._boardCache=lb;
-      toast(t("toast_hall_local")); this.renderBoard(r.fans);
+      toast(t("toast_hall_local")); this.renderBoard(r.fans); this._afterSaveModal(true);
     }
   },
   showBoard(){
@@ -2245,7 +2264,7 @@ const Game = {
     document.getElementById("growthBox").style.display="none";
     const rc=document.getElementById("radar").getContext("2d");
     rc.clearRect(0,0,580,580);
-    ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});
+    ["shareLinkBtn","shareBtn","nameInput","saveBtn","dgOfficeBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});   // 전당 뷰선 기획사 버튼도 숨김 → '홈으로'만
     const _lb=document.getElementById("lbBox"); if(_lb)_lb.style.display="";   // 전당(전설의 연습생) 뷰에선 랭킹 표시(결과화면서 숨겨졌을 수 있음)
     const _dg=document.getElementById("dgResult"); if(_dg)_dg.style.display="none";   // 이전 결과의 칭호·카드 섹션 잔존 제거
     const abtn=document.getElementById("againBtn");
@@ -3116,7 +3135,8 @@ window.addEventListener("popstate", ()=>{
       try{ toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어'); }catch(e){}
     },
     // 열린 포지션 집합 = 명시적으로 연 것(openPos) + 채운 자리(항상) + 최소 2칸. 순서 아닌 '선택'식
-    openSlotSet(){ const s=new Set(this.data.openPos||[]);
+    openSlotSet(){ const valid=new Set(POSITIONS.map(p=>p.id));   // 개편 전 옛 포지션 id(visual/charm 등) 유령 제거 → size 부풀림·자리추가 오차단 방지
+      const s=new Set((this.data.openPos||[]).filter(id=>valid.has(id)));
       POSITIONS.forEach(p=>{ if(this.data.lineup[p.id]) s.add(p.id); });
       for(const p of POSITIONS){ if(s.size>=2) break; s.add(p.id); }
       return s; },
