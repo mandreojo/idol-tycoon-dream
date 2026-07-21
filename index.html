@@ -2986,17 +2986,21 @@ window.addEventListener("popstate", ()=>{
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
     autoFill(){ this.load();
-      const used=new Set(this.lineupRids());
       const openSet=this.openSlotSet();
-      let placed=0;
-      POSITIONS.filter(p=>openSet.has(p.id)).forEach(p=>{ if(this.data.lineup[p.id])return;
-        let best=null,bv=-1;
-        (this.data.roster||[]).forEach(r=>{ if(this.isCommitted(r.rid)||used.has(r.rid))return;
-          if(this.idkeyInLineup(r.idkey,p.id))return;
-          const s=this.posScore(r.stats,p.stat); if(s>bv){bv=s;best=r;} });
-        if(best){ this.data.lineup[p.id]=best.rid; used.add(best.rid); placed++; } });
-      this.persist(); this.renderOffice();
-      toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어');
+      const slots=POSITIONS.filter(p=>openSet.has(p.id));
+      // 재율애비: '이미 배치된 칸도 수정' = 전속(commit) 자리만 두고 나머지 전역 재배치
+      const newLineup={}, usedRid=new Set(), usedKey=new Set();
+      POSITIONS.forEach(p=>{ const rid=this.data.lineup[p.id]; if(rid && this.isCommitted(rid)){ newLineup[p.id]=rid; usedRid.add(rid); const r=this.rosterById(rid); if(r)usedKey.add(r.idkey); } });
+      const pool=(this.data.roster||[]).filter(r=>!this.isCommitted(r.rid) && !usedRid.has(r.rid));
+      // (열린 빈슬롯 × 가용 연습생) 모든 쌍을 점수순 그리디 배정 → 포지션순 그리디보다 전역 최적에 근접
+      const pairs=[];
+      slots.forEach(p=>{ if(newLineup[p.id])return; pool.forEach(r=>pairs.push({sid:p.id, rid:r.rid, idkey:r.idkey, s:this.posScore(r.stats,p.stat)})); });
+      pairs.sort((a,b)=>b.s-a.s);
+      pairs.forEach(pr=>{ if(newLineup[pr.sid]||usedRid.has(pr.rid)||usedKey.has(pr.idkey))return;
+        newLineup[pr.sid]=pr.rid; usedRid.add(pr.rid); usedKey.add(pr.idkey); });
+      this.data.lineup=newLineup; this.persist(); this.renderOffice();
+      const placed=Object.values(newLineup).filter(rid=>!this.isCommitted(rid)).length;
+      try{ toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어'); }catch(e){}
     },
     // 열린 포지션 집합 = 명시적으로 연 것(openPos) + 채운 자리(항상) + 최소 2칸. 순서 아닌 '선택'식
     openSlotSet(){ const s=new Set(this.data.openPos||[]);
