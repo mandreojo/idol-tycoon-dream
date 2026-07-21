@@ -3003,6 +3003,20 @@ window.addEventListener("popstate", ()=>{
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
       try{ drawRadar(document.getElementById('rosRadar'), sv, {dark:false, big:true}); }catch(e){}
     },
+    // 카드 상세 팝업(숙소 상세와 동일 패턴): 이름·레어도·별·효과·보유 별별 개수
+    showCardDetail(type){ this.load(); const c=CARDS[type]; if(!c) return;
+      const owned=this.owned(type), bs=this.bestStar(type);
+      const stars=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(type,s); if(n)stars.push(`★${s} × ${n}장`); }
+      const ov=document.getElementById('ov'); ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
+      ov.innerHTML=`<div class="ev-card" style="max-width:320px;text-align:center">
+        <div style="font-size:44px;line-height:1.1">${owned?c.em:'❔'}</div>
+        <div class="ev-title" style="margin-top:4px">${this.rarBadge(type)} ${owned?esc(c.nm):'???'}</div>
+        <div class="muted" style="margin:4px 0 10px">${RARITY[c.rr]} 레어도${owned?` · 최고 ${this.starStr(bs)}`:''}</div>
+        <div style="background:#fff7fa;border:1px solid #ffe0e8;border-radius:12px;padding:11px;font-size:13.5px;line-height:1.5;margin-bottom:10px">${owned?this.cardDesc(type,bs):'아직 미보유<br>육성을 마치면 얻을 수 있어'}</div>
+        ${owned&&stars.length?`<div class="muted" style="font-size:12px;margin-bottom:10px">보유: ${stars.join(' · ')}</div>`:''}
+        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
+    },
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
     autoFill(){ this.load();
@@ -3189,9 +3203,9 @@ window.addEventListener("popstate", ()=>{
         const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
         let ms=-1; for(let s=1;s<MAXSTAR;s++){ if(this.countAt(id,s)>=2){ ms=s; break; } }
         const btn = ms>0
-          ? (o=>`<button class="cr-btn" onclick="DG.doMerge('${id}',${ms})">합치기<br><small>★${ms}→★${ms+1} · ${o.gs+o.s}%</small></button>`)(this.mergeOdds(ms))
+          ? (o=>`<button class="cr-btn" onclick="event.stopPropagation();DG.doMerge('${id}',${ms})">합치기<br><small>★${ms}→★${ms+1} · ${o.gs+o.s}%</small></button>`)(this.mergeOdds(ms))
           : (bs>=MAXSTAR?'<span class="cr-maxb">👑</span>':'<span class="muted" style="font-size:11px;text-align:center;display:inline-block">2장 모으면<br>합치기</span>');
-        return `<div class="card-row ${c.rr>=2?'rare':''}">
+        return `<div class="card-row ${c.rr>=2?'rare':''}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${c.em}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${c.nm} <span style="color:#f0a01e">${this.starStr(bs)}</span></div>
             <div class="muted" style="font-size:12px">${this.cardDesc(id,bs)}</div>
@@ -3206,7 +3220,7 @@ window.addEventListener("popstate", ()=>{
       const ownedN=all.filter(id=>this.owned(id)).length;
       if(hint) hint.innerHTML=`<span class="cdex-prog">카드 도감 · 수집 <b>${ownedN}</b> / ${all.length}</span>`;
       box.innerHTML=all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
-        return `<div class="card-row ${c.rr>=2?'rare':''} ${owned?'':'locked'}">
+        return `<div class="card-row ${c.rr>=2?'rare':''} ${owned?'':'locked'}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${owned?c.em:'❔'}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${owned?c.nm:'???'}${owned?` <span style="color:#f0a01e">${this.starStr(bs)}</span>`:''}</div>
             <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):'육성으로 획득'}</div></div>
