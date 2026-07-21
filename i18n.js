@@ -142,7 +142,7 @@ window.I18N = {
     shared_banner:"님의 육성 결과예요 🎤",
     shared_cta:"🎤 나도 내 최애로 해보기",
     toast_link_copied:"링크를 복사했어! 📋 붙여넣기 해줘",
-    name_ph:"이름을 남겨봐 (리더보드)",
+    name_ph:"이름을 남겨봐",
     save_btn:"🏆 전설의 연습생 등록",
     save_done:"✅ 등록 완료!",
     home_btn:"홈으로", again_btn:"다시 하기",

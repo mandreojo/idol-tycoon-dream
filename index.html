@@ -486,7 +486,7 @@
   .cardsave-sub b{color:var(--txt)}
 
   /* 언어 스위처 · 공유 배너 */
-  .title-set{position:absolute;top:12px;left:12px;z-index:5;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:17px;cursor:pointer;line-height:1;box-shadow:0 1px 4px rgba(180,120,140,.12)}
+  .title-set{position:absolute;top:12px;right:12px;z-index:5;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:17px;cursor:pointer;line-height:1;box-shadow:0 1px 4px rgba(180,120,140,.12)}
   .langsel{position:absolute;top:12px;right:12px;z-index:5;appearance:none;border:1px solid var(--line);
     border-radius:10px;background:var(--panel);color:var(--sub);font-size:12px;font-weight:700;
     padding:6px 26px 6px 10px;font-family:inherit;cursor:pointer;
@@ -507,7 +507,7 @@
   <!-- TITLE -->
   <section class="screen on" id="s-title">
     <button class="title-set" onclick="Game.openSettings()" aria-label="settings" title="설정">⚙️</button>
-    <select id="langSel" class="langsel" onchange="Game.changeLang(this.value)" aria-label="language"></select>
+    <select id="langSel" class="langsel" onchange="Game.changeLang(this.value)" aria-label="language" style="display:none"></select>
     <div class="spacer"></div>
     <img id="titleMascot" src="assets/mascot.png" alt="">
     <img id="logo" src="assets/logo.png" alt="최애돌">
@@ -719,13 +719,14 @@
     <div class="endsub" id="endSub">—</div>
     <div id="radarWrap"><canvas id="radar" width="580" height="580"></canvas></div>
     <div class="ograde" id="oGrade"></div>
-    <div id="dgResult"></div>
-    <button class="btn" id="dgOfficeBtn" style="margin-top:12px;display:none" onclick="DG.go()">🏢 기획사로 (드림그룹 보기)</button>
     <div class="growth" id="growthBox" style="display:none"></div>
+    <div id="dgResult"></div>
+    <!-- 액션: 등록 → 공유 → 기획사 → 홈. 전당 랭킹(lbBox)은 결과화면선 숨김 = 홈>전설의 연습생 전용(중복 제거) -->
+    <input class="name" id="nameInput" placeholder="이름을 남겨봐" maxlength="10" data-i18n-ph="name_ph">
+    <button class="btn ghost" id="saveBtn" style="margin-top:9px" onclick="Game.saveScore()" data-i18n="save_btn">🏆 전설의 연습생 등록</button>
     <button class="btn" id="shareLinkBtn" style="margin-top:14px" onclick="Game.shareLink()" data-i18n="share_link_btn">🔗 결과 공유하기</button>
     <button class="btn ghost" id="shareBtn" style="margin-top:9px" onclick="Game.shareCard()" data-i18n="share_btn">📸 이미지로 저장</button>
-    <input class="name" id="nameInput" placeholder="이름을 남겨봐 (리더보드)" maxlength="10" data-i18n-ph="name_ph">
-    <button class="btn ghost" id="saveBtn" style="margin-top:9px" onclick="Game.saveScore()" data-i18n="save_btn">🏆 전설의 연습생 등록</button>
+    <button class="btn" id="dgOfficeBtn" style="margin-top:12px;display:none" onclick="DG.go()">🏢 기획사로 (드림그룹 보기)</button>
     <div class="lb" id="lbBox"></div>
     <button class="btn ghost" id="againBtn" style="margin-top:12px" onclick="Game.reset()">홈으로</button>
     <div class="spacer"></div>
@@ -770,7 +771,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f6"></script>
+<script src="i18n.js?v=20260721a"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -1981,15 +1982,15 @@ const Game = {
       document.getElementById("againBtn").onclick=()=>Game.goSelect();
     } else {
       sharedBanner.style.display="none";
-      ["shareLinkBtn","shareBtn","nameInput","saveBtn","lbBox"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="";});
+      ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="";});
+      const _lb=document.getElementById("lbBox"); if(_lb)_lb.style.display="none";   // 결과화면선 전당 랭킹 숨김(홈>전설의 연습생 전용, 중복 제거)
       document.getElementById("nameInput").value="";
       // 등록 버튼 상태 리셋(이전 게임의 '완료' 잔류 방지)
       const sb=document.getElementById("saveBtn"); if(sb){ sb.disabled=false; sb.textContent=t("save_btn"); sb.classList.remove("saved-done"); }
       const ni2=document.getElementById("nameInput"); if(ni2) ni2.disabled=false;
       document.getElementById("againBtn").textContent=t("again_btn");
       document.getElementById("againBtn").onclick=()=>Game.confirmReset();
-      this._boardCache=null; this.loadBoard(null);   // 서버 리더보드 조회
-      this.prepCard();   // 카드 미리 생성 (저장 버튼 제스처 소진 방지)
+      this.prepCard();   // 카드 미리 생성 (저장 버튼 제스처 소진 방지). 결과화면 전당 조회는 제거(홈>전설의 연습생에서만)
       // 드림그룹: 육성카드 드랍 + 자리 등록
       const _dg=DG.onFinish(s, statVals, end);
       if(this.lastResult){ this.lastResult.titles=_dg.titles||[]; this.lastResult.topTitle=DG.topTitle(_dg.titles); }   // 전당 등재용 대표칭호
@@ -2245,6 +2246,8 @@ const Game = {
     const rc=document.getElementById("radar").getContext("2d");
     rc.clearRect(0,0,580,580);
     ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});
+    const _lb=document.getElementById("lbBox"); if(_lb)_lb.style.display="";   // 전당(전설의 연습생) 뷰에선 랭킹 표시(결과화면서 숨겨졌을 수 있음)
+    const _dg=document.getElementById("dgResult"); if(_dg)_dg.style.display="none";   // 이전 결과의 칭호·카드 섹션 잔존 제거
     const abtn=document.getElementById("againBtn");
     abtn.textContent=t("home_btn");
     abtn.onclick=()=>Game.reset();   // 명전은 결과가 아니라 랭킹 뷰 → 이탈 경고 없이 바로 홈으로(결과화면의 confirmReset 가드 덮어씀)
@@ -2870,10 +2873,12 @@ window.addEventListener("popstate", ()=>{
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
     setRep(gid){ this.load(); this.data.repGid=gid; this.persist(); const g=(this.data.groups||[]).find(x=>x.gid===gid); if(g)this.submitGroup(g); this.renderOffice(); try{toast('⭐ 대표 데뷔조 지정 · 순위전 출전');}catch(e){} },
-    disbandGroup(gid){ this.load(); const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return; if(!confirm(`${g.name} 해체할까?\n멤버는 다시 무소속(숙소)으로 돌아가.`))return;
-      this.data.groups=(this.data.groups||[]).filter(x=>x.gid!==gid);
-      if(this.data.repGid===gid) this.data.repGid=(this.data.groups[0]&&this.data.groups[0].gid)||null;
-      this.persist(); this.renderOffice(); try{toast('그룹 해체됨 · 멤버 무소속 복귀');}catch(e){} },
+    disbandGroup(gid){ this.load(); const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return;
+      this.confirmModal({title:'그룹 해체', body:`<b>${esc(g.name)}</b> 을(를) 해체할까?<br>멤버는 다시 무소속(숙소)으로 돌아가.`, ok:'해체', cancel:'취소', danger:true,
+        onOk:()=>{ this.load();
+          this.data.groups=(this.data.groups||[]).filter(x=>x.gid!==gid);
+          if(this.data.repGid===gid) this.data.repGid=(this.data.groups[0]&&this.data.groups[0].gid)||null;
+          this.persist(); this.renderOffice(); try{toast('그룹 해체됨 · 멤버 무소속 복귀');}catch(e){} }}); },
     assign(slotId, rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       if(this.isCommitted(rid)) return {err:'committed'};
       if(this.idkeyInLineup(r.idkey, slotId)) return {err:'dup', name:r.name};
@@ -3140,7 +3145,25 @@ window.addEventListener("popstate", ()=>{
       this.data.openPos=open; this.persist(); this.renderOffice();
       try{toast('자리 닫음');}catch(e){}
     },
-    doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 은퇴시키고 카드로 남길까?`))return; const res=this.discard(rid); if(res.ok) toast(`은퇴 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
+    // 공통 확인 모달(#9 컴포넌트화 첫 조각) — 시스템 confirm 대체, 다른 커스텀 팝업과 톤 통일. ov 없으면 confirm 폴백
+    confirmModal(opt){ const ov=document.getElementById('ov');
+      if(!ov){ if(confirm((opt.body||'').replace(/<[^>]+>/g,''))) opt.onOk&&opt.onOk(); return; }
+      ov.className='ov on';
+      const close=()=>{ ov.className='ov'; ov.onclick=null; };
+      ov.onclick=(e)=>{ if(e.target===ov) close(); };
+      ov.innerHTML=`<div class="ev-card" style="max-width:320px;text-align:center">
+        ${opt.title?`<div class="ev-title">${opt.title}</div>`:''}
+        <div style="margin:8px 2px 16px;font-size:14px;line-height:1.55">${opt.body||''}</div>
+        <div style="display:flex;gap:9px">
+          <button class="btn ghost" style="flex:1" id="_cmNo">${opt.cancel||'취소'}</button>
+          <button class="btn" style="flex:1${opt.danger?';background:#e5555f;border-color:#e5555f':''}" id="_cmYes">${opt.ok||'확인'}</button>
+        </div></div>`;
+      document.getElementById('_cmNo').onclick=close;
+      document.getElementById('_cmYes').onclick=()=>{ close(); try{opt.onOk&&opt.onOk();}catch(e){} };
+    },
+    doDiscard(rid){ const r=this.rosterById(rid); if(!r)return;
+      this.confirmModal({title:'연습생 은퇴', body:`<b>${esc(r.name)}</b> 을(를) 은퇴시키고<br>육성 카드로 남길까?`, ok:'은퇴', cancel:'취소', danger:true,
+        onOk:()=>{ const res=this.discard(rid); if(res.ok) toast(`은퇴 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); }}); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
     // 데뷔 = 전용 세리머니 화면(그룹명·로고 짓기). 기존 prompt 1줄 → s-debut 승격.
     doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
