@@ -659,13 +659,13 @@
     <button class="btn" onclick="DG.confirmDebut()" style="margin-top:12px">🎬 데뷔 시키기!</button>
   </section>
 
-  <!-- 연습생 창고 -->
+  <!-- 연습생 숙소 -->
   <section class="screen" id="s-roster">
     <div class="sub-head">
       <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
-      <h2>📋 연습생 창고</h2>
+      <h2>📋 연습생 숙소</h2>
     </div>
-    <p class="muted" style="margin:2px 0 6px">육성한 연습생들. <b>편성</b>으로 데뷔조에, 안 쓸 연습생은 <b>폐기</b>해서 대표스탯 카드로.</p>
+    <p class="muted" style="margin:2px 0 6px">육성한 연습생들. <b>편성</b>으로 데뷔조에, 안 쓸 연습생은 <b>은퇴</b>시켜 대표스탯 카드로.</p>
     <div id="rosterList"></div>
     <button class="btn" onclick="Game.goSelect()" style="margin-top:14px">＋ 새 연습생 육성</button>
   </section>
@@ -770,7 +770,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f4"></script>
+<script src="i18n.js?v=20260720f5"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -1314,7 +1314,7 @@ const Game = {
     if(this.curMode==="custom"){
       const nm=(document.getElementById("customName").value||t("my_idol")).trim().slice(0,10) || t("my_idol");
       if(!this.customSpec) return null;
-      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 창고에 있어"); show("s-select"); return null; } }catch(e){}
+      try{ DG.load(); if((DG.data.roster||[]).some(r=>r.idkey==='c:'+nm)){ toast("같은 이름의 연습생이 이미 숙소에 있어"); show("s-select"); return null; } }catch(e){}
       return {id:"custom", name:nm, grp:t("custom_idol"), spec:this.customSpec, img:this.customImg||"", cat:this.customGender||"F"};
     }
     return this.selIdol || null;
@@ -1960,8 +1960,9 @@ const Game = {
     document.getElementById("endName").textContent=end.name;
     const dexChip = dexNew ? `<div class="dex-unlock">${t("end_dex_unlock")}</div>` : "";
     document.getElementById("endSub").innerHTML=`${dexChip}${end.sub}<br><br>${t("end_fans",{fans:fmt(s.fans)})}`;
+    const _ti=DG.idolTop(s), _rep=STATS.find(x=>x.k===_ti.stat)||STATS[0];   // 육성 결과 대표재능(고정 spec 아님)
     document.getElementById("oGrade").innerHTML=
-      t("end_overall",{g:overall,c:spStat.c,ico:spStat.ico,spec:t("st_"+spStat.k)});
+      t("end_overall",{g:overall,rg:grade(_ti.score),c:_rep.c,ico:_rep.ico,spec:t("st_"+_ti.stat)});
     const gbox=document.getElementById("growthBox");
     if(s.log && s.log.length){ gbox.style.display="";
       gbox.innerHTML=`<h3>${t("end_growth_title",{name:esc(idolName(s.idol))})}</h3>`+s.log.map(l=>`<div class="gl">${l}</div>`).join(""); }
@@ -2563,7 +2564,8 @@ Game.refreshEndTexts=function(){
   document.getElementById("endEmoji").textContent=end.emoji;
   document.getElementById("endName").textContent=end.name;
   document.getElementById("endSub").innerHTML=`${end.sub}<br><br>${t("end_fans",{fans:fmt(r.fans)})}`;
-  document.getElementById("oGrade").innerHTML=t("end_overall",{g:r.overall,c:spStat.c,ico:spStat.ico,spec:t("st_"+spStat.k)});
+  const _ti=DG.idolTop(this.st), _rep=STATS.find(x=>x.k===_ti.stat)||STATS[0];   // 육성 결과 대표재능(고정 spec 아님)
+  document.getElementById("oGrade").innerHTML=t("end_overall",{g:r.overall,rg:grade(_ti.score),c:_rep.c,ico:_rep.ico,spec:t("st_"+_ti.stat)});
   document.getElementById("endStage").textContent=
     r.reachedWorld?(r.finalRank?t("end_stage_world",{rank:r.finalRank}):t("end_stage_world_nr")):t("end_stage_out");
   document.getElementById("endIdolName").innerHTML=
@@ -2719,7 +2721,7 @@ window.addEventListener("popstate", ()=>{
     {id:'first',   ic:'👣', nm:'첫 발걸음',     desc:'연습생 1명 육성 완주',   goal:1,  cur:d=>(d.data.roster||[]).length},
     {id:'debut',   ic:'🎬', nm:'데뷔 신고식',   desc:'그룹 1팀 데뷔',         goal:1,  cur:d=>(d.data.groups||[]).length},
     {id:'runs10',  ic:'🔁', nm:'열혈 프로듀서', desc:'육성 10회 완주',        goal:10, cur:d=>d.data.runs||0},
-    {id:'roster8', ic:'📋', nm:'인재 창고',     desc:'연습생 8명 보유',       goal:8,  cur:d=>(d.data.roster||[]).length},
+    {id:'roster8', ic:'📋', nm:'인재 숙소',     desc:'연습생 8명 보유',       goal:8,  cur:d=>(d.data.roster||[]).length},
     {id:'sclass',  ic:'⭐', nm:'스타 발굴',     desc:'S급 이상 연습생 육성',   goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=6).length},
     {id:'ssclass', ic:'🌟', nm:'육각형 스타',   desc:'SS급 연습생 육성',      goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=7).length},
     {id:'full9',   ic:'💃', nm:'완전체',        desc:'9인 완성 그룹 데뷔',     goal:1,  cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
@@ -2753,7 +2755,7 @@ window.addEventListener("popstate", ()=>{
       // v<4: 데뷔(저장)한 그룹 프리셋 배열 신설. 그룹 멤버 rid = 전속(다른 데뷔조 편성 불가)
       d.groups = Array.isArray(d.groups)? d.groups : [];
       if(typeof d.groupSeq!=='number') d.groupSeq = d.groups.reduce((m,g)=>Math.max(m,g.gid||0),0);
-      // v<3: 옛 자동슬롯 group{stat:rec} → 창고 아이돌로 이관(알려진 스탯 1개만)
+      // v<3: 옛 자동슬롯 group{stat:rec} → 숙소 아이돌로 이관(알려진 스탯 1개만)
       if(d.group && typeof d.group==='object' && !(d.v>=3)){
         Object.keys(d.group).forEach(sk=>{ const r=d.group[sk]; if(!r)return; const stats={}; ORDER.forEach(k=>stats[k]=0); stats[sk]=r.value||0;
           d.roster.push({rid:++d.ridSeq, idkey:'legacy'+d.ridSeq, name:r.name||'연습생', img:r.img||'', spec:sk, cat:'F', stats, grade:r.grade||'F'}); });
@@ -2827,8 +2829,8 @@ window.addEventListener("popstate", ()=>{
       if(debuted){
         newRid=++this.data.ridSeq;
         this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr});
-        joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 창고 합류<br><span class="muted">대표 ${STATNM[top.stat]} · ${gr}·${top.score}</span>`;
-      } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 창고에 못 들어감`; }
+        joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">대표 ${STATNM[top.stat]} · ${gr}·${top.score}</span>`;
+      } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 숙소에 못 들어감`; }
       const drops=this.rollCards(top.stat, gr, debuted);
       const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
       this.data.runs++; this.persist();
@@ -2865,11 +2867,11 @@ window.addEventListener("popstate", ()=>{
       document.getElementById('dgGroup').innerHTML=
         `<div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=2?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
           <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
-          <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '창고에서 2명 이상 편성하면 활동 시작'}</div></div>
+          <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 2명 이상 편성하면 활동 시작'}</div></div>
          <div class="dg-grid nine">${slots}</div>
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
-           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 창고 (${this.data.roster.length})</button>
+           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 숙소 (${this.data.roster.length})</button>
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
            ${shown.length<9? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
@@ -2920,7 +2922,7 @@ window.addEventListener("popstate", ()=>{
       // 같은 아이돌이 다른 자리에 있으면 그 자리 비우고 이동
       if(r0){ for(const sid in this.data.lineup){ if(sid===this._slot)continue; const rr=this.rosterById(this.data.lineup[sid]); if(rr&&rr.idkey===r0.idkey) delete this.data.lineup[sid]; } this.persist(); }
       const r=this.assign(this._slot, rid); if(r.err==='committed'){ toast('전속 멤버라 배치 못 해'); return; } if(r.err){ toast('배치 실패'); return; } this.go(); },
-    // ===== 연습생 창고 =====
+    // ===== 연습생 숙소 =====
     // ===== 업적 =====
     achvState(){ return ACHV.map(a=>{ const val=a.cur(this), done=val>=a.goal; return {a, val, done, pct:Math.min(100,Math.round(val/a.goal*100))}; }); },
     achvDone(){ return this.achvState().filter(x=>x.done).length; },
@@ -2956,10 +2958,10 @@ window.addEventListener("popstate", ()=>{
             <div class="muted" style="font-size:12px">대표 ${STATNM[top.stat]} ${top.score}</div></div>
           ${commit? '' : `<div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto">
             ${inup?'':`<button class="cr-btn" style="padding:6px 11px;font-size:12px" onclick="DG.doQuick(${r.rid})">편성</button>`}
-            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">폐기<br><small>${STATNM[top.stat]}★1×${cnt}</small></button>
+            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">은퇴<br><small>${STATNM[top.stat]}★1×${cnt}</small></button>
           </div>`}</div>`;}).join('');
     },
-    // 창고에서 연습생 눌러 육성 결과 다시 보기 (레이더 + 스탯 등급). 로스터에 저장된 stats 재활용
+    // 숙소에서 연습생 눌러 육성 결과 다시 보기 (레이더 + 스탯 등급). 로스터에 저장된 stats 재활용
     showRosterDetail(rid){ this.load(); const r=this.rosterById(rid); if(!r||!r.stats) return;
       const it=this.idolTop(r.stats);
       const sv=STATS.map(st=>({n:t(st.k==='creative'?'st_creative_short':'st_'+st.k),k:st.k,c:st.c,v:Math.round(r.stats[st.k]||0),g:grade(Math.round(r.stats[st.k]||0))}));
@@ -3013,7 +3015,7 @@ window.addEventListener("popstate", ()=>{
       const ov=document.getElementById('ov'); ov.className='ov'; ov.onclick=null;
       this.renderOffice();
     },
-    doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 폐기하고 카드로 바꿀까?`))return; const res=this.discard(rid); if(res.ok) toast(`폐기 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
+    doDiscard(rid){ const r=this.rosterById(rid); if(!r)return; if(!confirm(`${r.name} 은퇴시키고 카드로 남길까?`))return; const res=this.discard(rid); if(res.ok) toast(`은퇴 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
     // 데뷔 = 전용 세리머니 화면(그룹명·로고 짓기). 기존 prompt 1줄 → s-debut 승격.
     doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
@@ -3091,8 +3093,8 @@ window.addEventListener("popstate", ()=>{
         : '<span class="muted">이번엔 육성카드를 못 얻었어요</span>';
       box.innerHTML=`<div class="dg-res"><div class="dg-res-slot">${res.joinMsg}</div>
         <div class="dg-res-cards"><b>🎴 획득한 육성카드</b><div class="dg-chips" style="margin-top:6px">${chips}</div></div>
-        ${res.debuted?`<button class="btn ghost" onclick="DG.goRoster()" style="margin-top:10px">📋 연습생 창고에서 편성하기</button>`:''}</div>`;
-      if(res.debuted) setTimeout(()=>{ try{toast('연습생 창고 합류! 📋');}catch(e){} }, 450);
+        ${res.debuted?`<button class="btn ghost" onclick="DG.goRoster()" style="margin-top:10px">📋 연습생 숙소에서 편성하기</button>`:''}</div>`;
+      if(res.debuted) setTimeout(()=>{ try{toast('연습생 숙소 합류! 📋');}catch(e){} }, 450);
     },
     // 캐릭터 선택 → 육성카드 선택 단계로 (없으면 바로 시작)
     toCardPick(){
