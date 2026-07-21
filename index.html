@@ -770,7 +770,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260720f5"></script>
+<script src="i18n.js?v=20260720f6"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -1298,7 +1298,7 @@ const Game = {
     const idol=this._pickIdol(); if(!idol) return;
     const mode=(this.trainMode==="quick")?"quick":"full";
     const {base} = talentOf(idol.spec);
-    this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode};   // mode=full(24턴)/quick(12턴 간이)
+    this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode, trainCount:{}};   // mode=full(24턴)/quick(12턴 간이) · trainCount=영역별 훈련 횟수
     DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
     DG.consumeEquipped();        // 카드 소모형: 장착 카드 1장씩 소모(지속 플레이 유인)
     this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
@@ -1447,6 +1447,7 @@ const Game = {
                         : Math.round(baseGain*J.mult);
     const oldV=Math.round(s[kind]), oldG=grade(oldV), oldL=levelOf(oldV);
     s[kind]=Math.max(0,Math.min(800,s[kind]+gain));   // 스탯 상한 800(=SS 만점). 넘겨도 캡
+    if(!s.trainCount)s.trainCount={}; s.trainCount[kind]=(s.trainCount[kind]||0)+1;   // 최다 훈련 영역 추적(카드 기본)
     s.cond=Math.max(0,s.cond+J.cond);
     s.mental=Math.max(0,Math.min(100,s.mental+(MENTAL_DELTA[j]||0)));  // 판정 연동 멘탈(비대칭)
     const fanGain=Math.round((30+s[kind]*0.6)*J.fanMult);
@@ -1865,10 +1866,12 @@ const Game = {
     try{ const so={}; STATS.forEach(st=>so[st.k]=Math.round(s[st.k])); const it=DG.idolTop(so); topK=it.stat; topScore=it.score; }catch(e){}
     const stObj=STATS.find(x=>x.k===topK)||STATS[0];
     const stName = topK==='creative' ? t('st_creative_short') : t('st_'+topK);
-    const typeName = allround ? '올라운더' : stName+'형';
-    const typeEmoji = allround ? '🌈' : stObj.ico;
-    const gradeLabel = allround ? overall : grade(topScore);       // idolTop.score 기반 = 로스터 등급과 일치
-    return {...raw, name:`${typeName} · ${gradeLabel}등급`, emoji:typeEmoji};
+    // 대표재능(육각형·종합에서 이미 보임)은 결과 타이틀에서 제거 → 종합등급 기반 서사 타이틀만
+    const OT={SS:'정상급 아이돌',S:'톱클래스 스타',A:'대형 유망주',B:'기대주',C:'성장 유망주',D:'새내기 연습생',E:'새내기 연습생',F:'새내기 연습생'};
+    const EMO={SS:'👑',S:'🌟',A:'✨',B:'🎤',C:'🎵',D:'🌱',E:'🌱',F:'🌱'};
+    const name=(allround?'올라운드 ':'')+(OT[overall]||'연습생');
+    const emoji=allround?'🌈':(EMO[overall]||'🎤');
+    return {...raw, name, emoji, overall, allround};
   },
   _endingRaw(reachedWorld, finalRank){
     const s=this.st;
@@ -1961,9 +1964,7 @@ const Game = {
     document.getElementById("endName").textContent=end.name;
     const dexChip = dexNew ? `<div class="dex-unlock">${t("end_dex_unlock")}</div>` : "";
     document.getElementById("endSub").innerHTML=`${dexChip}${end.sub}<br><br>${t("end_fans",{fans:fmt(s.fans)})}`;
-    const _ti=DG.idolTop(s), _rep=STATS.find(x=>x.k===_ti.stat)||STATS[0];   // 육성 결과 대표재능(고정 spec 아님)
-    document.getElementById("oGrade").innerHTML=
-      t("end_overall",{g:overall,rg:grade(_ti.score),c:_rep.c,ico:_rep.ico,spec:t("st_"+_ti.stat)});
+    document.getElementById("oGrade").innerHTML=t("end_overall",{g:overall});   // 종합 등급만(대표재능은 육각형에 있음)
     const gbox=document.getElementById("growthBox");
     if(s.log && s.log.length){ gbox.style.display="";
       gbox.innerHTML=`<h3>${t("end_growth_title",{name:esc(idolName(s.idol))})}</h3>`+s.log.map(l=>`<div class="gl">${l}</div>`).join(""); }
@@ -2843,9 +2844,10 @@ window.addEventListener("popstate", ()=>{
       if(debuted){
         newRid=++this.data.ridSeq;
         this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr});
-        joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">대표 ${STATNM[top.stat]} · ${gr}·${top.score}</span>`;
+        joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">종합 ${grade(Math.round(STATS.reduce((a,x)=>a+(stats[x.k]||0),0)/STATS.length))} 등급</span>`;
       } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 숙소에 못 들어감`; }
-      const drops=this.rollCards(top.stat, gr, debuted, stats);
+      const tc=(st&&st.trainCount)||{}; let trainedK=top.stat, mxT=-1; STATS.forEach(x=>{ if((tc[x.k]||0)>mxT){mxT=tc[x.k]||0; trainedK=x.k;} });   // 기본 카드 = 능력치 높은게 아니라 '가장 많이 훈련한 영역'
+      const drops=this.rollCards(trainedK, gr, debuted, stats);
       const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
       this.data.runs++; this.persist();
       return {drops:dropInfo, joinMsg, debuted, newRid};
