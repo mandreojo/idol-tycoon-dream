@@ -2171,7 +2171,7 @@ const Game = {
         {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       if(!res.ok) throw new Error("http "+res.status);
       const arr=await res.json();
-      this._boardCache=(arr||[]).filter(x=>x.document).map(x=>fsParse(x.document));
+      this._boardCache=(arr||[]).filter(x=>x.document).map(x=>fsParse(x.document)).filter(r=>!(r.ending&&String(r.ending).indexOf('GRP:')===0));   // 개인명전에서 그룹(GRP:) 문서 제외
       this._boardServer=true;
     }catch(e){ this._boardServer=false; this._boardCache=this.localBoard(); }
     return this._boardCache;
@@ -3221,27 +3221,31 @@ window.addEventListener("popstate", ()=>{
       return s;
     },
     async fetchGroupBoard(){
+      // 서버 공유: leaderboard 컬렉션 재활용(쓰기 허용). 그룹은 ending='GRP:n' 마커 + fans=점수. 개인명전과 필터로 분리.
       try{
-        const q={structuredQuery:{from:[{collectionId:"group_board"}],
-          orderBy:[{field:{fieldPath:"score"},direction:"DESCENDING"}], limit:50}};
+        const q={structuredQuery:{from:[{collectionId:"leaderboard"}],
+          orderBy:[{field:{fieldPath:"fans"},direction:"DESCENDING"}], limit:200}};
         const res=await fetch(`${FS_BASE}:runQuery?key=${FB_KEY}`,
           {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(q)});
         if(res.ok){ const arr=await res.json();
           const list=(arr||[]).filter(x=>x.document).map(x=>{ const f=x.document.fields||{};
             const g=k=>{ const c=f[k]; if(!c)return ""; return c.stringValue!=null?c.stringValue:(c.integerValue!=null?+c.integerValue:0); };
-            return {name:g("name"), logo:g("emoji")||"🎤", score:+g("score")||0, n:+g("n")||0, server:true}; });
+            const end=String(g("ending")||"");
+            return {name:g("name"), logo:g("emoji")||"🎤", score:+g("fans")||0, n:(end.indexOf('GRP:')===0?(+end.slice(4)||0):0), agency:g("player"), _grp:end.indexOf('GRP:')===0, server:true}; })
+            .filter(r=>r._grp);   // GRP: 마커 문서(그룹)만 — 개인명전·잔존 테스트문서 자동 제외
           this._leagueServer=true; return list;
         }
       }catch(e){}
       this._leagueServer=false; return null;
     },
-    submitGroup(g){   // 서버 규칙 열리면 자동 공유(fire&forget). 지금은 403이라 조용히 실패 → 로컬 표시로 충분.
+    submitGroup(g){   // 서버 공유(fire&forget): leaderboard에 ending='GRP:n' 마커 + fans=점수로 저장(규칙이 이 스키마만 허용).
       if(!g) return;
       try{
-        const body={fields:{name:fsStr(g.name), emoji:fsStr(g.logo||'🎤'),
-          score:{integerValue:String(this.groupScore(g))}, n:{integerValue:String(g.n||0)},
-          agency:fsStr((this.agency&&this.agency().name)||''), lang:fsStr(window.LANG||'ko')}};
-        fetch(`${FS_BASE}/group_board?key=${FB_KEY}`,
+        const sc=Math.max(0,Math.min(5000000,this.groupScore(g)));
+        const body={fields:{player:fsStr((this.agency&&this.agency().name)||''), name:fsStr(g.name),
+          ending:fsStr('GRP:'+(g.n||0)), emoji:fsStr(g.logo||'🎤'),
+          fans:{integerValue:String(sc)}, lang:fsStr(window.LANG||'ko')}};
+        fetch(`${FS_BASE}/leaderboard?key=${FB_KEY}`,
           {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).catch(()=>{});
       }catch(e){}
     },
@@ -3249,7 +3253,7 @@ window.addEventListener("popstate", ()=>{
     renderLeague(serverList){
       this.load();
       const mine=(this.data.groups||[]).map(g=>({name:g.name, logo:g.logo||'🎤', score:this.groupScore(g), n:g.n||0, me:true}));
-      const others=(Array.isArray(serverList)&&serverList.length)? serverList : this._leagueSeed();
+      const others=(Array.isArray(serverList)&&serverList.length)? serverList.concat(this._leagueSeed()).slice(0,14) : this._leagueSeed();   // 서버 그룹 + 더미(시드) 보충
       const board=others.concat(mine).sort((a,b)=>b.score-a.score);
       const myBest = mine.length? mine.reduce((a,b)=>b.score>a.score?b:a) : null;
       const head=document.getElementById('leagueHead');
