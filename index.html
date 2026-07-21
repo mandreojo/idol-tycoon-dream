@@ -3372,7 +3372,8 @@ window.addEventListener("popstate", ()=>{
         const file=new File([blob], 'debut-group.png', {type:'image/png'});
         try{
           if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-            navigator.share({files:[file], title:'우리 데뷔조'}).catch(function(){ (Game.isMobile&&Game.isMobile())?Game.showCardImage(file):Game.downloadCard(file); });
+            navigator.share({files:[file], title:'우리 데뷔조'}).catch(function(e){ if(e&&e.name==='AbortError')return;   // 공유 취소면 저장 모달 안 띄움(이중모달 방지)
+              (Game.isMobile&&Game.isMobile())?Game.showCardImage(file):Game.downloadCard(file); });
           } else if(Game.isMobile && Game.isMobile()){ Game.showCardImage(file); }
           else { Game.downloadCard(file); }
         }catch(e){ try{ Game.downloadCard(file); }catch(_){} }
