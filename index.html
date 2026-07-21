@@ -2845,17 +2845,21 @@ window.addEventListener("popstate", ()=>{
         this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr});
         joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">대표 ${STATNM[top.stat]} · ${gr}·${top.score}</span>`;
       } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 숙소에 못 들어감`; }
-      const drops=this.rollCards(top.stat, gr, debuted);
+      const drops=this.rollCards(top.stat, gr, debuted, stats);
       const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
       this.data.runs++; this.persist();
       return {drops:dropInfo, joinMsg, debuted, newRid};
     },
-    rollCards(topK, topG, debuted){
-      const out=[]; const gr=grank(topG);   // 0(F)~7(SS). 카드 소모형 → 수급 넉넉히, 결과 좋을수록 장수·고등급↑
+    rollCards(topK, topG, debuted, stats){
+      const out=[]; const gr=grank(topG);   // 0(F)~7(SS)
       if(!debuted){ out.push('effort'); return out; }   // 데뷔 실패도 위로 1장
-      out.push(STATCARD[topK]);                          // 대표재능 카드 항상 1장(수급 기본 보장)
-      if(gr>=3) out.push('effort'); else if(Math.random()<0.5) out.push('effort');   // C+ 확정 노력카드
-      if(gr>=5) out.push(Math.random()<0.6?'genius':STATCARD[topK]);   // A+ = 3장째, 고등급(천재 SR 위주)
+      out.push(STATCARD[topK]);                          // 대표재능 카드 항상 1장(어떤 육성이든 대표 재능은 존재)
+      // 육성 성향을 카드가 반영: 6스탯 균등도 → 골고루형(노력파·천재=전스탯) vs 집중형(대표재능=특정스탯)
+      const vals=ORDER.map(k=>(stats&&stats[k])||0), mx=Math.max(1,...vals), mn=Math.min(...vals);
+      const even=(mn/mx)>=0.6;   // 최저스탯이 최고의 60%+ = 골고루 (⚠️임시 기준)
+      // 추가 카드는 확률(변수·뽑기 재미). 등급↑일수록 장수·고등급 확률↑. 성향: 골고루→노력파·천재(전스탯), 집중→대표재능(특정스탯)
+      if(Math.random() < 0.30 + gr*0.07) out.push(even?'effort':STATCARD[topK]);          // ② 2장째(등급 비례)
+      if(Math.random() < Math.max(0,(gr-2)*0.10)) out.push(even?'genius':STATCARD[topK]);  // ③ 3장째(고등급 대박, 골고루면 천재SR)
       return out.slice(0,3);
     },
 
