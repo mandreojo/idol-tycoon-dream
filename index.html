@@ -744,7 +744,7 @@
   <!-- 데뷔조 순위전 (그룹 리더보드) -->
   <section class="screen" id="s-league">
     <div class="sub-head">
-      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
+      <button class="menu-btn" onclick="Game.reset()" aria-label="back" title="뒤로">←</button>
       <h2 data-i18n="lg_title">🏆 데뷔조 순위전</h2>
     </div>
     <div id="leagueHead"></div>
@@ -2401,7 +2401,7 @@ function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
-  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"||id==="s-achv"){ try{ history.pushState({scr:id},""); }catch(e){} }}
 function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
 function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
   s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
@@ -2599,7 +2599,7 @@ window.addEventListener("popstate", ()=>{
     return;
   }
   // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
-  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>DG.go()};
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>Game.reset(),"s-achv":()=>DG.go()};
   const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
   if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
     if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
