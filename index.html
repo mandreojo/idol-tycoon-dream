@@ -593,7 +593,7 @@
       <button class="menu-btn" onclick="Game.goSelect()" aria-label="back" title="뒤로">←</button>
       <h2>🎴 육성카드 선택</h2>
     </div>
-    <p class="muted" style="margin:2px 0 4px">다음 육성에 힘을 실어줄 카드를 골라 · 최대 2개<br>(안 골라도 시작할 수 있어)</p>
+    <p class="muted" style="margin:2px 0 4px">다음 육성에 힘을 실어줄 카드를 골라 · 최대 2개<br>⚠️ 장착 카드는 육성 시작 시 <b>1장 소모</b>돼 · 완주하면 다시 얻어 (안 골라도 OK)</p>
     <div id="cardPickList"></div>
     <button class="btn" onclick="Game.start()" style="margin-top:16px">육성 시작 🔥</button>
   </section>
@@ -1300,6 +1300,7 @@ const Game = {
     const {base} = talentOf(idol.spec);
     this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode};   // mode=full(24턴)/quick(12턴 간이)
     DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
+    DG.consumeEquipped();        // 카드 소모형: 장착 카드 1장씩 소모(지속 플레이 유인)
     this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
     this.logWeek(t("start_log",{name:esc(idolName(idol))}));
     this.save();
@@ -2781,6 +2782,11 @@ window.addEventListener("popstate", ()=>{
       if(x.all)e.all+=x.all*m; if(x.stat)for(const k in x.stat)e.stat[k]=(e.stat[k]||0)+x.stat[k]*m; }); return e; },
     applyEquipped(st){ if(!this.equipped||!this.equipped.length) return; const e=this.effOf(this.equipped);
       ORDER.forEach(k=>{ st[k]=Math.min(800,Math.round((st[k]||0)+(e.all||0)+(e.stat[k]||0))); }); },
+    consumeEquipped(){   // 카드 소모형: 장착한 카드 각 1장(최저 별부터) 소모 → 지속 플레이 유인
+      if(!this.equipped||!this.equipped.length) return; this.load();
+      this.equipped.forEach(type=>{ for(let s=1;s<=MAXSTAR;s++){ if(this.countAt(type,s)>0){ this.add(type,s,-1); break; } } });
+      this.persist();
+    },
 
     // ===== 데뷔조 로스터/라인업 =====
     posScore(stats, statKey){ const f=POSFIT[statKey]; return Math.round((stats[f.pri]||0)*0.7+(stats[f.sec]||0)*0.3); },
@@ -2837,12 +2843,11 @@ window.addEventListener("popstate", ()=>{
       return {drops:dropInfo, joinMsg, debuted, newRid};
     },
     rollCards(topK, topG, debuted){
-      const out=[]; const gr=grank(topG);
-      if(!debuted){ out.push('effort'); return out; }
-      if(gr>=3 || Math.random()<0.6) out.push(STATCARD[topK]);
-      if(Math.random()<0.5) out.push('effort');
-      if(gr>=6 && Math.random()<0.5) out.push('genius');
-      if(!out.length) out.push('effort');
+      const out=[]; const gr=grank(topG);   // 0(F)~7(SS). 카드 소모형 → 수급 넉넉히, 결과 좋을수록 장수·고등급↑
+      if(!debuted){ out.push('effort'); return out; }   // 데뷔 실패도 위로 1장
+      out.push(STATCARD[topK]);                          // 대표재능 카드 항상 1장(수급 기본 보장)
+      if(gr>=3) out.push('effort'); else if(Math.random()<0.5) out.push('effort');   // C+ 확정 노력카드
+      if(gr>=5) out.push(Math.random()<0.6?'genius':STATCARD[topK]);   // A+ = 3장째, 고등급(천재 SR 위주)
       return out.slice(0,3);
     },
 
