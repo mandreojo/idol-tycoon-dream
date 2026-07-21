@@ -2800,6 +2800,14 @@ window.addEventListener("popstate", ()=>{
     idkeyInLineup(idkey, exceptSlot){ for(const sid in this.data.lineup){ if(sid===exceptSlot)continue; const r=this.rosterById(this.data.lineup[sid]); if(r&&r.idkey===idkey)return true; } return false; },
     filledCount(){ let n=0; POSITIONS.forEach(p=>{ if(this.rosterById(this.data.lineup[p.id])) n++; }); return n; },
     groupInfo(){ let sum=0,n=0; POSITIONS.forEach(p=>{ const r=this.rosterById(this.data.lineup[p.id]); if(r){ sum+=this.posScore(r.stats,p.stat); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
+    // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
+    repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
+    repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
+    setRep(gid){ this.load(); this.data.repGid=gid; this.persist(); const g=(this.data.groups||[]).find(x=>x.gid===gid); if(g)this.submitGroup(g); this.renderOffice(); try{toast('⭐ 대표 데뷔조 지정 · 순위전 출전');}catch(e){} },
+    disbandGroup(gid){ this.load(); const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return; if(!confirm(`${g.name} 해체할까?\n멤버는 다시 무소속(숙소)으로 돌아가.`))return;
+      this.data.groups=(this.data.groups||[]).filter(x=>x.gid!==gid);
+      if(this.data.repGid===gid) this.data.repGid=(this.data.groups[0]&&this.data.groups[0].gid)||null;
+      this.persist(); this.renderOffice(); try{toast('그룹 해체됨 · 멤버 무소속 복귀');}catch(e){} },
     assign(slotId, rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       if(this.isCommitted(rid)) return {err:'committed'};
       if(this.idkeyInLineup(r.idkey, slotId)) return {err:'dup', name:r.name};
@@ -2876,7 +2884,7 @@ window.addEventListener("popstate", ()=>{
          <div class="dg-grid nine">${slots}</div>
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
-           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 숙소 (${this.data.roster.length})</button>
+           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 숙소 (${(function(cm){return (DG.data.roster||[]).filter(r=>!cm.has(r.rid)).length;})(this.committedRids())})</button>
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
            ${shown.length<9? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
@@ -2885,15 +2893,19 @@ window.addEventListener("popstate", ()=>{
          ${gi.n>=2? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
       // 데뷔(저장)한 그룹 목록 — 멤버 전속
       const groups=this.data.groups||[];
+      const _repGid=this.repGroupGid();
       document.getElementById('dgGroups').innerHTML = groups.length?
-        `<div class="dg-sub" style="margin-top:15px"><b>🏆 데뷔한 그룹</b><span class="muted">${groups.length}팀</span></div>
-         <div style="display:flex;flex-direction:column;gap:8px;margin-top:7px">${groups.map(g=>
-           `<div style="display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #f4dde3;border-radius:14px;padding:10px 13px;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">
-              <span style="flex:0 0 auto">${this.logoHtml(g.logo,32)}</span>
-              <div style="flex:1;min-width:0"><div style="font-weight:bold">${esc(g.name)}</div>
-                <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명 · 전속</div></div>
-              <span style="flex:0 0 auto;opacity:.55">📸</span>
-            </div>`).join('')}</div>` : '';
+        `<div class="dg-sub" style="margin-top:15px"><b>🏆 데뷔한 그룹</b><span class="muted">${groups.length}/5팀</span></div>
+         <div style="display:flex;flex-direction:column;gap:8px;margin-top:7px">${groups.map(g=>{ const isRep=g.gid===_repGid;
+           return `<div style="display:flex;align-items:center;gap:11px;background:#fff;border:1px solid ${isRep?'#f0c04a':'#f4dde3'};border-radius:14px;padding:10px 13px">
+              <span style="flex:0 0 auto;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">${this.logoHtml(g.logo,32)}</span>
+              <div style="flex:1;min-width:0;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})"><div style="font-weight:bold">${esc(g.name)}${isRep?' <span style="color:#e59500;font-size:11px">⭐대표</span>':''}</div>
+                <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명</div></div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 auto">
+                ${isRep?'<span class="muted" style="font-size:10px;text-align:center;line-height:1.3">순위전<br>출전중</span>':`<button class="cr-btn" style="padding:5px 9px;font-size:11px" onclick="DG.setRep(${g.gid})">⭐대표</button>`}
+                <button class="cr-btn off" style="padding:5px 9px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.disbandGroup(${g.gid})">해체</button>
+              </div>
+            </div>`;}).join('')}</div>` : '';
       // F5/C: 기획사 화면은 카드 '진입 버튼'만(상세 나열·합치기·도감은 s-cards 카드 보관함으로 분리 → 화면 간소화)
       const cardTypes=this.ownedTypes();
       document.getElementById('dgCards').innerHTML=
@@ -2953,10 +2965,12 @@ window.addEventListener("popstate", ()=>{
     goRoster(){ this.load(); this.renderRoster(); show('s-roster'); },
     renderRoster(){
       const box=document.getElementById('rosterList'); if(!box) return;
-      const list=(this.data.roster||[]).slice().sort((a,b)=>grank(b.grade)-grank(a.grade));
-      if(!list.length){ box.innerHTML='<p class="muted" style="text-align:center;padding:24px">아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!</p>'; return; }
-      const commitSet=this.committedRids();
-      box.innerHTML=list.map(r=>{ const top=this.idolTop(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
+      const commitSet=this.committedRids(), allR=(this.data.roster||[]);
+      const list=allR.filter(r=>!commitSet.has(r.rid)).sort((a,b)=>grank(b.grade)-grank(a.grade));   // 숙소=무소속만(전속은 데뷔조 카드에서)
+      const enrolled=allR.length-list.length;
+      const note = enrolled? `<p class="muted" style="font-size:12px;margin:0 0 8px;text-align:center">🏆 전속 ${enrolled}명은 데뷔조 카드에서 관리 · 여긴 무소속만</p>` : '';
+      if(!list.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${enrolled?`전속 ${enrolled}명은 데뷔조에 있어.<br>무소속 연습생이 없어 — 「새 연습생 육성」!`:'아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!'}</p>`; return; }
+      box.innerHTML=note+list.map(r=>{ const top=this.idolTop(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
         const badge = commit? ` <span style="color:#c98a00;font-size:11px">🏆 ${esc(cg?cg.name:'전속')}</span>` : (inup? ' <span style="color:#18b06e;font-size:11px">편성됨</span>' : '');
         return `<div class="ros-row${inup||commit?' cur':''}"><span class="ros-av" ${av} onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer">${r.img?'':'🎤'}</span>
           <div class="ros-m" onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${badge}</div>
@@ -3028,6 +3042,7 @@ window.addEventListener("popstate", ()=>{
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
     // 데뷔 = 전용 세리머니 화면(그룹명·로고 짓기). 기존 prompt 1줄 → s-debut 승격.
     doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
+      if((this.data.groups||[]).length>=5){ toast('데뷔조는 최대 5팀 · 기존 그룹을 먼저 해체해줘'); return; }
       this.renderDebut(); show('s-debut');
     },
     _debutLogo:'🏢',
@@ -3063,7 +3078,9 @@ window.addEventListener("popstate", ()=>{
       const nm=(((document.getElementById('dbGroupName')||{}).value)||'').trim().slice(0,14);
       if(!nm){ toast('그룹 이름을 지어줘'); return; }
       const r=this.debutGroup(nm, this._debutLogo); if(r.err){ toast('데뷔할 수 없어'); return; }
-      this.submitGroup(r.g);   // 순위전 서버 등록(규칙 열리면 전국 공유, 지금은 조용히 실패)
+      if(!this.data.repGid || (this.data.groups||[]).length===1) this.data.repGid=r.g.gid;   // 첫 그룹 자동 대표
+      if(this.data.repGid===r.g.gid) this.submitGroup(r.g);   // 순위전엔 대표 1팀만 등록
+      this.persist();
       try{ Game.confetti(60,true); }catch(e){}
       try{ sfx('win'); }catch(e){}
       toast(`🎉 ${nm} 데뷔! 멤버 ${r.g.n}명 전속 확정`);
@@ -3261,7 +3278,8 @@ window.addEventListener("popstate", ()=>{
     showLeague(){ this.load(); show('s-league'); this.renderLeague(); this.fetchGroupBoard().then(list=>this.renderLeague(list)); },
     renderLeague(serverList){
       this.load();
-      const mine=(this.data.groups||[]).map(g=>({name:g.name, logo:g.logo||'🎤', score:this.groupScore(g), n:g.n||0, me:true}));
+      const _rg=this.repGroup();   // 순위전엔 대표 데뷔조 1팀만 출전
+      const mine=_rg? [{name:_rg.name, logo:_rg.logo||'🎤', score:this.groupScore(_rg), n:_rg.n||0, me:true}] : [];
       const others=(Array.isArray(serverList)&&serverList.length)? serverList.concat(this._leagueSeed()).slice(0,14) : this._leagueSeed();   // 서버 그룹 + 더미(시드) 보충
       const board=others.concat(mine).sort((a,b)=>b.score-a.score);
       const myBest = mine.length? mine.reduce((a,b)=>b.score>a.score?b:a) : null;
