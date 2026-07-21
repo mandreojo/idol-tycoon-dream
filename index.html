@@ -608,13 +608,32 @@
       <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
       <h2>🎴 카드 보관함</h2>
     </div>
+    <button class="btn" onclick="DG.goForge()" style="margin-bottom:11px">⚗️ 카드 조합소 열기</button>
     <div class="segtab" style="margin-bottom:9px">
-      <button class="seg on" id="cseg-own" onclick="DG.cardsTab('own')">🎴 보유 · 강화</button>
+      <button class="seg on" id="cseg-own" onclick="DG.cardsTab('own')">🎴 보유</button>
       <button class="seg" id="cseg-dex" onclick="DG.cardsTab('dex')">📖 도감</button>
     </div>
     <p class="muted" id="cardsHint" style="margin:0 0 8px"></p>
     <div id="cardsFilter"></div>
     <div id="cardsList"></div>
+  </section>
+
+  <!-- 카드 조합소 (강화·합성) -->
+  <section class="screen" id="s-forge">
+    <div class="sub-head">
+      <button class="menu-btn" onclick="DG.goCards()" aria-label="back" title="뒤로">←</button>
+      <h2>⚗️ 카드 조합소</h2>
+    </div>
+    <p class="muted" style="margin:2px 0 4px">카드 2장을 올려 합쳐봐.</p>
+    <p class="muted" style="margin:0 0 14px;font-size:12px;line-height:1.6">· 같은 카드 같은 ★ → <b style="color:#f0a01e">강화</b> (별 ↑)<br>· 다른 카드 같은 레어도 → <b style="color:#a855f7">합성</b> (레어도 ↑ · R→SR→SSR→UR)</p>
+    <div class="forge-stage">
+      <div class="forge-slot" id="fslot0" onclick="DG.pickForge(0)"><span class="fs-plus">＋</span></div>
+      <div class="forge-op" id="forgeOp">＋</div>
+      <div class="forge-slot" id="fslot1" onclick="DG.pickForge(1)"><span class="fs-plus">＋</span></div>
+    </div>
+    <div class="forge-verdict" id="forgeVerdict"></div>
+    <button class="btn" id="forgeBtn" onclick="DG.doForge()" disabled style="opacity:.5">조합하기</button>
+    <div class="spacer" style="max-height:12px"></div>
   </section>
 
   <!-- 업적 -->
@@ -1309,6 +1328,7 @@ const Game = {
     const {base} = talentOf(idol.spec);
     this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode, trainCount:{}};   // mode=full(24턴)/quick(12턴 간이) · trainCount=영역별 훈련 횟수
     DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
+    { const _e=DG.effOf(DG.equipped); this.st.cardGrowth=1+(_e.growth||0); this.st.cardGate=1+(_e.gate||0); }   // 특수효과: 성장률·관문파워 배수 (SSR/UR 카드)
     DG.consumeEquipped();        // 카드 소모형: 장착 카드 1장씩 소모(지속 플레이 유인)
     this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
     this.logWeek(t("start_log",{name:esc(idolName(idol))}));
@@ -1452,7 +1472,7 @@ const Game = {
     // 히든 특기 가점: 타고난 특기 훈련이 더 잘 자람 (준특기는 소폭). UI엔 안 보임.
     const keys=STATS.map(x=>x.k), si=keys.indexOf(s.idol.spec);
     const talent = kind===s.idol.spec ? 1.22 : (kind===keys[(si+3)%keys.length] ? 1.1 : 1.0);
-    let gain = J.mult>0 ? Math.round(baseGain*J.mult*growthMult(s[kind])*talent)
+    let gain = J.mult>0 ? Math.round(baseGain*J.mult*growthMult(s[kind])*talent*(s.cardGrowth||1))
                         : Math.round(baseGain*J.mult);
     const oldV=Math.round(s[kind]), oldG=grade(oldV), oldL=levelOf(oldV);
     s[kind]=Math.max(0,Math.min(800,s[kind]+gain));   // 스탯 상한 800(=SS 만점). 넘겨도 캡
@@ -1696,6 +1716,7 @@ const Game = {
       const metric=Math.max(avg, peak*AWARD_PEAK_K);
       mine = metric * (1 + Math.min(0.45, s.fans/60000)) * (0.9 + Math.random()*0.2);
     }
+    mine *= (s.cardGate||1);   // 카드 특수효과: 관문 파워 보정 (SSR 초신성·UR 갓)
     const idxs=[]; while(idxs.length<3){ const r=Math.floor(Math.random()*RIVAL_POOL.length); if(!idxs.includes(r)) idxs.push(r); }
     const rivals=idxs.map(i=>({name:RIVAL_POOL[i], emoji:RIVAL_EMOJI[i], score:c.base*(0.75+Math.random()*0.5), me:false}));
     const board=[{name:idolName(s.idol), emoji:"🎤", score:mine, me:true}, ...rivals].sort((a,b)=>b.score-a.score);
@@ -2429,7 +2450,7 @@ function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
-  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"||id==="s-achv"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-forge"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"||id==="s-achv"){ try{ history.pushState({scr:id},""); }catch(e){} }}
 function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
 function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
   s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
@@ -2627,7 +2648,7 @@ window.addEventListener("popstate", ()=>{
     return;
   }
   // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
-  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>Game.reset(),"s-achv":()=>DG.go()};
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-forge":()=>DG.goCards(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>Game.reset(),"s-achv":()=>DG.go()};
   const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
   if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
     if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
@@ -2702,6 +2723,38 @@ window.addEventListener("popstate", ()=>{
   .card-row.locked{opacity:.62;filter:grayscale(.75)}
   .cr-own{color:#18b06e;font-weight:800;font-size:13px}
   .cr-miss{color:#c7bcc7;font-weight:700;font-size:12px}
+  /* ④ 카드 조합소 */
+  .forge-stage{display:flex;align-items:center;justify-content:center;gap:9px;margin:6px 0 14px}
+  .forge-slot{position:relative;flex:1;max-width:150px;min-height:150px;border:2px dashed #ffc9d6;border-radius:16px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    background:#fff8fa;cursor:pointer;padding:10px 8px;text-align:center;transition:.15s}
+  .forge-slot.filled{border-style:solid;border-color:#ec3a5c;background:#fff;box-shadow:0 4px 14px rgba(236,58,92,.12)}
+  .forge-slot.filled.rare{border-color:#ffb43e;background:#fff8ec}
+  .forge-slot .fs-plus{font-size:36px;color:#ffb0c1}
+  .forge-slot .fs-em{font-size:42px;line-height:1}
+  .forge-slot .fs-nm{font-size:13px;font-weight:700;line-height:1.2}
+  .forge-slot .fs-meta{font-size:11px;color:#9a8f9a}
+  .forge-slot .fs-x{position:absolute;top:5px;right:8px;font-size:14px;color:#c9b8c0;font-weight:700}
+  .forge-op{font-size:24px;color:#c9a0d6;font-weight:800;flex:0 0 auto}
+  .forge-verdict{min-height:50px;text-align:center;font-size:14px;line-height:1.55;margin-bottom:12px;display:flex;flex-direction:column;justify-content:center}
+  .fv-hi{font-weight:800} .fv-err{color:#cc8a8a}
+  .forge-pick{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;margin-bottom:8px}
+  .fp-chip{display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;text-align:left;
+    border:1.5px solid #ffe0e8;background:#fff;border-radius:12px;padding:9px 12px;cursor:pointer;font-size:14px}
+  .fp-chip.rare{border-color:#ffb43e;background:#fff8ec}
+  .fp-chip .fp-nm{flex:1;min-width:0}
+  .fp-chip .fp-meta{color:#9a8f9a;font-size:12px;font-weight:700;flex:0 0 auto}
+  /* 합성 겹침 연출 */
+  @keyframes faL{0%{transform:translateX(-42px) scale(1);opacity:1}55%{transform:translateX(0) scale(1.05)}100%{transform:translateX(0) scale(.35);opacity:0}}
+  @keyframes faR{0%{transform:translateX(42px) scale(1);opacity:1}55%{transform:translateX(0) scale(1.05)}100%{transform:translateX(0) scale(.35);opacity:0}}
+  @keyframes faGlow{0%{transform:scale(0);opacity:0}60%{transform:scale(1.4);opacity:.95}100%{transform:scale(2.4);opacity:0}}
+  .forge-collide{position:relative;height:96px;display:flex;align-items:center;justify-content:center;margin:6px 0}
+  .forge-collide .fa-c{position:absolute;font-size:56px}
+  .forge-collide .fa-l{animation:faL .82s ease-in forwards}
+  .forge-collide .fa-r{animation:faR .82s ease-in forwards}
+  .forge-collide .fa-glow{position:absolute;width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle,#fff 0%,#ffd36b 45%,rgba(255,107,138,0) 72%);animation:faGlow .82s ease-out .28s forwards;opacity:0}
+  .forge-anim-msg{text-align:center;font-weight:700;color:#a855f7;margin-top:2px}
   .cdex-prog{text-align:center;font-size:13px;color:#9a8f9a;margin:2px 0 10px}
   .cdex-prog b{color:#ec3a5c}
   .ag-logo{display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:#fff0f4;border:2px solid #ffe0e8;font-size:44px;cursor:pointer;overflow:hidden}
@@ -2750,6 +2803,24 @@ window.addEventListener("popstate", ()=>{
     producer:{creative:0.7, visual:0.3},
   };
   const STATNM={vocal:'발성',dance:'체력',visual:'스타일',charm:'화술',acting:'리듬감',creative:'창조'};
+  // ===== ④ 카드 조합: 상위 레어도 카드(합성 결과물) =====
+  // R+R → 하이브리드 SR(2스탯 동시) · SR+SR → SSR · SSR+SSR → UR. 특수효과=성장률(growth)·관문보정(gate).
+  const HYB_META = {   // 대표 6쌍만 특별명, 나머지 9쌍은 "스탯1·스탯2" 제너릭
+    vocal_acting:{nm:'보컬래퍼',em:'🎤'}, vocal_dance:{nm:'라이브강자',em:'🔥'},
+    charm_creative:{nm:'만능엔터',em:'🎭'}, dance_visual:{nm:'퍼포머',em:'💃'},
+    visual_charm:{nm:'예능비주얼',em:'📸'}, acting_creative:{nm:'힙합프로듀서',em:'🎧'},
+  };
+  (function(){ const ks=ORDER;   // 15종 하이브리드 SR 자동 정의 (C(6,2))
+    for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){
+      const a=ks[i], b=ks[j], id='hyb_'+a+'_'+b, m=HYB_META[a+'_'+b];
+      CARDS[id]={nm:m?m.nm:STATNM[a]+'·'+STATNM[b], em:m?m.em:'🎴', rr:2, eff:{stat:{[a]:34,[b]:34}}, hyb:true};
+    } })();
+  CARDS.ssr_allstar={nm:'올스타',   em:'🌟', rr:3, eff:{all:58}};
+  CARDS.ssr_prodigy={nm:'천재소년', em:'🌱', rr:3, eff:{all:30, growth:0.25}};
+  CARDS.ssr_nova   ={nm:'초신성',   em:'💫', rr:3, eff:{all:36, gate:0.12}};
+  CARDS.ur_legend  ={nm:'레전드',   em:'🏆', rr:4, eff:{all:82}};
+  CARDS.ur_god     ={nm:'갓',       em:'⚡', rr:4, eff:{all:48, growth:0.30, gate:0.15}};
+  const RARPOOL = {3:['ssr_allstar','ssr_prodigy','ssr_nova'], 4:['ur_legend','ur_god']};   // 합성 결과 추첨 풀
   // 데뷔조 9포지션 = 리더1·센터1·보컬2·래퍼2·댄서2·프로듀서1. 각 자리 type = POSFORMULA 공식으로 평가.
   // 순서 = openSlotSet 최소2칸 노출순(리더·센터가 기본 필수 슬롯 느낌으로 먼저 열림)
   const POSITIONS=[
@@ -2780,19 +2851,66 @@ window.addEventListener("popstate", ()=>{
   };
 
   // ===== 업적 (목표·진행감 = 상용게임 필수 레이어). 보상=뱃지형(밸런싱 무관). cur(d)=현재 진행값 =====
+  // ⑤ 업적 50종. cur(d)=현재 진행값(d=DG). ⚠️'dexfull' goal은 CARDS 총 종수와 일치(카드 추가 시 갱신).
   const ACHV = [
-    {id:'agency',  ic:'✍️', nm:'창업',         desc:'기획사를 설립',         goal:1,  cur:d=>d.data.agency?1:0},
-    {id:'first',   ic:'👣', nm:'첫 발걸음',     desc:'연습생 1명 육성 완주',   goal:1,  cur:d=>(d.data.roster||[]).length},
-    {id:'debut',   ic:'🎬', nm:'데뷔 신고식',   desc:'그룹 1팀 데뷔',         goal:1,  cur:d=>(d.data.groups||[]).length},
-    {id:'runs10',  ic:'🔁', nm:'열혈 프로듀서', desc:'육성 10회 완주',        goal:10, cur:d=>d.data.runs||0},
-    {id:'roster8', ic:'📋', nm:'인재 숙소',     desc:'연습생 8명 보유',       goal:8,  cur:d=>(d.data.roster||[]).length},
-    {id:'sclass',  ic:'⭐', nm:'스타 발굴',     desc:'S급 이상 연습생 육성',   goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=6).length},
-    {id:'ssclass', ic:'🌟', nm:'육각형 스타',   desc:'SS급 연습생 육성',      goal:1,  cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=7).length},
-    {id:'full9',   ic:'💃', nm:'완전체',        desc:'9인 완성 그룹 데뷔',     goal:1,  cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
-    {id:'groups3', ic:'🏢', nm:'대형 기획사',   desc:'그룹 3팀 데뷔',         goal:3,  cur:d=>(d.data.groups||[]).length},
-    {id:'cards5',  ic:'🎴', nm:'수집가',        desc:'육성카드 5종 보유',      goal:5,  cur:d=>d.ownedTypes().length},
-    {id:'star5',   ic:'👑', nm:'강화 장인',     desc:'★5 카드 달성',          goal:1,  cur:d=>d.ownedTypes().filter(t=>d.bestStar(t)>=5).length},
-    {id:'gradeA',  ic:'🏆', nm:'명문 그룹',     desc:'A등급 이상 그룹 데뷔',    goal:1,  cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=5).length},
+    // ── 시작
+    {id:'agency',  ic:'✍️', nm:'창업',          desc:'기획사를 설립',            goal:1,  cur:d=>d.data.agency?1:0},
+    {id:'name1',   ic:'🏷️', nm:'작명가',        desc:'기획사 이름·로고 설정',      goal:1,  cur:d=>(d.data.agency&&d.data.agency.name)?1:0},
+    {id:'first',   ic:'👣', nm:'첫 발걸음',      desc:'연습생 1명 육성 완주',       goal:1,  cur:d=>(d.data.roster||[]).length},
+    {id:'debut',   ic:'🎬', nm:'데뷔 신고식',    desc:'그룹 1팀 데뷔',             goal:1,  cur:d=>(d.data.groups||[]).length},
+    // ── 육성 누적
+    {id:'runs5',   ic:'🔁', nm:'초보 프로듀서',  desc:'육성 5회 완주',             goal:5,   cur:d=>d.data.runs||0},
+    {id:'runs10',  ic:'🔂', nm:'열혈 프로듀서',  desc:'육성 10회 완주',            goal:10,  cur:d=>d.data.runs||0},
+    {id:'runs25',  ic:'🔥', nm:'베테랑 프로듀서',desc:'육성 25회 완주',            goal:25,  cur:d=>d.data.runs||0},
+    {id:'runs50',  ic:'🏅', nm:'육성 마스터',    desc:'육성 50회 완주',            goal:50,  cur:d=>d.data.runs||0},
+    {id:'runs100', ic:'💠', nm:'육성의 신',      desc:'육성 100회 완주',           goal:100, cur:d=>d.data.runs||0},
+    {id:'custom1', ic:'🎨', nm:'나만의 원석',    desc:'커스텀 연습생 육성',         goal:1,   cur:d=>(d.data.roster||[]).filter(r=>String(r.idkey||'').indexOf('c:')===0).length},
+    {id:'max800',  ic:'💯', nm:'만점 재능',      desc:'능력치 800(SS만점) 달성',    goal:1,   cur:d=>(d.data.roster||[]).filter(r=>ORDER.some(k=>((r.stats&&r.stats[k])||0)>=800)).length},
+    // ── 연습생 등급/수
+    {id:'sclass',  ic:'⭐', nm:'스타 발굴',      desc:'S급 이상 연습생 육성',       goal:1,   cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=6).length},
+    {id:'sclass5', ic:'✨', nm:'A&R의 눈',       desc:'S급 이상 5명 육성',          goal:5,   cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=6).length},
+    {id:'ssclass', ic:'🌟', nm:'육각형 스타',    desc:'SS급 연습생 육성',           goal:1,   cur:d=>(d.data.roster||[]).filter(r=>grank(r.grade)>=7).length},
+    {id:'roster8', ic:'📋', nm:'인재 숙소',      desc:'연습생 8명 보유',            goal:8,   cur:d=>(d.data.roster||[]).length},
+    {id:'roster20',ic:'🏬', nm:'인재풀',         desc:'연습생 20명 보유',           goal:20,  cur:d=>(d.data.roster||[]).length},
+    {id:'roster40',ic:'🏙️', nm:'대형 아카데미',  desc:'연습생 40명 보유',           goal:40,  cur:d=>(d.data.roster||[]).length},
+    // ── 카드 수집
+    {id:'cards5',  ic:'🎴', nm:'수집가',         desc:'카드 5종 보유',             goal:5,   cur:d=>d.ownedTypes().length},
+    {id:'cards12', ic:'🃏', nm:'카드 애호가',    desc:'카드 12종 보유',            goal:12,  cur:d=>d.ownedTypes().length},
+    {id:'cards20', ic:'📚', nm:'카드 컬렉터',    desc:'카드 20종 보유',            goal:20,  cur:d=>d.ownedTypes().length},
+    {id:'dexfull', ic:'🏆', nm:'도감 완성',      desc:'카드 전 28종 수집',          goal:28,  cur:d=>d.ownedTypes().length},
+    {id:'cardqty', ic:'🗂️', nm:'카드 부자',      desc:'카드 누적 50장 보유',        goal:50,  cur:d=>{let n=0;Object.keys(d.data.cards||{}).forEach(t=>{const c=d.data.cards[t];for(const s in c)n+=c[s];});return n;}},
+    {id:'hyb1',    ic:'🎭', nm:'첫 합성체',      desc:'하이브리드 카드 1종 보유',    goal:1,   cur:d=>d.ownedTypes().filter(t=>(CARDS[t]||{}).hyb).length},
+    {id:'hyb8',    ic:'🎨', nm:'하이브리드 수집가',desc:'하이브리드 8종 보유',       goal:8,   cur:d=>d.ownedTypes().filter(t=>(CARDS[t]||{}).hyb).length},
+    {id:'hyb15',   ic:'🌈', nm:'하이브리드 도감', desc:'하이브리드 전 15종 보유',    goal:15,  cur:d=>d.ownedTypes().filter(t=>(CARDS[t]||{}).hyb).length},
+    // ── 강화·합성(조합소)
+    {id:'firstfg', ic:'🎇', nm:'연금술 입문',    desc:'조합(강화·합성) 첫 성공',     goal:1,   cur:d=>{const f=d.data.forge||{};return (f.c||0)+(f.m||0);}},
+    {id:'star3',   ic:'⭐', nm:'별 세 개',       desc:'★3 카드 달성',              goal:1,   cur:d=>d.ownedTypes().filter(t=>d.bestStar(t)>=3).length},
+    {id:'star5',   ic:'👑', nm:'강화 장인',      desc:'★5 카드 달성',              goal:1,   cur:d=>d.ownedTypes().filter(t=>d.bestStar(t)>=5).length},
+    {id:'star5x3', ic:'💎', nm:'풀강 마니아',    desc:'★5 카드 3종 달성',           goal:3,   cur:d=>d.ownedTypes().filter(t=>d.bestStar(t)>=5).length},
+    {id:'merge5',  ic:'🔧', nm:'강화 입문',      desc:'강화 성공 5회',             goal:5,   cur:d=>(d.data.forge&&d.data.forge.m)||0},
+    {id:'merge25', ic:'🛠️', nm:'강화 숙련공',    desc:'강화 성공 25회',            goal:25,  cur:d=>(d.data.forge&&d.data.forge.m)||0},
+    {id:'comb5',   ic:'⚗️', nm:'합성 입문',      desc:'합성 성공 5회',             goal:5,   cur:d=>(d.data.forge&&d.data.forge.c)||0},
+    {id:'comb25',  ic:'🧪', nm:'합성 연금술사',  desc:'합성 성공 25회',            goal:25,  cur:d=>(d.data.forge&&d.data.forge.c)||0},
+    {id:'ssr1',    ic:'💫', nm:'초신성 탄생',    desc:'SSR 카드 제작',             goal:1,   cur:d=>d.ownedTypes().filter(t=>d.rrOf(t)>=3).length},
+    {id:'ur1',     ic:'⚡', nm:'전설의 카드',    desc:'UR 카드 제작',              goal:1,   cur:d=>d.ownedTypes().filter(t=>d.rrOf(t)>=4).length},
+    {id:'urboth',  ic:'🎆', nm:'UR 컴플리트',    desc:'UR 2종 모두 보유',           goal:2,   cur:d=>d.ownedTypes().filter(t=>d.rrOf(t)>=4).length},
+    // ── 그룹·데뷔
+    {id:'groups3', ic:'🏢', nm:'대형 기획사',    desc:'그룹 3팀 데뷔',             goal:3,   cur:d=>(d.data.groups||[]).length},
+    {id:'groups5', ic:'🏛️', nm:'엔터 제국',      desc:'그룹 5팀 데뷔',             goal:5,   cur:d=>(d.data.groups||[]).length},
+    {id:'full9',   ic:'💃', nm:'완전체',         desc:'9인 완성 그룹 데뷔',         goal:1,   cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
+    {id:'full9x3', ic:'🎉', nm:'멀티 완전체',    desc:'9인 그룹 3팀 데뷔',          goal:3,   cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
+    {id:'allpos',  ic:'🧩', nm:'육각형 편성',    desc:'6개 포지션 모두 채운 그룹',   goal:1,   cur:d=>(d.data.groups||[]).filter(g=>{const ts=new Set();POSITIONS.forEach(p=>{if(g.lineup&&g.lineup[p.id])ts.add(p.type);});return ts.size>=6;}).length},
+    {id:'gradeA',  ic:'🥉', nm:'명문 그룹',      desc:'A등급 이상 그룹 데뷔',        goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=5).length},
+    {id:'gradeS',  ic:'🥇', nm:'월드클래스',     desc:'S등급 이상 그룹 데뷔',        goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=6).length},
+    {id:'gradeSS', ic:'🌠', nm:'역대급 그룹',    desc:'SS등급 그룹 데뷔',           goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=7).length},
+    {id:'league1', ic:'📊', nm:'차트인',         desc:'대표 그룹 차트 등록',         goal:1,   cur:d=>d.data.repGid?1:0},
+    // ── 칭호(전설의 연습생)
+    {id:'title3',  ic:'🎖️', nm:'훈장 수집',      desc:'서로 다른 칭호 3종 획득',     goal:3,   cur:d=>{const s=new Set();(d.data.roster||[]).forEach(r=>(r.titles||[]).forEach(x=>s.add(x)));return s.size;}},
+    {id:'title6',  ic:'🏅', nm:'명예의 컬렉션',  desc:'서로 다른 칭호 6종 획득',     goal:6,   cur:d=>{const s=new Set();(d.data.roster||[]).forEach(r=>(r.titles||[]).forEach(x=>s.add(x)));return s.size;}},
+    {id:'title11', ic:'👑', nm:'칭호 마스터',    desc:'칭호 전 11종 획득',          goal:11,  cur:d=>{const s=new Set();(d.data.roster||[]).forEach(r=>(r.titles||[]).forEach(x=>s.add(x)));return s.size;}},
+    {id:'legendT', ic:'🐉', nm:'전설 배출',      desc:"'전설' 칭호 연습생 배출",      goal:1,   cur:d=>(d.data.roster||[]).filter(r=>(r.titles||[]).indexOf('legend')>=0).length},
+    // ── 팬덤(엔드게임)
+    {id:'fans1m',  ic:'💗', nm:'백만 팬덤',      desc:'최고 팬 100만 돌파',         goal:1000000, cur:d=>+(localStorage.getItem('dg_best_fans')||0)},
   ];
 
   function pid(){ let id=localStorage.getItem('idol_pid'); if(!id){ id='local-'+Date.now(); localStorage.setItem('idol_pid',id);} return id; }
@@ -2838,11 +2956,18 @@ window.addEventListener("popstate", ()=>{
     rarBadge(type){ const r=CARDS[type].rr; return `<b style="color:${RAR_COLOR[r]}">${RARITY[r]}</b>`; },
     starStr(star){ return star>0?'★'+star:''; },
     cardDesc(type, star){ const c=CARDS[type]; const m=STAR_MULT[(star||this.bestStar(type)||1)-1]||1;
-      if(c.eff.all!=null) return `전 재능 +${Math.round(c.eff.all*m)}로 시작`;
-      if(c.eff.stat){ const k=Object.keys(c.eff.stat)[0]; return `${STATNM[k]||k} +${Math.round(c.eff.stat[k]*m)}로 시작`; }
-      return ''; },
-    effOf(types){ const e={stat:{},all:0}; (types||[]).forEach(id=>{ const c=CARDS[id]; if(!c)return; const m=STAR_MULT[Math.max(1,this.bestStar(id))-1]||1; const x=c.eff;
-      if(x.all)e.all+=x.all*m; if(x.stat)for(const k in x.stat)e.stat[k]=(e.stat[k]||0)+x.stat[k]*m; }); return e; },
+      const parts=[];
+      if(c.eff.all!=null) parts.push(`전 재능 +${Math.round(c.eff.all*m)}`);
+      if(c.eff.stat) for(const k in c.eff.stat) parts.push(`${STATNM[k]||k} +${Math.round(c.eff.stat[k]*m)}`);
+      let s = parts.length ? parts.join(' · ')+'로 시작' : '';
+      const sp=[];   // 특수효과(별배수 미적용, 지속효과)
+      if(c.eff.growth) sp.push(`성장률 +${Math.round(c.eff.growth*100)}%`);
+      if(c.eff.gate) sp.push(`관문 파워 +${Math.round(c.eff.gate*100)}%`);
+      if(sp.length) s += (s?' · ':'')+sp.join(' · ');
+      return s; },
+    effOf(types){ const e={stat:{},all:0,growth:0,gate:0}; (types||[]).forEach(id=>{ const c=CARDS[id]; if(!c)return; const m=STAR_MULT[Math.max(1,this.bestStar(id))-1]||1; const x=c.eff;
+      if(x.all)e.all+=x.all*m; if(x.stat)for(const k in x.stat)e.stat[k]=(e.stat[k]||0)+x.stat[k]*m;
+      if(x.growth)e.growth+=x.growth; if(x.gate)e.gate+=x.gate; }); return e; },
     applyEquipped(st){ if(!this.equipped||!this.equipped.length) return; const e=this.effOf(this.equipped);
       ORDER.forEach(k=>{ st[k]=Math.min(800,Math.round((st[k]||0)+(e.all||0)+(e.stat[k]||0))); }); },
     consumeEquipped(){   // 카드 소모형: 장착한 카드 각 1장(최저 별부터) 소모 → 지속 플레이 유인
@@ -3111,7 +3236,7 @@ window.addEventListener("popstate", ()=>{
         <div style="font-size:44px;line-height:1.1">${owned?c.em:'❔'}</div>
         <div class="ev-title" style="margin-top:4px">${this.rarBadge(type)} ${owned?esc(c.nm):'???'}</div>
         <div class="muted" style="margin:4px 0 10px">${RARITY[c.rr]} 레어도${owned?` · 최고 ${this.starStr(bs)}`:''}</div>
-        <div style="background:#fff7fa;border:1px solid #ffe0e8;border-radius:12px;padding:11px;font-size:13.5px;line-height:1.5;margin-bottom:10px">${owned?this.cardDesc(type,bs):'아직 미보유<br>육성을 마치면 얻을 수 있어'}</div>
+        <div style="background:#fff7fa;border:1px solid #ffe0e8;border-radius:12px;padding:11px;font-size:13.5px;line-height:1.5;margin-bottom:10px">${owned?this.cardDesc(type,bs):((c.hyb||c.rr>=3)?'아직 미보유<br>⚗️ 조합소에서 합성해 얻을 수 있어':'아직 미보유<br>육성을 마치면 얻을 수 있어')}</div>
         ${owned&&stars.length?`<div class="muted" style="font-size:12px;margin-bottom:10px">보유: ${stars.join(' · ')}</div>`:''}
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
     },
@@ -3306,10 +3431,138 @@ window.addEventListener("popstate", ()=>{
       else if(o==='success'){ this.add(type,star,-2); this.add(type,star+1,1); }   // 2장 소모 + 승급
       else if(o==='fail'){ this.add(type,star,-1); }                               // 1장 소실
       else { this.add(type,star,-2); }                                            // 2장 소실
+      if(o==='gsuccess'||o==='success'){ if(!this.data.forge)this.data.forge={}; this.data.forge.m=(this.data.forge.m||0)+1; }   // 업적: 강화 성공 누적
       this.persist();
       return {outcome:o, type, from:star};
     },
-    // ===== 카드 보관함 (보유·강화 탭 | 도감 탭) =====
+    // ===== 합성(조합) — 다른 카드 같은 레어도 2장 → 상위 레어도 1장. 확률제. R+R은 재료 스탯 반영 =====
+    combineOdds(rr){   // rr=재료 레어도(1=R,2=SR,3=SSR). 상위로 갈수록 성공률↓
+      const sTot=[,82,60,42][rr]||50;   // R→SR 82% · SR→SSR 60% · SSR→UR 42%
+      const gs=Math.round(sTot*0.15), s=sTot-gs, f=100-sTot;
+      return {gs,s,f};   // 🌟대성공(재료1 보존)·✨성공·💦실패(재료1 소실)
+    },
+    combineResult(idA, idB){   // 결과 카드 id 결정 (R+R=두 스탯 하이브리드, 그 외=상위 풀 추첨)
+      const cA=CARDS[idA], cB=CARDS[idB];
+      if(!cA||!cB||idA===idB||cA.rr!==cB.rr) return null;
+      if(cA.rr===1){ const ka=Object.keys(cA.eff.stat||{})[0], kb=Object.keys(cB.eff.stat||{})[0];
+        if(!ka||!kb||ka===kb) return null;
+        const key=[ka,kb].sort((x,y)=>ORDER.indexOf(x)-ORDER.indexOf(y));
+        return 'hyb_'+key[0]+'_'+key[1]; }
+      const pool=RARPOOL[cA.rr+1]; if(!pool) return null;   // SR→SSR, SSR→UR
+      return pool[Math.floor(Math.random()*pool.length)];
+    },
+    combine(idA, starA, idB, starB){
+      this.load();
+      if(idA===idB) return {err:'same'};
+      const cA=CARDS[idA], cB=CARDS[idB];
+      if(!cA||!cB) return {err:'bad'};
+      if(cA.rr!==cB.rr) return {err:'rrdiff'};
+      if(cA.rr>=4) return {err:'urmax'};
+      if(this.countAt(idA,starA)<1 || this.countAt(idB,starB)<1) return {err:'need'};
+      const result=this.combineResult(idA, idB);
+      if(!result) return {err:'norule'};
+      const preOwn=this.owned(result);
+      const p=this.combineOdds(cA.rr), r=Math.random()*100; let o;
+      if(r<p.gs)o='gsuccess'; else if(r<p.gs+p.s)o='success'; else o='fail';
+      if(o==='gsuccess'){ this.add(idB,starB,-1); this.add(result,1,1); }                         // 재료 1개만 소모(A 보존)
+      else if(o==='success'){ this.add(idA,starA,-1); this.add(idB,starB,-1); this.add(result,1,1); }
+      else { this.add(idA,starA,-1); }                                                            // 실패: 재료 1개 소실
+      if(o!=='fail'){ if(!this.data.forge)this.data.forge={}; this.data.forge.c=(this.data.forge.c||0)+1;   // 업적: 합성 성공 누적
+        const rrR=this.rrOf(result); if(rrR>=3)this.data.forge.ssr=(this.data.forge.ssr||0)+1; if(rrR>=4)this.data.forge.ur=(this.data.forge.ur||0)+1; }
+      this.persist();
+      return {outcome:o, result, rr:cA.rr, wasNew:(o!=='fail')&&!preOwn};
+    },
+    // ===== ④ 카드 조합소 (강화·합성 통합 작업대) =====
+    rrOf(id){ return (CARDS[id]||{}).rr; },
+    emOf(id){ return (CARDS[id]||{}).em||'🎴'; },
+    nmOf(id){ return (CARDS[id]||{}).nm||id; },
+    goForge(){ this.load(); this.forge=[null,null]; show('s-forge'); this.renderForge(); },
+    pickForge(slot){ this.load();
+      const other=this.forge&&this.forge[1-slot];
+      const items=[];
+      this.ownedTypes().forEach(id=>{ for(let s=1;s<=MAXSTAR;s++){ let n=this.countAt(id,s);
+        if(other && other.id===id && other.star===s) n--;   // 다른 슬롯이 점유한 재고 제외
+        if(n>0) items.push({id,star:s,n}); }});
+      const ov=document.getElementById('ov'); ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
+      if(!items.length){ ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px"><div class="ev-title">올릴 카드가 없어</div><p class="muted" style="margin:8px 0 14px">육성을 완주하면 카드가 생겨.${other?'<br>(다른 슬롯 카드는 중복 사용 불가)':''}</p><button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`; return; }
+      ov.innerHTML=`<div class="ev-card" style="max-width:340px"><div class="ev-title" style="margin-bottom:2px">${slot===0?'왼쪽':'오른쪽'} 슬롯에 올릴 카드</div>
+        <p class="muted" style="margin:0 0 10px;font-size:12px">탭해서 선택</p>
+        <div class="forge-pick">${items.map(it=>`<button class="fp-chip ${this.rrOf(it.id)>=2?'rare':''}" onclick="DG.setForge(${slot},'${it.id}',${it.star})">
+          <span style="font-size:22px">${this.emOf(it.id)}</span>
+          <span class="fp-nm">${this.rarBadge(it.id)} ${esc(this.nmOf(it.id))}</span>
+          <span class="fp-meta">★${it.star} · ${it.n}장</span></button>`).join('')}</div>
+        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
+    },
+    setForge(slot,id,star){ if(!this.forge)this.forge=[null,null]; this.forge[slot]={id,star:+star};
+      const ov=document.getElementById('ov'); ov.className='ov'; ov.onclick=null; this.renderForge(); },
+    clearForge(i){ if(this.forge)this.forge[i]=null; this.renderForge(); },
+    forgeVerdictInfo(){ const a=this.forge&&this.forge[0], b=this.forge&&this.forge[1];
+      if(!a||!b) return {kind:'incomplete'};
+      if(a.id===b.id){
+        if(a.star!==b.star) return {kind:'err', msg:'같은 카드는 같은 ★끼리만 강화돼'};
+        if(a.star>=MAXSTAR) return {kind:'err', msg:'이미 ★5 (최대)'};
+        if(this.countAt(a.id,a.star)<2) return {kind:'err', msg:'같은 ★ 2장이 필요해'};
+        return {kind:'merge', id:a.id, star:a.star, odds:this.mergeOdds(a.star)};
+      }
+      const rrA=this.rrOf(a.id), rrB=this.rrOf(b.id);
+      if(rrA!==rrB) return {kind:'err', msg:'합성은 같은 레어도끼리만 (R+R · SR+SR …)'};
+      if(rrA>=4) return {kind:'err', msg:'UR은 더 합칠 수 없어'};
+      const result=this.combineResult(a.id,b.id);
+      if(!result) return {kind:'err', msg:'이 조합은 합성 규칙이 없어'};
+      return {kind:'combine', a, b, result, odds:this.combineOdds(rrA)};
+    },
+    renderForge(){ if(!this.forge)this.forge=[null,null];
+      [0,1].forEach(i=>{ const el=document.getElementById('fslot'+i); if(!el)return; const f=this.forge[i];
+        if(f){ el.className='forge-slot filled'+(this.rrOf(f.id)>=2?' rare':'');
+          el.innerHTML=`<span class="fs-x" onclick="event.stopPropagation();DG.clearForge(${i})">✕</span><span class="fs-em">${this.emOf(f.id)}</span><span class="fs-nm">${this.rarBadge(f.id)} ${esc(this.nmOf(f.id))}</span><span class="fs-meta">★${f.star} · ${RARITY[this.rrOf(f.id)]}</span>`;
+        } else { el.className='forge-slot'; el.innerHTML='<span class="fs-plus">＋</span>'; }
+      });
+      const v=this.forgeVerdictInfo(), vd=document.getElementById('forgeVerdict'), btn=document.getElementById('forgeBtn');
+      if(!vd||!btn) return;
+      const off=()=>{ btn.disabled=true; btn.style.opacity=.5; };
+      const on=(lbl)=>{ btn.disabled=false; btn.style.opacity=1; btn.textContent=lbl; };
+      if(v.kind==='incomplete'){ vd.innerHTML='<span class="muted">두 슬롯을 모두 채워줘</span>'; off(); btn.textContent='조합하기'; }
+      else if(v.kind==='err'){ vd.innerHTML=`<span class="fv-err">✖ ${v.msg}</span>`; off(); btn.textContent='조합하기'; }
+      else if(v.kind==='merge'){ vd.innerHTML=`<span class="fv-hi" style="color:#f0a01e">🔧 강화</span> · ★${v.star} → ★${v.star+1}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 🌟대성공 시 1장 보존</span>`; on('🔧 강화하기'); }
+      else { const rc=RAR_COLOR[this.rrOf(v.result)]; vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${rc}">${RARITY[this.rrOf(v.result)]}</b> ${esc(this.nmOf(v.result))}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 레어도 상승</span>`; on('⚗️ 합성하기'); }
+    },
+    doForge(){ const v=this.forgeVerdictInfo(); if(v.kind!=='merge'&&v.kind!=='combine') return;
+      let res;
+      if(v.kind==='merge'){ res=this.merge(v.id,v.star); if(res.err){toast('강화 실패: 재료 부족'); this.load(); this.renderForge(); return;} res.mode='merge'; }
+      else { res=this.combine(v.a.id,v.a.star,v.b.id,v.b.star); if(res.err){toast('합성 실패: 재료 부족'); this.load(); this.renderForge(); return;} res.mode='combine'; }
+      this.forge=[null,null];
+      const twoEm = v.kind==='merge' ? [this.emOf(v.id),this.emOf(v.id)] : [this.emOf(v.a.id),this.emOf(v.b.id)];
+      const ov=document.getElementById('ov'); ov.className='ov on'; ov.onclick=null;
+      ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px">
+        <div class="forge-collide"><span class="fa-glow"></span><span class="fa-c fa-l">${twoEm[0]}</span><span class="fa-c fa-r">${twoEm[1]}</span></div>
+        <div class="forge-anim-msg">${v.kind==='merge'?'강화 중…':'합성 중…'}</div></div>`;
+      try{sfx('click');}catch(e){}
+      setTimeout(()=>this.showForgeResult(res), 880);
+    },
+    showForgeResult(res){ const ov=document.getElementById('ov'); ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; this.renderForge(); } };
+      let big, title, body; const cf=()=>{ try{Game.confetti(48,false);}catch(e){} };
+      if(res.mode==='merge'){ const nm=this.nmOf(res.type);
+        if(res.outcome==='gsuccess'){ big='🌟'; title='대성공!'; body=`<b>${esc(nm)}</b> ★${res.from+1} 승급 · 재료 1장 보존!`; try{sfx('win');}catch(e){} cf(); }
+        else if(res.outcome==='success'){ big='✨'; title='강화 성공'; body=`<b>${esc(nm)}</b> ★${res.from} → ★${res.from+1}`; try{sfx('win');}catch(e){} }
+        else if(res.outcome==='fail'){ big='💦'; title='실패…'; body='카드 1장 소실'; try{sfx('fail');}catch(e){} }
+        else { big='💥'; title='대실패'; body='카드 2장 소실…'; try{sfx('fail');}catch(e){} }
+      } else {
+        if(res.outcome==='fail'){ big='💦'; title='합성 실패…'; body='재료 1장 소실'; try{sfx('fail');}catch(e){} }
+        else { const rc=RAR_COLOR[this.rrOf(res.result)];
+          big=this.emOf(res.result);
+          title=res.outcome==='gsuccess'?'🌟 대성공!':'✨ 합성 성공!';
+          body=`<b style="color:${rc}">${RARITY[this.rrOf(res.result)]}</b> <b>${esc(this.nmOf(res.result))}</b> 획득!${res.wasNew?' <span style="color:#18b06e">✨새 카드</span>':''}${res.outcome==='gsuccess'?'<br><span class="muted" style="font-size:12px">재료 1장 보존</span>':''}<br><span class="muted" style="font-size:12px">${esc(this.cardDesc(res.result,1))}</span>`;
+          try{sfx('win');}catch(e){} cf(); }
+      }
+      ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px">
+        <div style="font-size:54px;line-height:1.1">${big}</div>
+        <div class="ev-title" style="margin-top:6px">${title}</div>
+        <div style="margin:9px 3px 15px;font-size:14px;line-height:1.5">${body}</div>
+        <button class="btn" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.renderForge()">확인</button></div>`;
+    },
+    // ===== 카드 보관함 (보유 탭 | 도감 탭) =====
     goCards(){ this.load(); this._cardTab='own'; this._cardFilter='all'; show('s-cards'); this.syncCardTab(); this.renderCards(); },
     cardsTab(tab){ this._cardTab=tab; this.syncCardTab(); this.renderCards(); },
     syncCardTab(){ const t=this._cardTab||'own';
@@ -3319,24 +3572,20 @@ window.addEventListener("popstate", ()=>{
     renderCards(){ this.load(); return (this._cardTab||'own')==='dex' ? this.renderCardsDex() : this.renderCardsOwned(); },
     renderCardsOwned(){
       const box=document.getElementById('cardsList'), fbox=document.getElementById('cardsFilter'), hint=document.getElementById('cardsHint');
-      if(hint) hint.innerHTML='같은 <b>★</b> 2장을 합쳐 별을 올려(★1→★5). 🌟대성공(1장보존)·✨성공·💦실패·💥대실패.';
+      if(hint) hint.innerHTML='카드를 모아 <b style="color:#a855f7">⚗️ 조합소</b>에서 강화(별↑)·합성(레어도↑)해봐.';
       const all=this.ownedTypes(); const f=this._cardFilter||'all';
-      if(fbox) fbox.innerHTML=`<div class="cfilter">${['all','N','R','SR'].map(x=>
+      if(fbox) fbox.innerHTML=`<div class="cfilter">${['all','N','R','SR','SSR','UR'].map(x=>
         `<button class="cf-chip ${f===x?'on':''}" onclick="DG.setCardFilter('${x}')">${x==='all'?'전체':x}</button>`).join('')}</div>`;
       const types = f==='all'? all : all.filter(id=>RARITY[CARDS[id].rr]===f);
       if(!types.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${all.length?'이 레어도 카드가 없어':'아직 보유한 육성카드가 없어.<br>육성을 마치면 생겨!'}</p>`; return; }
       box.innerHTML=types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
         const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
-        let ms=-1; for(let s=1;s<MAXSTAR;s++){ if(this.countAt(id,s)>=2){ ms=s; break; } }
-        const btn = ms>0
-          ? (o=>`<button class="cr-btn" onclick="event.stopPropagation();DG.doMerge('${id}',${ms})">합치기<br><small>★${ms}→★${ms+1} · ${o.gs+o.s}%</small></button>`)(this.mergeOdds(ms))
-          : (bs>=MAXSTAR?'<span class="cr-maxb">👑</span>':'<span class="muted" style="font-size:11px;text-align:center;display:inline-block">2장 모으면<br>합치기</span>');
         return `<div class="card-row ${c.rr>=2?'rare':''}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${c.em}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${c.nm} <span style="color:#f0a01e">${this.starStr(bs)}</span></div>
             <div class="muted" style="font-size:12px">${this.cardDesc(id,bs)}</div>
             <div style="font-size:12px;margin-top:3px">${schips.join('')}</div></div>
-          <div class="cr-r">${btn}</div>
+          <div class="cr-r">${bs>=MAXSTAR?'<span class="cr-maxb">👑</span>':''}</div>
         </div>`;}).join('');
     },
     renderCardsDex(){
@@ -3349,7 +3598,7 @@ window.addEventListener("popstate", ()=>{
         return `<div class="card-row ${c.rr>=2?'rare':''} ${owned?'':'locked'}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${owned?c.em:'❔'}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${owned?c.nm:'???'}${owned?` <span style="color:#f0a01e">${this.starStr(bs)}</span>`:''}</div>
-            <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):'육성으로 획득'}</div></div>
+            <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):((c.hyb||c.rr>=3)?'⚗️ 조합소에서 합성':'육성으로 획득')}</div></div>
           <div class="cr-r">${owned?'<span class="cr-own">보유</span>':'<span class="cr-miss">미보유</span>'}</div>
         </div>`;}).join('');
     },
