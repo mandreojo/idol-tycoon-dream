@@ -780,13 +780,15 @@ function idolName(i){ return (typeof LANG!=="undefined" && LANG==="en" && i && i
 function idolGrp(i){ return (typeof LANG!=="undefined" && LANG==="en" && i && i.grpEn) ? i.grpEn : (i ? (i.grp||"") : ""); }
 
 // 6대 능력치 (육각형)
+// ⚠️ 내부키(vocal/acting/dance/visual/charm/creative)는 세이브·카드 호환 위해 유지, 표시이름만 신(新)스탯으로 교체(2026-07-21 개편).
+//   vocal=발성 · acting=리듬감 · dance=체력 · visual=스타일 · charm=화술 · creative=창조. (dance키가 화면엔 '체력', charm키가 '화술'인 내부 불일치는 이 주석으로 감당)
 const STATS = [
-  {k:"vocal",   n:"보컬",         ico:"🎵", c:"#ff7ab8"},
-  {k:"acting",  n:"랩",           ico:"🎤", c:"#ff8a6b"},
-  {k:"dance",   n:"댄스",         ico:"💃", c:"#5fc9ff"},
-  {k:"visual",  n:"비주얼",       ico:"✨", c:"#ffca5f"},
-  {k:"charm",   n:"예능",         ico:"🎭", c:"#a97bff"},
-  {k:"creative",n:"크리에이티브", ico:"🎼", c:"#4fe0c0"},
+  {k:"vocal",   n:"발성",   ico:"🎵", c:"#ff7ab8"},
+  {k:"acting",  n:"리듬감", ico:"🎤", c:"#ff8a6b"},
+  {k:"dance",   n:"체력",   ico:"💪", c:"#5fc9ff"},
+  {k:"visual",  n:"스타일", ico:"✨", c:"#ffca5f"},
+  {k:"charm",   n:"화술",   ico:"💬", c:"#a97bff"},
+  {k:"creative",n:"창조",   ico:"🎼", c:"#4fe0c0"},
 ];
 const MENTAL = {k:"mental", n:"멘탈", ico:"🧠", c:"#9aa6c9"};
 
@@ -810,14 +812,14 @@ function talentOf(spec){
   return {base, spec};
 }
 
-// 순서 = STATS/그래프 순서(보컬·랩·댄스·비주얼·예능·크리)와 일치시킴
+// 순서 = STATS/그래프 순서(발성·리듬감·체력·스타일·화술·창조)와 일치시킴
 const TRAININGS = [
-  {k:"vocal",   ico:"🎵", t:"보컬 레슨",   d:"발성·음정"},
-  {k:"acting",  ico:"🎤", t:"랩 트레이닝", d:"플로우·라임"},
-  {k:"dance",   ico:"💃", t:"댄스 연습",   d:"안무·체력"},
-  {k:"visual",  ico:"✨", t:"비주얼 관리", d:"스타일링"},
-  {k:"charm",   ico:"🎭", t:"예능 도전",   d:"끼·화술"},
-  {k:"creative",ico:"🎼", t:"작업실",      d:"작사·작곡"},
+  {k:"vocal",   ico:"🎵", t:"발성 훈련",   d:"음정·성량"},
+  {k:"acting",  ico:"🎤", t:"리듬 훈련",   d:"플로우·라임"},
+  {k:"dance",   ico:"💪", t:"체력 단련",   d:"안무·기초체력"},
+  {k:"visual",  ico:"✨", t:"스타일 관리", d:"패션·비주얼"},
+  {k:"charm",   ico:"💬", t:"화술 훈련",   d:"말솜씨·예능"},
+  {k:"creative",ico:"🎼", t:"창작 작업",   d:"작사·작곡"},
 ];
 const REST = {k:"rest", ico:"😴", t:"휴식", d:"컨디션 회복 + 멘탈 ↑"};
 
@@ -834,12 +836,12 @@ function fsParse(doc){ const f=doc.fields||{};
 }
 // 훈련 도트 연출: 활동별 동작(영차영차) + 결과별 마무리
 const TRAIN_FX = {
-  vocal:   {motion:"fx-sing",   notes:["♪","♫","🎵"], word:"노래 연습 중"},
-  dance:   {motion:"fx-dance",  notes:["✨","💫","✨"], word:"춤 연습 중"},
-  visual:  {motion:"fx-pose",   notes:["✨","💖","✨"], word:"비주얼 가꾸는 중"},
-  charm:   {motion:"fx-charm",  notes:["💕","⭐","💕"], word:"끼 발산 중"},
-  acting:  {motion:"fx-act",    notes:["🎤","🔥","🎤"], word:"랩 연습 중"},
-  creative:{motion:"fx-create", notes:["🎶","💡","🎶"], word:"작업 중"},
+  vocal:   {motion:"fx-sing",   notes:["♪","♫","🎵"], word:"발성 연습 중"},
+  dance:   {motion:"fx-dance",  notes:["✨","💫","✨"], word:"체력 단련 중"},
+  visual:  {motion:"fx-pose",   notes:["✨","💖","✨"], word:"스타일 가꾸는 중"},
+  charm:   {motion:"fx-charm",  notes:["💕","⭐","💕"], word:"화술 연습 중"},
+  acting:  {motion:"fx-act",    notes:["🎤","🔥","🎤"], word:"리듬 연습 중"},
+  creative:{motion:"fx-create", notes:["🎶","💡","🎶"], word:"창작 중"},
   rest:    {motion:"fx-rest",   notes:["💤","💤","💤"], word:"휴식 중"},
 };
 // 활동별 담당 캐릭터(레티=토끼🐰 / 리니=오리🦆). 3:3 번갈아 — "하나로 돌려막기" 탈피.
@@ -1863,7 +1865,7 @@ const Game = {
     const allround = gapE<120 && minE>=230;                        // 고르게 성장 = 올라운더
     // 대표 스탯·등급은 DG.idolTop(포지션 적합도) 기준 = 로스터에 저장되는 재료 등급과 100% 일치
     let topK=arr[0].k, topScore=arr[0].v;
-    try{ const so={}; STATS.forEach(st=>so[st.k]=Math.round(s[st.k])); const it=DG.idolTop(so); topK=it.stat; topScore=it.score; }catch(e){}
+    try{ const so={}; STATS.forEach(st=>so[st.k]=Math.round(s[st.k])); topScore=DG.idolTop(so).score; }catch(e){}   // topK=최고 성장스탯(arr[0].k) 유지, 등급점수만 포지션적합도로
     const stObj=STATS.find(x=>x.k===topK)||STATS[0];
     const stName = topK==='creative' ? t('st_creative_short') : t('st_'+topK);
     // 대표재능(육각형·종합에서 이미 보임)은 결과 타이틀에서 제거 → 종합등급 기반 서사 타이틀만
@@ -2566,8 +2568,8 @@ Game.refreshEndTexts=function(){
   document.getElementById("endEmoji").textContent=end.emoji;
   document.getElementById("endName").textContent=end.name;
   document.getElementById("endSub").innerHTML=`${end.sub}<br><br>${t("end_fans",{fans:fmt(r.fans)})}`;
-  const _ti=DG.idolTop(this.st), _rep=STATS.find(x=>x.k===_ti.stat)||STATS[0];   // 육성 결과 대표재능(고정 spec 아님)
-  document.getElementById("oGrade").innerHTML=t("end_overall",{g:r.overall,rg:grade(_ti.score),c:_rep.c,ico:_rep.ico,spec:t("st_"+_ti.stat)});
+  const _ti=DG.idolTop(this.st), _rep=STATS.find(x=>x.k===DG.topStat(this.st))||STATS[0];   // 대표재능=최고 성장스탯, 등급점수=포지션 적합도
+  document.getElementById("oGrade").innerHTML=t("end_overall",{g:r.overall,rg:grade(_ti.score),c:_rep.c,ico:_rep.ico,spec:t("st_"+_rep.k)});
   document.getElementById("endStage").textContent=
     r.reachedWorld?(r.finalRank?t("end_stage_world",{rank:r.finalRank}):t("end_stage_world_nr")):t("end_stage_out");
   document.getElementById("endIdolName").innerHTML=
@@ -2682,16 +2684,17 @@ window.addEventListener("popstate", ()=>{
 </style>
 <script>
 (function(){
-  const POS   = {vocal:'메인보컬', acting:'메인래퍼', dance:'메인댄서', visual:'페이스', charm:'센터', creative:'프로듀서'};
   const ORDER = ['vocal','acting','dance','visual','charm','creative'];
-  const ICO   = {vocal:'🎵',acting:'🎤',dance:'💃',visual:'✨',charm:'🎭',creative:'🎼'};
+  // 데뷔조 포지션 아이콘(스탯 아이콘과 별개 — 자리 타입별)
+  const POSICO = {leader:'🎖️', center:'🌟', vocal:'🎵', rapper:'🎤', dancer:'💪', producer:'🎛️'};
+  const ICO   = {vocal:'🎵',acting:'🎤',dance:'💪',visual:'✨',charm:'💬',creative:'🎼'};   // 스탯 아이콘(발성·리듬감·체력·스타일·화술·창조)
   // rr = 레어도 인덱스(고정). N=0 R=1 SR=2 (SSR/UR은 향후 이벤트·조합카드)
   const CARDS = {
-    effort:  {nm:'노력파',   em:'💪', rr:0, eff:{all:15}},
+    effort:  {nm:'노력파',   em:'🔥', rr:0, eff:{all:15}},
     vocalC:  {nm:'황금성대', em:'🎵', rr:1, eff:{stat:{vocal:55}}},
-    danceC:  {nm:'리듬천재', em:'💃', rr:1, eff:{stat:{dance:55}}},
-    visualC: {nm:'비주얼신', em:'✨', rr:1, eff:{stat:{visual:55}}},
-    charmC:  {nm:'예능감', em:'🎭', rr:1, eff:{stat:{charm:55}}},
+    danceC:  {nm:'무한체력', em:'💪', rr:1, eff:{stat:{dance:55}}},
+    visualC: {nm:'스타일신', em:'✨', rr:1, eff:{stat:{visual:55}}},
+    charmC:  {nm:'달변가',   em:'💬', rr:1, eff:{stat:{charm:55}}},
     actingC: {nm:'라임장인', em:'🎤', rr:1, eff:{stat:{acting:55}}},
     creatC:  {nm:'작곡센스', em:'🎼', rr:1, eff:{stat:{creative:55}}},
     genius:  {nm:'천재',     em:'👑', rr:2, eff:{all:35}},
@@ -2702,17 +2705,28 @@ window.addEventListener("popstate", ()=>{
   const RAR_COLOR=['#9aa0a6','#3d7bd6','#a855f7','#f0a01e','#ff3b5c'];
   const STAR_MULT=[1,1.4,1.9,2.5,3.2];   // ★1~★5 효과배수
   const MAXSTAR=5;
-  // 포지션 = 주스탯(70%)+보조스탯(30%) 블렌드 → 몰빵 비최적화(2번 A)
-  // 포지션 주+보조 (acting=랩, charm=예능): 메인보컬=보컬+랩 / 메인래퍼=랩+보컬 / 메인댄서=댄스+비주얼 / 비주얼=비주얼+예능 / 예능=예능+비주얼 / 프로듀서=크리+보컬
-  const POSFIT={ vocal:{pri:'vocal',sec:'acting'}, acting:{pri:'acting',sec:'vocal'}, dance:{pri:'dance',sec:'visual'},
-    visual:{pri:'visual',sec:'charm'}, charm:{pri:'charm',sec:'visual'}, creative:{pri:'creative',sec:'vocal'} };
-  const STATNM={vocal:'보컬',dance:'댄스',visual:'비주얼',charm:'예능',acting:'랩',creative:'크리에이티브'};
-  // 데뷔조 9포지션(보컬·랩·댄스 각2 + 비주얼·예능·프로듀서 각1). 각 자리 = 한 스탯으로 평가(POSFIT 블렌드).
+  // 포지션 공식(2026-07-21 개편): {내부스탯키:가중치} 맵. 특수항 _mental(멘탈 0~100→×8 정규화)·_top2(최고 성장스탯 2개 합).
+  //   내부키 매핑: vocal=발성 · acting=리듬감 · dance=체력 · visual=스타일 · charm=화술 · creative=창조
+  //   리더=화술60+멘탈20+최고2개각10 / 센터=스타일70+체력30 / 보컬=발성70+리듬30 / 래퍼=리듬70+발성30 / 댄서=체력60+리듬30+창조10 / 프로듀서=창조70+스타일30
+  //   스케일 검산: 리더 화술0.6×480 + 멘탈0.2×160 + top2 0.1×160 = 800 만점 (다른 포지션도 0.7+0.3 → 800)
+  const POSFORMULA = {
+    leader:  {charm:0.6, _mental:0.2, _top2:0.1},
+    center:  {visual:0.7, dance:0.3},
+    vocal:   {vocal:0.7, acting:0.3},
+    rapper:  {acting:0.7, vocal:0.3},
+    dancer:  {dance:0.6, acting:0.3, creative:0.1},
+    producer:{creative:0.7, visual:0.3},
+  };
+  const STATNM={vocal:'발성',dance:'체력',visual:'스타일',charm:'화술',acting:'리듬감',creative:'창조'};
+  // 데뷔조 9포지션 = 리더1·센터1·보컬2·래퍼2·댄서2·프로듀서1. 각 자리 type = POSFORMULA 공식으로 평가.
+  // 순서 = openSlotSet 최소2칸 노출순(리더·센터가 기본 필수 슬롯 느낌으로 먼저 열림)
   const POSITIONS=[
-    {id:'vocal1',stat:'vocal',nm:'메인보컬'}, {id:'vocal2',stat:'vocal',nm:'리드보컬'},
-    {id:'rap1',stat:'acting',nm:'메인래퍼'}, {id:'rap2',stat:'acting',nm:'리드래퍼'},
-    {id:'dance1',stat:'dance',nm:'메인댄서'}, {id:'dance2',stat:'dance',nm:'리드댄서'},
-    {id:'visual',stat:'visual',nm:'페이스'}, {id:'variety',stat:'charm',nm:'센터'}, {id:'producer',stat:'creative',nm:'프로듀서'},
+    {id:'leader',  type:'leader',   nm:'리더'},
+    {id:'center',  type:'center',   nm:'센터'},
+    {id:'vocal1',  type:'vocal',    nm:'메인보컬'}, {id:'vocal2', type:'vocal',  nm:'서브보컬'},
+    {id:'rap1',    type:'rapper',   nm:'메인래퍼'}, {id:'rap2',   type:'rapper', nm:'서브래퍼'},
+    {id:'dance1',  type:'dancer',   nm:'메인댄서'}, {id:'dance2', type:'dancer', nm:'서브댄서'},
+    {id:'producer',type:'producer', nm:'프로듀서'},
   ];
   const GR = ['F','E','D','C','B','A','S','SS'];
   const grank = g => Math.max(0, GR.indexOf(g));
@@ -2790,8 +2804,17 @@ window.addEventListener("popstate", ()=>{
     },
 
     // ===== 데뷔조 로스터/라인업 =====
-    posScore(stats, statKey){ const f=POSFIT[statKey]; return Math.round((stats[f.pri]||0)*0.6+(stats[f.sec]||0)*0.4); },   // 60/40: 몰빵보다 주+보조 균형 유도(포지션=2능력치 종합)
-    idolTop(stats){ let bk=ORDER[0], bv=-1; ORDER.forEach(k=>{ const s=this.posScore(stats,k); if(s>bv){bv=s;bk=k;} }); return {stat:bk, score:bv}; },
+    // 포지션 적합도 = POSFORMULA 가중합(0~800 스케일). _mental=멘탈×8 정규화, _top2=최고 성장스탯 2개 합.
+    posScore(stats, type){ const f=POSFORMULA[type]; if(!f) return 0; let s=0;
+      for(const k in f){
+        if(k==='_mental') s += Math.min(800,(stats.mental||0)*8) * f[k];
+        else if(k==='_top2'){ const v=ORDER.map(x=>stats[x]||0).sort((a,b)=>b-a); s += (v[0]+v[1]) * f[k]; }
+        else s += (stats[k]||0) * f[k];
+      } return Math.round(s); },
+    // 최고 적합 포지션(등급·재료 산정용). 반환 {type, score}
+    idolTop(stats){ let bt='vocal', bv=-1; for(const type in POSFORMULA){ const s=this.posScore(stats,type); if(s>bv){bv=s;bt=type;} } return {type:bt, score:bv}; },
+    // 대표 능력치(표시용) = 최고 성장스탯 1개. 포지션 개편으로 idolTop은 포지션타입을 반환 → 대표스탯은 이걸로 분리.
+    topStat(stats){ let bk=ORDER[0], bv=-1; ORDER.forEach(k=>{ if((stats[k]||0)>bv){bv=stats[k]||0;bk=k;} }); return bk; },
     rosterById(rid){ return (this.data.roster||[]).find(r=>r.rid===rid); },
     lineupRids(){ return Object.keys(this.data.lineup||{}).map(k=>this.data.lineup[k]); },
     // 전속: 데뷔(저장)한 그룹에 속한 rid는 다른 데뷔조에 재사용 불가 (좋은 9명 무한복제 방지 = 육성 계속할 이유)
@@ -2800,7 +2823,7 @@ window.addEventListener("popstate", ()=>{
     groupOfRid(rid){ return (this.data.groups||[]).find(g=>Object.keys(g.lineup||{}).some(k=>g.lineup[k]===rid)); },
     idkeyInLineup(idkey, exceptSlot){ for(const sid in this.data.lineup){ if(sid===exceptSlot)continue; const r=this.rosterById(this.data.lineup[sid]); if(r&&r.idkey===idkey)return true; } return false; },
     filledCount(){ let n=0; POSITIONS.forEach(p=>{ if(this.rosterById(this.data.lineup[p.id])) n++; }); return n; },
-    groupInfo(){ let sum=0,n=0; POSITIONS.forEach(p=>{ const r=this.rosterById(this.data.lineup[p.id]); if(r){ sum+=this.posScore(r.stats,p.stat); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
+    groupInfo(){ let sum=0,n=0; POSITIONS.forEach(p=>{ const r=this.rosterById(this.data.lineup[p.id]); if(r){ sum+=this.posScore(r.stats,p.type); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
@@ -2817,12 +2840,12 @@ window.addEventListener("popstate", ()=>{
     quickAssign(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       if(this.isCommitted(rid)) return {err:'committed'};
       if(this.idkeyInLineup(r.idkey,null)) return {err:'dup', name:r.name};
-      let best=null, bv=-1; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id])return; const s=this.posScore(r.stats,p.stat); if(s>bv){bv=s;best=p.id;} });
+      let best=null, bv=-1; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id])return; const s=this.posScore(r.stats,p.type); if(s>bv){bv=s;best=p.id;} });
       if(!best) return {err:'full'};
       this.data.lineup[best]=rid; this.persist(); return {ok:true, slot:best}; },
     discard(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       for(const sid in this.data.lineup){ if(this.data.lineup[sid]===rid) delete this.data.lineup[sid]; }
-      const top=this.idolTop(r.stats), cardType=STATCARD[top.stat], rk=grank(grade(top.score));
+      const top=this.idolTop(r.stats), cardType=STATCARD[this.topStat(r.stats)], rk=grank(grade(top.score));
       const cnt = rk>=6?3 : rk>=4?2 : 1;   // S+↑=3 · B~A=2 · 그외=1
       this.add(cardType,1,cnt);
       this.data.roster=this.data.roster.filter(x=>x.rid!==rid); this.persist();
@@ -2838,6 +2861,7 @@ window.addEventListener("popstate", ()=>{
     onFinish(st, statVals, end){
       this.load();
       const stats={}; ORDER.forEach(k=>stats[k]=0); statVals.forEach(v=>{ if(stats[v.k]!=null) stats[v.k]=Math.round(v.v); });
+      stats.mental = Math.round((st&&st.mental)||0);   // 리더 포지션 평가용 멘탈(히든스탯)을 로스터에 함께 저장 (레이더·종합등급은 STATS 6개만 쓰므로 영향 없음)
       const top=this.idolTop(stats), gr=grade(top.score), debuted=top.score>=55;
       const idkey = st.idol.id==='custom' ? 'c:'+st.idol.name : 'i:'+(st.idol.id!=null?st.idol.id:st.idol.name);
       let joinMsg, newRid=null;
@@ -2846,7 +2870,7 @@ window.addEventListener("popstate", ()=>{
         this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr});
         joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">종합 ${grade(Math.round(STATS.reduce((a,x)=>a+(stats[x.k]||0),0)/STATS.length))} 등급</span>`;
       } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 숙소에 못 들어감`; }
-      const tc=(st&&st.trainCount)||{}; let trainedK=top.stat, mxT=-1; STATS.forEach(x=>{ if((tc[x.k]||0)>mxT){mxT=tc[x.k]||0; trainedK=x.k;} });   // 기본 카드 = 능력치 높은게 아니라 '가장 많이 훈련한 영역'
+      const tc=(st&&st.trainCount)||{}; let trainedK=this.topStat(stats), mxT=-1; STATS.forEach(x=>{ if((tc[x.k]||0)>mxT){mxT=tc[x.k]||0; trainedK=x.k;} });   // 기본 카드 = 능치 높은게 아니라 '가장 많이 훈련한 영역'
       const drops=this.rollCards(trainedK, gr, debuted, stats);
       const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
       this.data.runs++; this.persist();
@@ -2876,11 +2900,11 @@ window.addEventListener("popstate", ()=>{
       const openSet=this.openSlotSet();                 // 열어둔 포지션(+채운 자리+최소2칸). 순서 아닌 '선택'식
       const shown=POSITIONS.filter(p=>openSet.has(p.id));
       const slots=shown.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
-        if(r){ const val=this.posScore(r.stats,p.stat), av=r.img?`style="background-image:url('${r.img}')"`:'';
-          return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
+        if(r){ const val=this.posScore(r.stats,p.type), av=r.img?`style="background-image:url('${r.img}')"`:'';
+          return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${POSICO[p.type]} ${p.nm}</div>
             <span class="dg-av" ${av}>${r.img?'':'🎤'}</span>
             <div class="dg-nm">${esc(r.name)}</div><div class="dg-gr">${grade(val)} · ${val}</div></div>`; }
-        return `<div class="dg-slot" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${ICO[p.stat]} ${p.nm}</div>
+        return `<div class="dg-slot" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${POSICO[p.type]} ${p.nm}</div>
           <span class="dg-av empty">＋</span><div class="dg-nm muted">배치</div></div>`;
       }).join('');
       document.getElementById('dgGroup').innerHTML=
@@ -2925,12 +2949,12 @@ window.addEventListener("popstate", ()=>{
     renderAssign(){
       const slot=POSITIONS.find(p=>p.id===this._slot); if(!slot) return;
       const cur=this.rosterById(this.data.lineup[slot.id]);
-      const t=document.getElementById('assignTitle'); if(t) t.innerHTML=`${ICO[slot.stat]} ${slot.nm} 배치`;
-      const list=(this.data.roster||[]).slice().filter(r=>!this.isCommitted(r.rid)).sort((a,b)=>this.posScore(b.stats,slot.stat)-this.posScore(a.stats,slot.stat));
+      const t=document.getElementById('assignTitle'); if(t) t.innerHTML=`${POSICO[slot.type]} ${slot.nm} 배치`;
+      const list=(this.data.roster||[]).slice().filter(r=>!this.isCommitted(r.rid)).sort((a,b)=>this.posScore(b.stats,slot.type)-this.posScore(a.stats,slot.type));
       let html='';
       if(cur) html+=`<button class="btn ghost" onclick="DG.unassign('${slot.id}');DG.renderAssign()" style="margin-bottom:9px">✕ 이 자리 비우기 (현재 ${esc(cur.name)})</button>`;
       if(!list.length) html+='<p class="muted" style="text-align:center;padding:20px">편성할 무소속 연습생이 없어.<br>새로 육성하거나, 전속은 이미 데뷔한 그룹 소속이야.</p>';
-      else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.stat), dup=this.idkeyInLineup(r.idkey,slot.id), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
+      else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.type), dup=this.idkeyInLineup(r.idkey,slot.id), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
         // 이미 다른 자리에 있으면 → 이동 가능(선택 시 기존 자리 자동 해지). 현재 포지션 표시
         let otherPos='';
         if(dup&&!isCur){ const osid=Object.keys(this.data.lineup).find(sid=>{ const rr=this.rosterById(this.data.lineup[sid]); return rr&&rr.idkey===r.idkey; }); otherPos=osid?((POSITIONS.find(p=>p.id===osid)||{}).nm||''):''; }
@@ -2976,19 +3000,19 @@ window.addEventListener("popstate", ()=>{
       const enrolled=allR.length-list.length;
       const note = enrolled? `<p class="muted" style="font-size:12px;margin:0 0 8px;text-align:center">🏆 전속 ${enrolled}명은 데뷔조 카드에서 관리 · 여긴 무소속만</p>` : '';
       if(!list.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${enrolled?`전속 ${enrolled}명은 데뷔조에 있어.<br>무소속 연습생이 없어 — 「새 연습생 육성」!`:'아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!'}</p>`; return; }
-      box.innerHTML=note+list.map(r=>{ const top=this.idolTop(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
+      box.innerHTML=note+list.map(r=>{ const ts=this.topStat(r.stats), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
         const badge = commit? ` <span style="color:#c98a00;font-size:11px">🏆 ${esc(cg?cg.name:'전속')}</span>` : (inup? ' <span style="color:#18b06e;font-size:11px">편성됨</span>' : '');
         return `<div class="ros-row${inup||commit?' cur':''}"><span class="ros-av" ${av} onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer">${r.img?'':'🎤'}</span>
           <div class="ros-m" onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${badge}</div>
-            <div class="muted" style="font-size:12px">대표 ${STATNM[top.stat]} ${top.score}</div></div>
+            <div class="muted" style="font-size:12px">대표 ${STATNM[ts]} ${Math.round(r.stats[ts]||0)}</div></div>
           ${commit? '' : `<div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto">
             ${inup?'':`<button class="cr-btn" style="padding:6px 11px;font-size:12px" onclick="DG.doQuick(${r.rid})">편성</button>`}
-            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">은퇴<br><small>${STATNM[top.stat]}★1×${cnt}</small></button>
+            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">은퇴<br><small>${STATNM[ts]}★1×${cnt}</small></button>
           </div>`}</div>`;}).join('');
     },
     // 숙소에서 연습생 눌러 육성 결과 다시 보기 (레이더 + 스탯 등급). 로스터에 저장된 stats 재활용
     showRosterDetail(rid){ this.load(); const r=this.rosterById(rid); if(!r||!r.stats) return;
-      const it=this.idolTop(r.stats);
+      const ts=this.topStat(r.stats);
       const sv=STATS.map(st=>({n:t(st.k==='creative'?'st_creative_short':'st_'+st.k),k:st.k,c:st.c,v:Math.round(r.stats[st.k]||0),g:grade(Math.round(r.stats[st.k]||0))}));
       const rows=STATS.map(st=>{ const v=Math.round(r.stats[st.k]||0); return `<div style="display:flex;justify-content:space-between;padding:1px 0"><span>${st.ico} ${t('st_'+st.k)}</span><b style="color:${GRADE_COLOR[grade(v)]}">${grade(v)} · ${v}</b></div>`; }).join('');
       const commit=this.committedRids().has(rid), cg=commit?this.groupOfRid(rid):null;
@@ -2997,7 +3021,7 @@ window.addEventListener("popstate", ()=>{
       ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
       ov.innerHTML=`<div class="ev-card" style="max-width:330px">
         <div class="ev-title">${esc(r.name)}</div>
-        <div class="muted" style="margin:2px 0 6px">${STATNM[it.stat]}형 · ${r.grade}등급 <span style="opacity:.7">· ${tag}</span></div>
+        <div class="muted" style="margin:2px 0 6px">${STATNM[ts]}형 · ${r.grade}등급 <span style="opacity:.7">· ${tag}</span></div>
         <canvas id="rosRadar" width="420" height="420" style="width:220px;height:220px;margin:0 auto"></canvas>
         <div style="margin:6px 2px 12px;font-size:13px">${rows}</div>
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
@@ -3028,7 +3052,7 @@ window.addEventListener("popstate", ()=>{
       const pool=(this.data.roster||[]).filter(r=>!this.isCommitted(r.rid) && !usedRid.has(r.rid));
       // (열린 빈슬롯 × 가용 연습생) 모든 쌍을 점수순 그리디 배정 → 포지션순 그리디보다 전역 최적에 근접
       const pairs=[];
-      slots.forEach(p=>{ if(newLineup[p.id])return; pool.forEach(r=>pairs.push({sid:p.id, rid:r.rid, idkey:r.idkey, s:this.posScore(r.stats,p.stat)})); });
+      slots.forEach(p=>{ if(newLineup[p.id])return; pool.forEach(r=>pairs.push({sid:p.id, rid:r.rid, idkey:r.idkey, s:this.posScore(r.stats,p.type)})); });
       pairs.sort((a,b)=>b.s-a.s);
       pairs.forEach(pr=>{ if(newLineup[pr.sid]||usedRid.has(pr.rid)||usedKey.has(pr.idkey))return;
         newLineup[pr.sid]=pr.rid; usedRid.add(pr.rid); usedKey.add(pr.idkey); });
@@ -3050,7 +3074,7 @@ window.addEventListener("popstate", ()=>{
       ov.innerHTML=`<div class="ev-card"><div class="ev-title">＋ 어느 자리를 추가할까?</div>
         <p class="muted" style="margin:2px 0 12px">추가할 포지션을 골라</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px">
-        ${avail.map(p=>`<button class="btn ghost" style="flex:0 0 auto;padding:9px 15px" onclick="DG.pickSlot('${p.id}')">${ICO[p.stat]} ${esc(p.nm)}</button>`).join('')}</div>
+        ${avail.map(p=>`<button class="btn ghost" style="flex:0 0 auto;padding:9px 15px" onclick="DG.pickSlot('${p.id}')">${POSICO[p.type]} ${esc(p.nm)}</button>`).join('')}</div>
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
     },
     pickSlot(id){ this.load(); const s=this.openSlotSet(); s.add(id);
@@ -3073,7 +3097,7 @@ window.addEventListener("popstate", ()=>{
         const r=this.rosterById(rid); if(!r) return null;
         const av=r.img?`style="background-image:url('${r.img}')"`:'';
         return `<div style="width:84px;text-align:center"><span class="dg-av" ${av} style="margin:0 auto">${r.img?'':'🎤'}</span>
-          <div class="dg-nm" style="margin-top:3px">${esc(r.name)}</div><div class="muted" style="font-size:11px">${ICO[p.stat]} ${p.nm}</div></div>`;
+          <div class="dg-nm" style="margin-top:3px">${esc(r.name)}</div><div class="muted" style="font-size:11px">${POSICO[p.type]} ${p.nm}</div></div>`;
       }).filter(Boolean).join('');
       const box=document.getElementById('debutMembers'); if(box) box.innerHTML=mem;
       // 그룹명 기본값 (편성버퍼 이름이 기본이면 비움)
@@ -3367,7 +3391,7 @@ window.addEventListener("popstate", ()=>{
       const W=1080,H=1350, FF="'Jua','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
       try{ await document.fonts.load("40px 'Jua'"); await document.fonts.load("700 40px 'Jua'"); await document.fonts.ready; }catch(e){}
       let aLogo=null; if(a.logo && a.logo.indexOf('data:')===0){ try{ aLogo=await loadImg(a.logo,false); }catch(e){} }
-      const mem=POSITIONS.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]); return r?{p,r,val:this.posScore(r.stats,p.stat)}:{p,r:null}; });
+      const mem=POSITIONS.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]); return r?{p,r,val:this.posScore(r.stats,p.type)}:{p,r:null}; });
       const faces=await Promise.all(mem.map(async m=>{ if(!m.r||!m.r.img) return null; try{ const cis=cardImgSrc(m.r.img); return cis.src? await loadImg(cis.src,cis.cross): null; }catch(e){ return null; } }));
       const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d'); x.textBaseline='alphabetic';
       const fit=(txt,mw,w,s)=>{ x.font=`${w} ${s}px ${FF}`; while(s>14 && x.measureText(txt).width>mw){ s-=2; x.font=`${w} ${s}px ${FF}`; } return s; };
@@ -3385,7 +3409,7 @@ window.addEventListener("popstate", ()=>{
       x.fillStyle='#ec3a5c'; fit(this.groupName(),W-240,'700',32); x.fillText(this.groupName(), W/2, 292);
       const cols=[W*0.2, W*0.5, W*0.8], rowY=[470,742,1014], R=76; let sum=0, filled=0;
       mem.forEach((m,i)=>{ const cx=cols[i%3], cy=rowY[(i/3)|0], face=faces[i];
-        x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${ICO[m.p.stat]} ${m.p.nm}`, cx, cy-R-12);
+        x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${POSICO[m.p.type]} ${m.p.nm}`, cx, cy-R-12);
         if(m.r){ sum+=m.val; filled++;
           if(face){ x.save(); x.beginPath(); x.arc(cx,cy,R,0,7); x.clip(); const mm=Math.min(face.naturalWidth,face.naturalHeight);
             x.drawImage(face,(face.naturalWidth-mm)/2,(face.naturalHeight-mm)/2,mm,mm,cx-R,cy-R,R*2,R*2); x.restore(); }
