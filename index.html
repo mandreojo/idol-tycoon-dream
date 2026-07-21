@@ -2681,7 +2681,7 @@ window.addEventListener("popstate", ()=>{
 </style>
 <script>
 (function(){
-  const POS   = {vocal:'메인보컬', acting:'메인래퍼', dance:'메인댄서', visual:'비주얼', charm:'예능', creative:'프로듀서'};
+  const POS   = {vocal:'메인보컬', acting:'메인래퍼', dance:'메인댄서', visual:'페이스', charm:'센터', creative:'프로듀서'};
   const ORDER = ['vocal','acting','dance','visual','charm','creative'];
   const ICO   = {vocal:'🎵',acting:'🎤',dance:'💃',visual:'✨',charm:'🎭',creative:'🎼'};
   // rr = 레어도 인덱스(고정). N=0 R=1 SR=2 (SSR/UR은 향후 이벤트·조합카드)
@@ -2711,7 +2711,7 @@ window.addEventListener("popstate", ()=>{
     {id:'vocal1',stat:'vocal',nm:'메인보컬'}, {id:'vocal2',stat:'vocal',nm:'리드보컬'},
     {id:'rap1',stat:'acting',nm:'메인래퍼'}, {id:'rap2',stat:'acting',nm:'리드래퍼'},
     {id:'dance1',stat:'dance',nm:'메인댄서'}, {id:'dance2',stat:'dance',nm:'리드댄서'},
-    {id:'visual',stat:'visual',nm:'비주얼'}, {id:'variety',stat:'charm',nm:'예능'}, {id:'producer',stat:'creative',nm:'프로듀서'},
+    {id:'visual',stat:'visual',nm:'페이스'}, {id:'variety',stat:'charm',nm:'센터'}, {id:'producer',stat:'creative',nm:'프로듀서'},
   ];
   const GR = ['F','E','D','C','B','A','S','SS'];
   const grank = g => Math.max(0, GR.indexOf(g));
@@ -2789,7 +2789,7 @@ window.addEventListener("popstate", ()=>{
     },
 
     // ===== 데뷔조 로스터/라인업 =====
-    posScore(stats, statKey){ const f=POSFIT[statKey]; return Math.round((stats[f.pri]||0)*0.7+(stats[f.sec]||0)*0.3); },
+    posScore(stats, statKey){ const f=POSFIT[statKey]; return Math.round((stats[f.pri]||0)*0.6+(stats[f.sec]||0)*0.4); },   // 60/40: 몰빵보다 주+보조 균형 유도(포지션=2능력치 종합)
     idolTop(stats){ let bk=ORDER[0], bv=-1; ORDER.forEach(k=>{ const s=this.posScore(stats,k); if(s>bv){bv=s;bk=k;} }); return {stat:bk, score:bv}; },
     rosterById(rid){ return (this.data.roster||[]).find(r=>r.rid===rid); },
     lineupRids(){ return Object.keys(this.data.lineup||{}).map(k=>this.data.lineup[k]); },
