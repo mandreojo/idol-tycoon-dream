@@ -2972,7 +2972,7 @@ window.addEventListener("popstate", ()=>{
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
            ${shown.length<9? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
-           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.shareGroupCard()">📸 그룹 정보</button>`:''}
+           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
          </div>
          ${gi.n>=2? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
       // 데뷔(저장)한 그룹 목록 — 멤버 전속
@@ -3232,7 +3232,7 @@ window.addEventListener("popstate", ()=>{
     },
     // 저장된 그룹 카드 공유: 현 편성버퍼를 잠시 그룹으로 스왑 후 카드 생성, 끝나면 복구
     shareSavedGroup(gid){ const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return;
-      this.shareGroupCard({lineup:g.lineup, name:g.name});   // override 전달 — 스왑/복원 없이 정확한 그룹 스샷(load() 덮어쓰기 버그 근본수정)
+      this.previewGroupCard({lineup:g.lineup, name:g.name});   // 프리뷰 모달 먼저(#3), override로 정확한 그룹(load() 덮어쓰기 버그 근본수정)
     },
 
     renderResult(box, res){
@@ -3492,21 +3492,26 @@ window.addEventListener("popstate", ()=>{
       else { x.font="82px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText(a.logo||'🏢', W/2, AY+28); }
       x.fillStyle='#2b2530'; fit(a.name,W-220,'800',52); x.fillText(a.name, W/2, 246);
       x.fillStyle='#ec3a5c'; fit(gname,W-240,'700',32); x.fillText(gname, W/2, 292);
-      const cols=[W*0.2, W*0.5, W*0.8], rowY=[470,742,1014], R=76; let sum=0, filled=0;
-      mem.forEach((m,i)=>{ const cx=cols[i%3], cy=rowY[(i/3)|0], face=faces[i];
-        x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${POSICO[m.p.type]} ${m.p.nm}`, cx, cy-R-12);
-        if(m.r){ sum+=m.val; filled++;
+      // 멤버수별 레이아웃(#2): 채워진 멤버만 균등 배치(빈 슬롯 ＋ 안 그림). 인원 적을수록 크게.
+      const memFace=mem.map((m,i)=>({m,face:faces[i]})).filter(o=>o.m.r);
+      const n=memFace.length; let sum=0; memFace.forEach(o=>sum+=o.m.val); const filled=n;
+      const rows=n<=3?1:(n<=6?2:3);
+      const rowYs=rows===1?[742]:(rows===2?[590,930]:[470,742,1014]);
+      const R=n<=3?96:(n<=6?84:76);
+      let idx=0;
+      for(let r=0;r<rows;r++){
+        const remain=n-idx, k=Math.ceil(remain/(rows-r));   // 이 행 멤버 수(위 행부터 채우고 마지막 행이 나머지)
+        for(let c=0;c<k;c++){
+          const {m,face}=memFace[idx++], cx=W*(c+1)/(k+1), cy=rowYs[r];
+          x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${POSICO[m.p.type]} ${m.p.nm}`, cx, cy-R-12);
           if(face){ x.save(); x.beginPath(); x.arc(cx,cy,R,0,7); x.clip(); const mm=Math.min(face.naturalWidth,face.naturalHeight);
             x.drawImage(face,(face.naturalWidth-mm)/2,(face.naturalHeight-mm)/2,mm,mm,cx-R,cy-R,R*2,R*2); x.restore(); }
           else { x.fillStyle='#ffe0e6'; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); x.font="52px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText('🎤',cx,cy+18); }
           x.beginPath(); x.arc(cx,cy,R,0,7); x.lineWidth=4.5; x.strokeStyle='#ec3a5c'; x.stroke();
           x.fillStyle='#2b2530'; fit(m.r.name,R*2+34,'800',28); x.fillText(m.r.name, cx, cy+R+38);
           x.fillStyle=gcolor(grade(m.val)); x.font=`900 26px ${FF}`; x.fillText(`${grade(m.val)}·${m.val}`, cx, cy+R+70);
-        } else {
-          x.strokeStyle='#ffc7d5'; x.lineWidth=3.5; x.setLineDash([9,8]); x.beginPath(); x.arc(cx,cy,R,0,7); x.stroke(); x.setLineDash([]);
-          x.fillStyle='#ffb3c6'; x.font=`800 46px ${FF}`; x.fillText('＋', cx, cy+16);
         }
-      });
+      }
       x.fillStyle='#fff'; x.strokeStyle='#ffd9de'; x.lineWidth=2.5; rr(80,1188,W-160,116,24); x.fill(); x.stroke();
       const gAll = filled? grade(Math.round(sum/filled)) : '–';
       x.textAlign='left'; x.fillStyle='#9a8f9a'; x.font=`600 26px ${FF}`; x.fillText('데뷔조 종합', 128, 1236);
@@ -3515,6 +3520,24 @@ window.addEventListener("popstate", ()=>{
       x.fillStyle='#f0a01e'; x.font=`900 42px ${FF}`; x.fillText(`${filled}/9`, W-128, 1288);
       x.textAlign='center'; x.fillStyle='#b9adb4'; x.font=`600 23px ${FF}`; x.fillText('프로젝트 최애돌', W/2, 1332);
       return cv;
+    },
+    // 그룹 카드 프리뷰(#3): 저장/공유 전 모달로 먼저 보여줌(숙소 상세 팝업 톤). 확인 후 저장은 shareGroupCard로
+    async previewGroupCard(opt){
+      let cv; try{ cv=await this.makeGroupCard(opt); }catch(e){ try{toast('카드 생성 실패');}catch(_){}; return; }
+      const url=cv.toDataURL('image/png');
+      const ov=document.getElementById('ov'); if(!ov){ this.shareGroupCard(opt); return; }
+      ov.className='ov on';
+      const close=()=>{ ov.className='ov'; ov.onclick=null; };
+      ov.onclick=(e)=>{ if(e.target===ov) close(); };
+      ov.innerHTML=`<div class="ev-card" style="max-width:340px;text-align:center">
+        <div class="ev-title">그룹 정보</div>
+        <img src="${url}" alt="group card" style="width:100%;border-radius:12px;margin:8px 0 14px;box-shadow:0 3px 14px rgba(180,120,140,.25)">
+        <div style="display:flex;gap:9px">
+          <button class="btn ghost" style="flex:1" id="_gcClose">닫기</button>
+          <button class="btn" style="flex:1" id="_gcSave">📸 저장·공유</button>
+        </div></div>`;
+      document.getElementById('_gcClose').onclick=close;
+      document.getElementById('_gcSave').onclick=()=>{ close(); this.shareGroupCard(opt); };
     },
     async shareGroupCard(opt){
       let cv; try{ cv=await this.makeGroupCard(opt); }catch(e){ try{toast('카드 생성 실패');}catch(_){}; return; }
