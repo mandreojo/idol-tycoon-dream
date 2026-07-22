@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>카드 때깔 데모</title>
+<style>
+  :root{ --accent:#ec3a5c; --accent2:#ff7a9c; --txt:#2b2530; --sub:#9a8f9a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#1a1420;color:#fff;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:18px 14px 40px}
+  h1{font-size:19px;text-align:center;margin:6px 0 2px}
+  .sub{text-align:center;color:#b9a9c4;font-size:12.5px;margin-bottom:22px}
+  h2{font-size:14px;color:#ffd36b;margin:26px 4px 12px;letter-spacing:.4px}
+  h2.b{color:#9a8f9a}
+  .row{display:flex;gap:11px;overflow-x:auto;padding:6px 2px 14px}
+  /* ===== BEFORE (현재) ===== */
+  .old-card{flex:0 0 auto;width:118px;background:#fff;border:1px solid #ffe0e8;border-radius:14px;padding:14px 8px;text-align:center;color:#2b2530}
+  .old-card.rare{border-color:#ffb43e;background:#fff8ec}
+  .old-em{font-size:40px;line-height:1}
+  .old-nm{font-size:13px;font-weight:800;margin-top:8px}
+  .old-rr{font-size:11px;font-weight:800}
+  .old-meta{font-size:10.5px;color:#9a8f9a;margin-top:3px}
+  .old-star{color:#f0a01e;font-size:12px;margin-top:4px}
+  /* ===== AFTER (개선) ===== */
+  .card{position:relative;flex:0 0 auto;width:134px;height:190px;border-radius:16px;overflow:hidden;
+    padding:11px 10px;display:flex;flex-direction:column;color:#fff;isolation:isolate;
+    box-shadow:0 10px 24px -8px rgba(0,0,0,.55)}
+  .card .top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:900;letter-spacing:.5px;z-index:3}
+  .card .rr-badge{padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.28);backdrop-filter:blur(2px)}
+  .card .art{flex:1;display:flex;align-items:center;justify-content:center;z-index:2;position:relative}
+  .card .art .em{font-size:60px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+  .card .art::before{content:"";position:absolute;width:96px;height:96px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 66%);z-index:-1}
+  .card .foot{z-index:3}
+  .card .nm{font-size:13.5px;font-weight:900;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .card .meta{font-size:10px;opacity:.92;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .card .stars{margin-top:4px;font-size:12px;letter-spacing:1px;color:#ffe07a;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  /* 공통 광택 스윕 */
+  .card .sheen{position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 47%,transparent 60%);
+    background-size:250% 250%;animation:sheen 3.6s ease-in-out infinite}
+  @keyframes sheen{0%{background-position:140% 0}55%,100%{background-position:-40% 0}}
+  /* 레어도별 배경/프레임 */
+  .n{background:linear-gradient(160deg,#8a929c,#5c636e);border:2px solid #b9c0c8}
+  .r{background:linear-gradient(160deg,#4d8fe0,#2456a8);border:2px solid #8fc0ff;
+     box-shadow:0 10px 24px -8px rgba(45,110,210,.6)}
+  .sr{background:linear-gradient(160deg,#a45cf0,#6a24c8);border:2px solid #d3a5ff;
+     box-shadow:0 10px 26px -6px rgba(150,60,240,.6)}
+  /* SSR 골드 홀로 */
+  .ssr{border:2px solid transparent;background:
+     linear-gradient(160deg,#4a3410,#221704) padding-box,
+     conic-gradient(from 0deg,#ffe98a,#ffb43e,#fff1b8,#e79a2a,#ffe98a) border-box;
+     box-shadow:0 12px 30px -6px rgba(240,160,30,.6)}
+  .ssr::before{content:"";position:absolute;inset:0;z-index:0;opacity:.5;mix-blend-mode:screen;
+     background:conic-gradient(from 0deg,rgba(255,220,120,.5),rgba(255,180,60,0) 25%,rgba(255,240,180,.5) 50%,rgba(230,150,40,0) 75%,rgba(255,220,120,.5));
+     animation:spin 6s linear infinite}
+  /* UR 무지개 홀로 */
+  .ur{border:2px solid transparent;background:
+     linear-gradient(160deg,#241033,#0d0618) padding-box,
+     conic-gradient(from 0deg,#ff5c8a,#ffd36b,#63f0c8,#5c9cff,#c77bff,#ff5c8a) border-box;
+     box-shadow:0 14px 34px -6px rgba(200,90,255,.65)}
+  .ur::before{content:"";position:absolute;inset:0;z-index:0;opacity:.55;mix-blend-mode:screen;
+     background:conic-gradient(from 0deg,rgba(255,92,138,.6),rgba(255,211,107,0) 20%,rgba(99,240,200,.6) 40%,rgba(92,156,255,0) 60%,rgba(199,123,255,.6) 80%,rgba(255,92,138,.6));
+     animation:spin 5s linear infinite}
+  .ur .art .em{filter:drop-shadow(0 0 12px rgba(255,255,255,.8)) drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* 반짝이 파티클(SSR/UR) */
+  .sparkle{position:absolute;z-index:5;font-size:11px;opacity:0;pointer-events:none;animation:twk 2.4s ease-in-out infinite}
+  @keyframes twk{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.1)}}
+  .note{color:#b9a9c4;font-size:12px;line-height:1.65;margin:20px 6px 0;background:rgba(255,255,255,.05);border-radius:12px;padding:13px 15px}
+  .note b{color:#ffd36b}
+</style></head>
+<body>
+  <h1>🎴 카드 "때깔" 데모</h1>
+  <div class="sub">이모지는 살리되, 진짜 수집형 카드처럼 프레이밍 · 레어도별 홀로그램·광택</div>
+
+  <h2 class="b">BEFORE — 지금 (이모지 + 얇은 테두리)</h2>
+  <div class="row">
+    <div class="old-card"><div class="old-em">🔥</div><div class="old-nm"><span class="old-rr" style="color:#9aa0a6">N</span> 노력파</div><div class="old-meta">전 재능 +15</div><div class="old-star">★1</div></div>
+    <div class="old-card"><div class="old-em">🎵</div><div class="old-nm"><span class="old-rr" style="color:#3d7bd6">R</span> 황금성대</div><div class="old-meta">발성 +55</div><div class="old-star">★2</div></div>
+    <div class="old-card rare"><div class="old-em">🎤</div><div class="old-nm"><span class="old-rr" style="color:#a855f7">SR</span> 보컬래퍼</div><div class="old-meta">발성·리듬 +34</div><div class="old-star">★1</div></div>
+    <div class="old-card rare"><div class="old-em">💫</div><div class="old-nm"><span class="old-rr" style="color:#f0a01e">SSR</span> 초신성</div><div class="old-meta">전능+36·관문↑</div><div class="old-star">★3</div></div>
+    <div class="old-card rare"><div class="old-em">⚡</div><div class="old-nm"><span class="old-rr" style="color:#ff3b5c">UR</span> 갓</div><div class="old-meta">전능+48·성장↑</div><div class="old-star">★5</div></div>
+  </div>
+
+  <h2>AFTER — 개선안 (프레임·홀로·광택·별젬)</h2>
+  <div class="row">
+    <div class="card n"><div class="sheen"></div>
+      <div class="top"><span>노력파</span><span class="rr-badge">N</span></div>
+      <div class="art"><span class="em">🔥</span></div>
+      <div class="foot"><div class="nm">노력파</div><div class="meta">전 재능 +15로 시작</div><div class="stars">★</div></div></div>
+
+    <div class="card r"><div class="sheen"></div>
+      <div class="top"><span>보컬</span><span class="rr-badge">R</span></div>
+      <div class="art"><span class="em">🎵</span></div>
+      <div class="foot"><div class="nm">황금성대</div><div class="meta">발성 +55로 시작</div><div class="stars">★★</div></div></div>
+
+    <div class="card sr"><div class="sheen"></div>
+      <div class="top"><span>하이브리드</span><span class="rr-badge">SR</span></div>
+      <div class="art"><span class="em">🎤</span></div>
+      <div class="foot"><div class="nm">보컬래퍼</div><div class="meta">발성·리듬 +34</div><div class="stars">★</div></div></div>
+
+    <div class="card ssr"><div class="sheen"></div>
+      <span class="sparkle" style="top:22px;left:16px">✦</span><span class="sparkle" style="top:60px;right:20px;animation-delay:.8s">✦</span><span class="sparkle" style="bottom:52px;left:24px;animation-delay:1.5s">✧</span>
+      <div class="top"><span>초신성</span><span class="rr-badge">SSR</span></div>
+      <div class="art"><span class="em">💫</span></div>
+      <div class="foot"><div class="nm">초신성</div><div class="meta">전능 +36 · 관문 ↑</div><div class="stars">★★★</div></div></div>
+
+    <div class="card ur"><div class="sheen"></div>
+      <span class="sparkle" style="top:18px;right:18px">✦</span><span class="sparkle" style="top:70px;left:16px;animation-delay:.6s">✧</span><span class="sparkle" style="bottom:44px;right:26px;animation-delay:1.2s">✦</span><span class="sparkle" style="bottom:70px;left:30px;animation-delay:1.9s">✧</span>
+      <div class="top"><span>레전드</span><span class="rr-badge">UR</span></div>
+      <div class="art"><span class="em">⚡</span></div>
+      <div class="foot"><div class="nm">갓</div><div class="meta">전능 +48 · 성장·관문 ↑</div><div class="stars">★★★★★</div></div></div>
+  </div>
+
+  <div class="note">
+    <b>핵심 아이디어</b> — 이모지를 없애는 게 아니라 <b>"카드 일러스트의 주인공"</b>으로 승격.<br>
+    · 레어도별 <b>배경 그라데이션 + 프레임</b> (N 회색 → R 블루 → SR 퍼플 → SSR 골드홀로 → UR 무지개홀로)<br>
+    · <b>광택 스윕</b>이 카드 위를 계속 지나가고, SSR·UR엔 <b>홀로그램 회전 + 반짝이</b><br>
+    · 뽑거나 합성 성공하면 이 카드가 <b>펑 터지며</b> 등장 → "레어 떴다!" 손맛<br>
+    · 전부 <b>CSS만</b> (이미지 에셋 0, 용량 0, 기존 이모지 그대로 재활용)
+  </div>
+</body></html>
