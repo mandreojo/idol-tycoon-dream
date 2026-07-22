@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>수집형 카드 데모 v2</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;color:#fff;padding:20px 16px 44px;
+    background:
+      radial-gradient(ellipse 70% 50% at 25% -5%, #43306e 0%, transparent 55%),
+      radial-gradient(ellipse 60% 45% at 90% 108%, #6e2a52 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, #241a3e 0%, transparent 70%),
+      linear-gradient(165deg,#171126 0%,#0c0917 100%);
+    background-attachment:fixed;min-height:100vh;position:relative;overflow-x:hidden}
+  /* 배경 반짝이 */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%,rgba(255,255,255,.8),transparent),
+      radial-gradient(1px 1px at 68% 12%,rgba(255,255,255,.6),transparent),
+      radial-gradient(1.5px 1.5px at 84% 42%,rgba(255,240,200,.7),transparent),
+      radial-gradient(1px 1px at 30% 62%,rgba(255,255,255,.5),transparent),
+      radial-gradient(1.5px 1.5px at 55% 82%,rgba(200,220,255,.7),transparent),
+      radial-gradient(1px 1px at 90% 76%,rgba(255,255,255,.5),transparent);
+    animation:tw 4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.5}50%{opacity:1}}
+  h1{font-size:20px;text-align:center;margin-bottom:4px;position:relative;z-index:1;letter-spacing:-.3px}
+  .sub{text-align:center;color:#b9aad4;font-size:12.5px;margin-bottom:24px;position:relative;z-index:1;line-height:1.55}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:400px;margin:0 auto;position:relative;z-index:1}
+  /* ===== 카드 ===== */
+  .uc{position:relative;aspect-ratio:3/4.25;border-radius:15px;overflow:hidden;isolation:isolate;
+    box-shadow:0 14px 32px -10px rgba(0,0,0,.75)}
+  .uc .photo{position:absolute;inset:0;background-size:cover;background-position:top center;z-index:0}
+  .uc .grad{position:absolute;inset:0;z-index:1;
+    background:linear-gradient(to top,rgba(6,4,12,.92) 6%,rgba(6,4,12,.5) 26%,transparent 46%)}
+  /* 레어도 프레임 (테두리 그라데이션) */
+  .uc .frame{position:absolute;inset:0;z-index:3;border-radius:15px;pointer-events:none;
+    border:2.5px solid transparent}
+  .uc.r  .frame{border-color:#5fa8e6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25), inset 0 0 22px rgba(60,130,230,.4)}
+  .uc.sr .frame{border-color:#c98bff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3), inset 0 0 26px rgba(160,80,255,.45)}
+  .uc.ssr .frame{border:none;
+    background:conic-gradient(from 0deg,#ffe98a,#ffb43e,#fff3c0,#e79a2a,#ffe98a) border-box;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    border:3px solid transparent;box-shadow:inset 0 0 26px rgba(255,180,60,.5)}
+  .uc.ur .frame{border:none;
+    background:conic-gradient(from 0deg,#ff5c8a,#ffd36b,#63f0c8,#5c9cff,#c77bff,#ff5c8a) border-box;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    border:3px solid transparent;box-shadow:inset 0 0 30px rgba(200,90,255,.5);animation:hue 6s linear infinite}
+  @keyframes hue{to{filter:hue-rotate(360deg)}}
+  /* 홀로 오버레이(고레어도) */
+  .uc.ssr .holo,.uc.ur .holo{position:absolute;inset:0;z-index:2;mix-blend-mode:screen;opacity:.4;pointer-events:none;
+    background:linear-gradient(115deg,transparent 34%,rgba(255,255,255,.55) 47%,rgba(255,220,150,.4) 52%,transparent 62%);
+    background-size:250% 250%;animation:sh 3.4s ease-in-out infinite}
+  @keyframes sh{0%{background-position:130% 0}55%,100%{background-position:-30% 0}}
+  /* 레어도 배지 */
+  .uc .rr{position:absolute;top:0;left:0;z-index:4;font-size:11px;font-weight:900;letter-spacing:.5px;color:#fff;
+    padding:4px 12px 5px 9px;clip-path:polygon(0 0,100% 0,84% 100%,0 100%);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .uc.r  .rr{background:linear-gradient(120deg,#3d7bd6,#5fa8e6)}
+  .uc.sr .rr{background:linear-gradient(120deg,#7d3fd0,#b06bff)}
+  .uc.ssr .rr{background:linear-gradient(120deg,#e08a1a,#ffc94d);color:#4a2e00}
+  .uc.ur .rr{background:linear-gradient(120deg,#ff4d80,#c77bff)}
+  /* 상단 등급 원형 */
+  .uc .gr{position:absolute;top:8px;right:8px;z-index:4;width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;
+    background:rgba(10,6,20,.6);border:1.5px solid rgba(255,255,255,.55);backdrop-filter:blur(3px);
+    text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  /* 하단 정보 */
+  .uc .info{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:0 11px 11px}
+  .uc .stars{font-size:13px;letter-spacing:2px;color:#ffd95e;text-shadow:0 0 8px rgba(255,190,60,.7),0 1px 2px rgba(0,0,0,.6);margin-bottom:3px}
+  .uc .nm{font-size:19px;font-weight:900;line-height:1.05;letter-spacing:-.5px;
+    -webkit-text-stroke:.5px rgba(0,0,0,.35);text-shadow:0 2px 5px rgba(0,0,0,.7)}
+  .uc .pos{display:inline-block;margin-top:5px;font-size:10.5px;font-weight:800;letter-spacing:.3px;
+    padding:2.5px 9px;border-radius:999px;background:rgba(255,255,255,.16);backdrop-filter:blur(3px);
+    border:1px solid rgba(255,255,255,.25)}
+  .note{max-width:400px;margin:24px auto 0;position:relative;z-index:1;color:#c8bce0;font-size:12.5px;line-height:1.7;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px 16px}
+  .note b{color:#ffd36b}
+</style></head>
+<body>
+  <h1>🎴 이 급 말하는 거야?</h1>
+  <div class="sub">연습생 = 수집형 카드 · 실제 사진이 주인공 · 레어도 프레임·홀로·별</div>
+
+  <div class="grid">
+    <div class="uc ur">
+      <div class="photo" style="background-image:url('https://dcyuonzxltfl2140514.gcdn.ntruss.com/faces/20260714/705/7051683af6e7079fefa4fd1aec38279de84bf885e4ffeb09c05b631d64a42138733e_o_st.webp')"></div>
+      <div class="grad"></div><div class="holo"></div>
+      <div class="rr">UR</div><div class="gr">S</div>
+      <div class="frame"></div>
+      <div class="info"><div class="stars">★★★★★</div><div class="nm">리사</div><span class="pos">💃 센터</span></div>
+    </div>
+
+    <div class="uc ssr">
+      <div class="photo" style="background-image:url('https://dcyuonzxltfl2140514.gcdn.ntruss.com/faces/20260714/377/377166f6a3c1c707d52ccecf1f0fc5ef03ccb4e6af03a35171aba43cb6ce97fd8a8d_o_st.webp')"></div>
+      <div class="grad"></div><div class="holo"></div>
+      <div class="rr">SSR</div><div class="gr">S</div>
+      <div class="frame"></div>
+      <div class="info"><div class="stars">★★★★</div><div class="nm">정국</div><span class="pos">🎤 메인보컬</span></div>
+    </div>
+
+    <div class="uc sr">
+      <div class="photo" style="background-image:url('https://dcyuonzxltfl2140514.gcdn.ntruss.com/faces/20260714/707/707147c068a100149169827f3dac367eb97f6c15e919d31ef1b5ed202b0b6d3e4241_o_st.webp')"></div>
+      <div class="grad"></div>
+      <div class="rr">SR</div><div class="gr">A</div>
+      <div class="frame"></div>
+      <div class="info"><div class="stars">★★★</div><div class="nm">로제</div><span class="pos">🎛️ 프로듀서</span></div>
+    </div>
+
+    <div class="uc r">
+      <div class="photo" style="background-image:url('https://dcyuonzxltfl2140514.gcdn.ntruss.com/faces/20260714/706/1e092078fb6170bfc693e3ed913dfa2b047ac95ac2d8c541d6e28ef46e1d1142f_o_st.jpg')"></div>
+      <div class="grad"></div>
+      <div class="rr">R</div><div class="gr">B</div>
+      <div class="frame"></div>
+      <div class="info"><div class="stars">★★</div><div class="nm">지수</div><span class="pos">🎧 래퍼</span></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>지금(AI 티)</b> 하고 뭐가 다른가 —<br>
+    · <b>이모지 → 실제 사진</b>이 카드를 꽉 채움 (우리 763명 다 사진 있음)<br>
+    · <b>딥한 배경</b> + 파티클 = "게임 로비" 느낌 (파스텔 아님)<br>
+    · <b>골드·무지개 프레임</b> + 홀로 스윕 + 별 = 레어 뽑는 손맛<br>
+    · 이름·포지션 <b>게임틱 타이포</b> (아웃라인·그림자)<br>
+    → 이 카드가 <b>결과 화면·숙소·그룹·뽑기</b>에 쫙 깔리면 완전 다른 게임처럼 보임.
+  </div>
+</body></html>
