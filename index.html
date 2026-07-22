@@ -8,28 +8,43 @@
     --gold:#f0a01e; --good:#18b06e; --bad:#ef4452;
     --vocal:#ff4f97; --dance:#2f9fe6; --visual:#f5a516; --charm:#9160f5;
     --acting:#ff6a3d; --creative:#12bda0; --mental:#8a92ad;
+    /* 프리미엄 톤업: 다층 그림자·상단 하이라이트(유리질감)·버튼 글로우 */
+    --shadow-sm:0 1px 3px rgba(176,116,138,.10), 0 8px 20px -10px rgba(236,58,92,.22);
+    --shadow-md:0 2px 8px rgba(176,116,138,.10), 0 18px 38px -14px rgba(236,58,92,.30);
+    --hi:inset 0 1px 0 rgba(255,255,255,.82);
+    --btn-glow:0 10px 24px -8px rgba(236,58,92,.55);
   }
   @font-face{font-family:'Jua';src:url('assets/Jua-400.ttf') format('truetype');font-display:swap}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;background:#f3e6e9;color:var(--txt);
+  html,body{margin:0;padding:0;background:#efdfe4;color:var(--txt);
     font-family:'Jua',-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif}
   #app{max-width:480px;margin:0 auto;min-height:100vh;background:
-    radial-gradient(120% 55% at 50% -8%, #ffe2e8 0%, var(--bg) 52%);
+    radial-gradient(125% 55% at 50% -8%, #ffe2e8 0%, rgba(255,226,232,0) 50%),
+    radial-gradient(72% 34% at 108% 5%, rgba(255,168,204,.30), rgba(255,168,204,0) 62%),
+    radial-gradient(66% 32% at -10% 20%, rgba(168,150,255,.18), rgba(168,150,255,0) 62%),
+    radial-gradient(64% 30% at 50% 110%, rgba(255,198,120,.15), rgba(255,198,120,0) 60%),
+    linear-gradient(180deg,#fff4f6 0%,#ffedf2 100%);
     display:flex;flex-direction:column;position:relative;overflow:hidden}
   .screen{flex:1;display:none;flex-direction:column;padding:16px}
   .screen.on{display:flex}
-  #s-title{background:radial-gradient(120% 48% at 50% 14%, #ffdde4 0%, var(--bg) 62%)}
+  #s-title{background:
+    radial-gradient(120% 46% at 50% 12%, #ffdbe4 0%, rgba(255,219,228,0) 60%),
+    radial-gradient(78% 30% at 86% 4%, rgba(255,168,204,.34), rgba(255,168,204,0) 60%),
+    radial-gradient(70% 28% at 12% 30%, rgba(168,150,255,.16), rgba(168,150,255,0) 60%)}
   #logo{width:230px;max-width:70%;height:auto;margin:0 auto;display:block}
   #titleMascot{width:132px;height:132px;border-radius:50%;object-fit:cover;object-position:top center;
     margin:0 auto;display:block;border:4px solid #fff;box-shadow:0 10px 22px rgba(236,58,92,.22)}
   h1{font-size:26px;margin:0;line-height:1.15;letter-spacing:-.5px}
   h2{font-size:19px;margin:0 0 6px}
   .muted{color:var(--sub);font-size:13px;line-height:1.5}
-  .btn{appearance:none;border:none;border-radius:14px;padding:15px 16px;
-    font-size:16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    width:100%;cursor:pointer;transition:transform .08s;box-shadow:0 6px 18px -6px var(--accent2)}
-  .btn:active{transform:scale(.97)}
-  .btn.ghost{background:var(--panel2);box-shadow:none;color:var(--txt);border:1px solid var(--line)}
+  .btn{appearance:none;border:none;border-radius:15px;padding:15px 16px;
+    font-size:16px;font-weight:700;color:#fff;letter-spacing:-.2px;
+    background:linear-gradient(135deg,#ff4d72 0%,var(--accent) 42%,#ff6f92 100%);
+    width:100%;cursor:pointer;transition:transform .08s,box-shadow .12s;
+    box-shadow:var(--btn-glow), var(--hi)}
+  .btn:active{transform:scale(.97);box-shadow:0 5px 14px -8px rgba(236,58,92,.6), var(--hi)}
+  .btn.ghost{background:linear-gradient(180deg,#ffffff,#fff5f8);color:var(--txt);border:1px solid var(--line);
+    box-shadow:var(--shadow-sm), var(--hi)}
   .btn.saved-done{background:#e6f8ef !important;color:#1f9d63 !important;border:1px solid #7fdcae !important;opacity:1}
   .btn:disabled{opacity:.4}
 
@@ -139,7 +154,7 @@
   /* 활력 2열 (컨디션·멘탈) */
   .vitals{display:flex;gap:10px;margin-bottom:10px}
   .vital{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 11px;
-    box-shadow:0 4px 14px rgba(236,58,92,.08)}
+    box-shadow:var(--shadow-sm), var(--hi)}
   .vital .vlbl{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:5px;font-weight:700}
   .vital .vlbl b{color:var(--txt);font-variant-numeric:tabular-nums}
   .vital .bar{height:8px;background:var(--panel2);border-radius:20px;overflow:hidden}
@@ -161,7 +176,7 @@
   .bar > i{display:block;height:100%;border-radius:20px;transition:width .4s}
 
   .stats{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 12px;margin-bottom:10px}
-  .stats,.act,.card,.ev-card,.lb,.uploader,.seg,.btn.ghost{box-shadow:0 4px 14px rgba(236,58,92,.08)}
+  .stats,.act,.card,.ev-card,.lb,.uploader,.seg,.btn.ghost{box-shadow:var(--shadow-sm), var(--hi)}
   .stat{display:flex;align-items:center;gap:8px;margin:6px 0}
   .stat .k{width:64px;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap}
   .stat .bar{flex:1}
@@ -173,7 +188,7 @@
 
   /* 연습실 패널 (빈 공간 채움 + 다음 관문 안내) */
   .practice{display:flex;align-items:center;gap:14px;margin:14px 0 0;padding:12px 16px;
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm), var(--hi)}
   .pr-buddy{width:60px;height:60px;object-fit:cover;border-radius:14px;flex:none;
     box-shadow:0 3px 10px rgba(236,58,92,.18);animation:prBob 1.5s ease-in-out infinite}
   @keyframes prBob{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-6px) scaleY(1.04)}}
@@ -452,7 +467,7 @@
 
   /* 성장 서사 로그 */
   .growth{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;
-    margin-top:14px;text-align:left;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+    margin-top:14px;text-align:left;box-shadow:var(--shadow-sm), var(--hi)}
   .growth h3{font-size:14px;margin:0 0 8px;color:var(--accent)}
   .growth h3.growth-toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:0}
   .growth h3.growth-toggle.open{margin:0 0 8px}
@@ -466,7 +481,7 @@
   #s-dex{overflow-y:auto}
   .dex-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .dexcell{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
-    padding:14px 12px 12px;text-align:center;box-shadow:0 4px 14px rgba(236,58,92,.08)}
+    padding:14px 12px 12px;text-align:center;box-shadow:var(--shadow-sm), var(--hi)}
   .dexcell.lock{background:var(--panel2);border-style:dashed;opacity:.85}
   .dexcell .dex-emoji{font-size:38px;line-height:1;margin-bottom:6px}
   .dexcell.lock .dex-emoji{filter:grayscale(1) opacity(.5)}
@@ -2728,8 +2743,36 @@ window.addEventListener("popstate", ()=>{
   .forge-slot{position:relative;flex:1;max-width:150px;min-height:150px;border:2px dashed #ffc9d6;border-radius:16px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
     background:#fff8fa;cursor:pointer;padding:10px 8px;text-align:center;transition:.15s}
-  .forge-slot.filled{border-style:solid;border-color:#ec3a5c;background:#fff;box-shadow:0 4px 14px rgba(236,58,92,.12)}
-  .forge-slot.filled.rare{border-color:#ffb43e;background:#fff8ec}
+  .forge-slot.filled{border-style:solid;border-color:#ec3a5c;background:#fff;box-shadow:0 8px 20px -8px rgba(0,0,0,.28), var(--hi)}
+  /* 레어도 프레임 (데모 톤 · 밝은 배경용) — 슬롯에 올린 카드가 레어도별로 확 다르게 */
+  .forge-slot.filled.rr-0{background:linear-gradient(165deg,#f7f8fa,#e7eaef);border-color:#c3c9d2;color:#3a3f47}
+  .forge-slot.filled.rr-1{background:linear-gradient(165deg,#eaf4ff,#cbe4ff);border-color:#5f9fe6;color:#164a86;
+    box-shadow:0 10px 22px -8px rgba(45,110,210,.5), var(--hi)}
+  .forge-slot.filled.rr-2{background:linear-gradient(165deg,#f4ecff,#e2ccff);border-color:#a45cf0;color:#57228f;
+    box-shadow:0 10px 24px -8px rgba(150,60,240,.5), var(--hi)}
+  .forge-slot.filled.rr-3{border:2.5px solid transparent;color:#7a5410;
+    background:linear-gradient(165deg,#fff6e0,#ffe6ad) padding-box,
+      conic-gradient(from 0deg,#ffe98a,#ffb43e,#fff1b8,#e79a2a,#ffe98a) border-box;
+    box-shadow:0 12px 28px -8px rgba(240,160,30,.55), var(--hi)}
+  .forge-slot.filled.rr-4{border:2.5px solid transparent;color:#48206e;
+    background:linear-gradient(165deg,#fdf1ff,#f0dcff) padding-box,
+      conic-gradient(from 0deg,#ff5c8a,#ffd36b,#63f0c8,#5c9cff,#c77bff,#ff5c8a) border-box;
+    box-shadow:0 14px 32px -8px rgba(200,90,255,.55), var(--hi)}
+  .forge-slot.filled .fs-nm,.forge-slot.filled .fs-meta{color:inherit}
+  .forge-slot.filled .fs-em{filter:drop-shadow(0 3px 6px rgba(0,0,0,.18))}
+  .forge-slot.filled.rr-4 .fs-em{filter:drop-shadow(0 0 10px rgba(255,255,255,.7)) drop-shadow(0 3px 6px rgba(0,0,0,.2))}
+  /* 로우/칩 레어도 톤 (보관함·결과·조합 픽업) — 카드 나오는 모든 곳 통일 */
+  .card-row.rr-1{background:linear-gradient(110deg,#eef6ff,#fff 62%);border-color:#a9d2ff}
+  .card-row.rr-2{background:linear-gradient(110deg,#f6edff,#fff 62%);border-color:#d3b3ff}
+  .card-row.rr-3{background:linear-gradient(110deg,#fff7e4,#fff 62%);border-color:#ffcb6f;box-shadow:0 8px 20px -10px rgba(240,160,30,.32), var(--hi)}
+  .card-row.rr-4{background:linear-gradient(110deg,#fdecff,#fff 62%);border-color:#ef9dff;box-shadow:0 8px 22px -10px rgba(200,90,255,.32), var(--hi)}
+  .dg-chip.rr-1{border-color:#a9d2ff;background:#f3f9ff}
+  .dg-chip.rr-2{border-color:#d3b3ff;background:#f8f2ff}
+  .dg-chip.rr-3{border-color:#ffcb6f;background:#fff8ea}
+  .dg-chip.rr-4{border-color:#ef9dff;background:#fdf1ff}
+  .fp-chip.rr-2{border-color:#d3b3ff;background:#f8f2ff}
+  .fp-chip.rr-3{border-color:#ffcb6f;background:#fff8ea}
+  .fp-chip.rr-4{border-color:#ef9dff;background:#fdf1ff}
   .forge-slot .fs-plus{font-size:36px;color:#ffb0c1}
   .forge-slot .fs-em{font-size:42px;line-height:1}
   .forge-slot .fs-nm{font-size:13px;font-weight:700;line-height:1.2}
@@ -3383,7 +3426,7 @@ window.addEventListener("popstate", ()=>{
     renderResult(box, res){
       if(!box) return;
       const chips=res.drops.length? res.drops.map(d=>{ const id=d.id, c=CARDS[id], bs=this.bestStar(id);
-        return `<span class="dg-chip ${c.rr>=2?'rare':''}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${d.isNew?'✨새 카드':'＋★1'}</span></span>`;}).join('')
+        return `<span class="dg-chip rr-${c.rr}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${d.isNew?'✨새 카드':'＋★1'}</span></span>`;}).join('')
         : '<span class="muted">이번엔 육성카드를 못 얻었어요</span>';
       const rec = res.newRecord ? `<div class="dg-record">🎉 <b>최고 팬 신기록!</b> ${fmt(res.fans)}명</div>` : '';
       const titleChips=(res.titles&&res.titles.length)? `<div class="dg-res-titles"><b>🏅 획득 칭호</b><div class="dg-titles" style="margin-top:6px">${res.titles.map(id=>this.titleChip(id)).join('')}</div></div>` : '';
@@ -3403,7 +3446,7 @@ window.addEventListener("popstate", ()=>{
       const box=document.getElementById('cardPickList'); if(!box) return;
       const types=this.ownedTypes();
       box.innerHTML=`<div class="dg-chips" style="margin-top:12px">${types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
-        return `<span class="dg-chip pick ${c.rr>=2?'rare':''}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)}<br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
+        return `<span class="dg-chip pick rr-${c.rr}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)}<br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
     },
     toggle(id, el){
       const i=this.equipped.indexOf(id);
@@ -3488,7 +3531,7 @@ window.addEventListener("popstate", ()=>{
       if(!items.length){ ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px"><div class="ev-title">올릴 카드가 없어</div><p class="muted" style="margin:8px 0 14px">육성을 완주하면 카드가 생겨.${other?'<br>(다른 슬롯 카드는 중복 사용 불가)':''}</p><button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`; return; }
       ov.innerHTML=`<div class="ev-card" style="max-width:340px"><div class="ev-title" style="margin-bottom:2px">${slot===0?'왼쪽':'오른쪽'} 슬롯에 올릴 카드</div>
         <p class="muted" style="margin:0 0 10px;font-size:12px">탭해서 선택</p>
-        <div class="forge-pick">${items.map(it=>`<button class="fp-chip ${this.rrOf(it.id)>=2?'rare':''}" onclick="DG.setForge(${slot},'${it.id}',${it.star})">
+        <div class="forge-pick">${items.map(it=>`<button class="fp-chip rr-${this.rrOf(it.id)}" onclick="DG.setForge(${slot},'${it.id}',${it.star})">
           <span style="font-size:22px">${this.emOf(it.id)}</span>
           <span class="fp-nm">${this.rarBadge(it.id)} ${esc(this.nmOf(it.id))}</span>
           <span class="fp-meta">★${it.star} · ${it.n}장</span></button>`).join('')}</div>
@@ -3514,7 +3557,7 @@ window.addEventListener("popstate", ()=>{
     },
     renderForge(){ if(!this.forge)this.forge=[null,null];
       [0,1].forEach(i=>{ const el=document.getElementById('fslot'+i); if(!el)return; const f=this.forge[i];
-        if(f){ el.className='forge-slot filled'+(this.rrOf(f.id)>=2?' rare':'');
+        if(f){ el.className='forge-slot filled rr-'+this.rrOf(f.id);
           el.innerHTML=`<span class="fs-x" onclick="event.stopPropagation();DG.clearForge(${i})">✕</span><span class="fs-em">${this.emOf(f.id)}</span><span class="fs-nm">${this.rarBadge(f.id)} ${esc(this.nmOf(f.id))}</span><span class="fs-meta">★${f.star} · ${RARITY[this.rrOf(f.id)]}</span>`;
         } else { el.className='forge-slot'; el.innerHTML='<span class="fs-plus">＋</span>'; }
       });
@@ -3580,7 +3623,7 @@ window.addEventListener("popstate", ()=>{
       if(!types.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${all.length?'이 레어도 카드가 없어':'아직 보유한 육성카드가 없어.<br>육성을 마치면 생겨!'}</p>`; return; }
       box.innerHTML=types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
         const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
-        return `<div class="card-row ${c.rr>=2?'rare':''}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
+        return `<div class="card-row rr-${c.rr}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${c.em}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${c.nm} <span style="color:#f0a01e">${this.starStr(bs)}</span></div>
             <div class="muted" style="font-size:12px">${this.cardDesc(id,bs)}</div>
@@ -3595,7 +3638,7 @@ window.addEventListener("popstate", ()=>{
       const ownedN=all.filter(id=>this.owned(id)).length;
       if(hint) hint.innerHTML=`<span class="cdex-prog">카드 도감 · 수집 <b>${ownedN}</b> / ${all.length}</span>`;
       box.innerHTML=all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
-        return `<div class="card-row ${c.rr>=2?'rare':''} ${owned?'':'locked'}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
+        return `<div class="card-row rr-${c.rr} ${owned?'':'locked'}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
           <span class="cr-em">${owned?c.em:'❔'}</span>
           <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${owned?c.nm:'???'}${owned?` <span style="color:#f0a01e">${this.starStr(bs)}</span>`:''}</div>
             <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):((c.hyb||c.rr>=3)?'⚗️ 조합소에서 합성':'육성으로 획득')}</div></div>
