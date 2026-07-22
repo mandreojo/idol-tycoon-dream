@@ -784,6 +784,10 @@
       <button class="seg on" id="rseg-group" onclick="DG.setRankTab('group')">🏆 그룹</button>
       <button class="seg" id="rseg-trainee" onclick="DG.setRankTab('trainee')">🏅 연습생</button>
     </div>
+    <div class="segtab rank-seg2" id="rankSub">
+      <button class="seg on" id="rsub-season" onclick="DG.setRankSub('season')">이번 시즌</button>
+      <button class="seg" id="rsub-all" onclick="DG.setRankSub('alltime')">역대</button>
+    </div>
     <div id="leagueHead"></div>
     <p class="muted" style="margin:2px 2px 9px" id="leagueNote"></p>
     <div class="lb" id="leagueBoard"></div>
@@ -2769,6 +2773,9 @@ window.addEventListener("popstate", ()=>{
   .hw-bar{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
   .hw-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
   .rank-seg{margin:2px 0 13px}
+  .rank-seg2{margin:-6px 0 13px}
+  .rank-seg2 .seg{padding:8px 8px;font-size:13px}
+  .lb-cap{font-size:12px;color:var(--sub);font-weight:700;padding:10px 14px 6px}
   /* 그룹 시너지(경쟁전) */
   .syn-box{background:linear-gradient(135deg,rgba(255,77,114,.13),rgba(255,194,71,.07));border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-top:10px}
   .syn-h{font-size:13px;font-weight:700;color:var(--txt)}
@@ -3292,6 +3299,7 @@ window.addEventListener("popstate", ()=>{
       if(!this.data.battleSeason || this.data.battleSeason.no!==no){ this.data.battleSeason={no, pts:0, w:0, l:0}; this.persist(); }
       return this.data.battleSeason; },
     battleTier(pts){ let t=BATTLE_TIERS[0]; for(const x of BATTLE_TIERS){ if(pts>=x.min)t=x; } return t; },
+    battleAll(){ if(!this.data.battleAll) this.data.battleAll={w:0,l:0,best:0}; return this.data.battleAll; },   // 통산(시즌 리셋 안 됨) = 역대 세그
     // ===== 시너지 조합 (경쟁전②) — 4축 합산, 상한 +40%. members 미지정=현재 편성, trend 미지정=이번 시즌 =====
     // ⚠️수치 초안(밸런싱 대기). ①콘셉트 몰이는 트렌드 포지션 일치 시 ×1.5.
     groupSynergy(members, trend){
@@ -3366,6 +3374,7 @@ window.addEventListener("popstate", ()=>{
       const bs=this.battleSeason();
       res.delta = res.win? Math.round(18+(oppScore||0)/220) : -12;
       bs.pts=Math.max(0, bs.pts+res.delta); if(res.win)bs.w=(bs.w||0)+1; else bs.l=(bs.l||0)+1;
+      const ba=this.battleAll(); if(res.win)ba.w++; else ba.l++; if(bs.pts>ba.best)ba.best=bs.pts;   // 통산 누적(역대)
       res.pts=bs.pts; res.tier=this.battleTier(bs.pts); this.persist();
       this._showBattle(g, {name:oppName, logo:oppLogo||'🎤'}, res);
       if(this._rankTab==='group') setTimeout(()=>{ try{ this.renderLeague(); }catch(e){} }, 900);   // 배틀 후 헤드 티어 갱신
@@ -4164,18 +4173,43 @@ window.addEventListener("popstate", ()=>{
           {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).catch(()=>{});
       }catch(e){}
     },
-    showLeague(){ this.load(); if(!this._rankTab)this._rankTab='group';
+    showLeague(){ this.load(); if(!this._rankTab)this._rankTab='group'; if(!this._leagueSub)this._leagueSub='season';
       const g=document.getElementById('rseg-group'), tr=document.getElementById('rseg-trainee');
       if(g)g.classList.toggle('on',this._rankTab==='group'); if(tr)tr.classList.toggle('on',this._rankTab==='trainee');
+      const a=document.getElementById('rsub-season'), b=document.getElementById('rsub-all');
+      if(a)a.classList.toggle('on',this._leagueSub==='season'); if(b)b.classList.toggle('on',this._leagueSub==='alltime');
       show('s-league'); this.renderRankTab(); },
     setRankTab(tab){ this._rankTab=tab;
       const g=document.getElementById('rseg-group'), tr=document.getElementById('rseg-trainee');
       if(g)g.classList.toggle('on',tab==='group'); if(tr)tr.classList.toggle('on',tab==='trainee');
       this.renderRankTab(); },
     renderRankTab(){
-      if(this._rankTab==='trainee'){ this.renderTraineeBoard(); return; }
+      const sub=document.getElementById('rankSub');
+      if(this._rankTab==='trainee'){ if(sub)sub.style.display='none'; this.renderTraineeBoard(); return; }
+      if(sub)sub.style.display='';                                  // 그룹 탭에서만 [시즌|역대]
+      if(this._leagueSub==='alltime'){ this.renderAllTime(); return; }
       this.renderLeague();
-      this.fetchGroupBoard().then(list=>{ if(this._rankTab==='group') this.renderLeague(list); });
+      this.fetchGroupBoard().then(list=>{ if(this._rankTab==='group'&&this._leagueSub!=='alltime') this.renderLeague(list); });
+    },
+    setRankSub(sub){ this._leagueSub=sub;
+      const a=document.getElementById('rsub-season'), b=document.getElementById('rsub-all');
+      if(a)a.classList.toggle('on',sub==='season'); if(b)b.classList.toggle('on',sub==='alltime');
+      this.renderRankTab(); },
+    // 역대 세그 = 통산 전적(시즌 리셋 안 됨) + 데뷔시킨 그룹 명예
+    renderAllTime(){
+      const ba=this.battleAll(), tier=this.battleTier(ba.best);
+      const head=document.getElementById('leagueHead'), note=document.getElementById('leagueNote'), box=document.getElementById('leagueBoard');
+      if(note) note.textContent='';
+      const total=ba.w+ba.l, rate=total?Math.round(ba.w/total*100):0;
+      if(head) head.innerHTML=`<div class="lg-head"><div class="lg-tier-ic">${tier.ic}</div>
+        <div class="lg-tier-nm">최고 ${esc(tier.nm)}</div>
+        <div class="lg-tier-sub">통산 <b>${ba.w}</b>승 ${ba.l}패${total?' · 승률 '+rate+'%':''}</div>
+        <div class="lg-rank-badge">최고 승점 ${ba.best}</div></div>`;
+      const groups=(this.data.groups||[]).slice().sort((a,b)=>(b.sum||0)-(a.sum||0));
+      if(box) box.innerHTML= groups.length?
+        `<div class="lb-cap">🏆 데뷔시킨 그룹 ${groups.length}팀</div>`+groups.map((g,i)=>
+          `<div class="lb-row"><span class="r">${i+1}</span><span class="who"><span class="lg-logo">${this.logoHtml(g.logo,24)}</span> ${esc(g.name)}<small>${g.grade}·${g.n}/9</small></span><span class="sc">${(g.sum||0).toLocaleString()}</span></div>`).join('')
+        : `<div class="lb-row"><span class="who muted">아직 데뷔시킨 그룹이 없어</span></div>`;
     },
     // 연습생 랭킹 = 전설의 연습생(개인 팬 리더보드). Game.fetchBoard 데이터 재활용, s-league에 렌더.
     renderTraineeBoard(){
