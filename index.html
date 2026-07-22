@@ -2781,6 +2781,17 @@ window.addEventListener("popstate", ()=>{
   .hw-bar{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
   .hw-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
   .rank-seg{margin:2px 0 13px}
+  /* 그룹 시너지(경쟁전) */
+  .syn-box{background:linear-gradient(135deg,rgba(255,77,114,.13),rgba(255,194,71,.07));border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-top:10px}
+  .syn-h{font-size:13px;font-weight:700;color:var(--txt)}
+  .syn-h b{color:var(--gold);font-size:16px}
+  .syn-cap{font-size:10px;color:var(--sub);font-weight:600;margin-left:5px;border:1px solid var(--line);padding:1px 5px;border-radius:8px}
+  .syn-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .syn-chip{font-size:11px;padding:3px 8px;border-radius:20px;background:var(--panel);border:1px solid var(--line);color:var(--sub);font-weight:600}
+  .syn-chip.k-concept{color:#ff9bb3;border-color:#5a3a48}
+  .syn-chip.k-chemi{color:#7fc6ff;border-color:#2a4a6a}
+  .syn-chip.k-grade{color:var(--gold);border-color:#5a4a2a}
+  .syn-chip.k-origin{color:#9be89b;border-color:#2a5a3a}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
@@ -3220,6 +3231,43 @@ window.addEventListener("popstate", ()=>{
       return same.length<=1? base : base+' '+(same.findIndex(s=>String(s.sid)===String(slot.sid))+1); },
     filledCount(){ let n=0; this.slots().forEach(s=>{ if(this.rosterById(this.data.lineup[s.sid])) n++; }); return n; },
     groupInfo(){ let sum=0,n=0; this.slots().forEach(s=>{ const r=this.rosterById(this.data.lineup[s.sid]); if(r){ sum+=this.posScore(r.stats,s.type); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
+    // ===== 시너지 조합 (경쟁전②) — 4축 합산, 상한 +40%. members 미지정 시 현재 편성 사용 =====
+    // ⚠️수치 초안(밸런싱 대기). ①콘셉트 몰이는 트렌드 일치 시 ×1.5(트렌드 도입 후 연결).
+    groupSynergy(members){
+      if(!members){ members=this.slots().map(s=>({type:s.type, r:this.rosterById(this.data.lineup[s.sid])})).filter(m=>m.r); }
+      const n=members.length;
+      if(n<3) return {pct:0, raw:0, capped:false, list:[]};
+      const list=[];
+      const pc={}; members.forEach(m=>pc[m.type]=(pc[m.type]||0)+1);
+      const titles=new Set(); members.forEach(m=>(m.r.titles||[]).forEach(t=>titles.add(t)));
+      // ① 콘셉트 몰이(같은 포지션 N명): 보컬/래퍼/댄서 2·3·4명 = +6/12/18%, 크리에이터(프로듀서) 2·3명 = +8/16%
+      const CM={vocal:'보컬 몰이', rapper:'힙합 몰이', dancer:'퍼포먼스 몰이'};
+      ['vocal','rapper','dancer'].forEach(t=>{ const c=pc[t]||0; if(c>=2) list.push({nm:CM[t], pct:(c>=4?18:c>=3?12:6), k:'concept'}); });
+      if((pc.producer||0)>=2) list.push({nm:'크리에이터 몰이', pct:(pc.producer>=3?16:8), k:'concept'});
+      // ② 케미 조합(트렌드 무관)
+      const has=t=>(pc[t]||0)>0;
+      if(has('vocal')&&has('rapper')&&has('dancer')) list.push({nm:'삼각편대', pct:12, k:'chemi'});
+      else if(has('vocal')&&has('rapper')) list.push({nm:'멜로디&플로우', pct:8, k:'chemi'});
+      if(has('leader')&&has('center')) list.push({nm:'완벽한 프론트', pct:6, k:'chemi'});
+      if(Object.keys(pc).length>=6) list.push({nm:'육각 완전체', pct:20, k:'chemi'});
+      // ③ 등급 보유(칭호): 전설>스타성 택1 + 에이스
+      if(titles.has('legend')) list.push({nm:'전설 보유', pct:12, k:'grade'});
+      else if(titles.has('star')) list.push({nm:'스타성 보유', pct:7, k:'grade'});
+      if(titles.has('ace')) list.push({nm:'에이스 보유', pct:5, k:'grade'});
+      // ④ 원조 케미(원본그룹) — 편성당 최고 1등급만(오버스펙 차단). 커스텀(grp='')은 순혈/완전체 깨뜨림
+      const grps=members.map(m=>m.r.grp||''), allOrigin=grps.every(g=>g);
+      const gc={}; grps.forEach(g=>{ if(g) gc[g]=(gc[g]||0)+1; });
+      const names=Object.keys(gc), big3=names.filter(g=>gc[g]>=3);
+      let ob=0, on='';
+      if(allOrigin && names.length===1 && n===9){ ob=35; on='완전체'; }
+      else if(allOrigin && names.length===1 && n>=3){ ob=26; on='순혈'; }
+      else if(allOrigin && n===9 && names.length>=2){ ob=25; on='풀 콜라보'; }
+      else if(allOrigin && big3.length>=2){ ob=18; on='콜라보'; }
+      else if(names.some(g=>gc[g]>=2)){ ob=8; on='실친'; }
+      if(ob>0) list.push({nm:on+' 케미', pct:ob, k:'origin'});
+      const raw=list.reduce((a,x)=>a+x.pct,0);
+      return {pct:Math.min(40,raw), raw, capped:raw>40, list};
+    },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
@@ -3267,7 +3315,7 @@ window.addEventListener("popstate", ()=>{
       let joinMsg, newRid=null;
       if(debuted){
         newRid=++this.data.ridSeq;
-        this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr, titles});
+        this.data.roster.push({rid:newRid, idkey, name:st.idol.name, img:st.idol.img||'', spec:st.idol.spec, cat:st.idol.cat||'F', stats, grade:gr, titles, grp:st.idol.grp||''});   // grp=원본그룹(원조 케미 시너지 재료). 커스텀=''(순혈/완전체 깨짐)
         joinMsg=`🎊 <b>${esc(st.idol.name)}</b> 데뷔! 연습생 숙소 합류<br><span class="muted">종합 ${grade(Math.round(STATS.reduce((a,x)=>a+(stats[x.k]||0),0)/STATS.length))} 등급</span>`;
       } else { joinMsg=`💤 <b>${esc(st.idol.name)}</b> 데뷔 실패 — 숙소에 못 들어감`; }
       // 개인 신기록: 자기 이전 최고 팬수 갱신(로컬 기록, 등재와 별개)
@@ -3384,6 +3432,7 @@ window.addEventListener("popstate", ()=>{
       if(roster.length===0){ document.getElementById('dgGroup').innerHTML=''; document.getElementById('dgGroups').innerHTML=''; return; }
       // 동적 슬롯: 리더 첫칸 고정 + 자유 편성(보컬그룹/힙합크루…). 최소 3칸·최대 9인
       const shown=this.slots();
+      const syn=this.groupSynergy();
       const slotCells=shown.map(s=>{ const r=this.rosterById(this.data.lineup[s.sid]); const nm=this.slotNm(s), ic=this.slotIco(s);
         if(r){ const val=this.posScore(r.stats,s.type), av=r.img?`style="background-image:url('${r.img}')"`:'';
           return `<div class="dg-slot filled" onclick="DG.openAssign('${s.sid}')"><div class="dg-pos">${ic} ${nm}</div>
@@ -3398,6 +3447,10 @@ window.addEventListener("popstate", ()=>{
           <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
           <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 3명 이상 편성하면 활동 시작'}</div></div>
          <div class="dg-grid nine">${slotCells}</div>
+         ${(gi.n>=3&&syn.list.length)?`<div class="syn-box">
+           <div class="syn-h">🔥 그룹 시너지 <b>+${syn.pct}%</b>${syn.capped?'<span class="syn-cap">상한</span>':''}</div>
+           <div class="syn-chips">${syn.list.map(x=>`<span class="syn-chip k-${x.k}">${esc(x.nm)} +${x.pct}</span>`).join('')}</div>
+         </div>`:''}
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
            <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 숙소 (${(function(cm){return (DG.data.roster||[]).filter(r=>!cm.has(r.rid)).length;})(this.committedRids())})</button>
