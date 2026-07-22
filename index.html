@@ -2795,6 +2795,22 @@ window.addEventListener("popstate", ()=>{
   .trend-nm b{color:var(--gold)}
   .trend-days{font-size:10px;color:var(--sub);border:1px solid var(--line);padding:1px 6px;border-radius:8px;margin-left:4px}
   .trend-desc{font-size:11px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 배틀 대결(경쟁전④) */
+  .bt-card{max-width:340px}
+  .bt-title{font-size:20px;font-weight:800;color:var(--txt)}
+  .bt-trend{font-size:12px;color:var(--gold);margin-top:3px;margin-bottom:15px}
+  .bt-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .bt-side{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .bt-logo{font-size:32px;width:64px;height:64px;border-radius:18px;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;box-shadow:var(--hi)}
+  .bt-nm{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+  .bt-pw{font-size:23px;font-weight:900;color:var(--accent2);font-variant-numeric:tabular-nums;line-height:1.1}
+  .bt-crit{font-size:11px;font-weight:800}
+  .bt-crit.up{color:var(--gold);text-shadow:0 0 10px rgba(255,194,71,.6)} .bt-crit.down{color:var(--sub)}
+  .bt-crit-none{height:15px}
+  .bt-vs{font-size:15px;font-weight:900;color:var(--sub);align-self:center;flex:0 0 auto}
+  .bt-result{font-size:26px;font-weight:900;margin:16px 0 6px}
+  .bt-result.win{color:var(--gold)} .bt-result.lose{color:var(--sub)}
+  .bt-go{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-size:13px;padding:5px 10px;border-radius:10px;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:var(--btn-glow)}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
@@ -3310,6 +3326,43 @@ window.addEventListener("popstate", ()=>{
     battle(myMembers, oppPower){ const mp=this.battlePower(myMembers), mc=this.critChance(myMembers);
       const my=this.battleRoll(mp.power, mc), opp=this.battleRoll(oppPower||1, 0.12);
       return {win:my.final>=opp.final, my, opp, myPower:mp.power, oppPower:oppPower||1, myInfo:mp}; },
+    // ===== 배틀 UI (경쟁전④): 대표 그룹 vs 고스트 대결 연출 =====
+    groupMembers(g){ return ((g&&g.slots)||[]).map(s=>({type:s.type, r:this.rosterById((g.lineup||{})[s.sid])})).filter(m=>m.r); },
+    openBattleAt(i){ const r=(this._board||[])[i]; if(!r||r.me) return; this.openBattle(r.name, r.logo, r.score); },
+    openBattle(oppName, oppLogo, oppScore){ this.load();
+      const g=this.repGroup(); if(!g){ try{toast('먼저 홈에서 대표 데뷔조를 정해줘');}catch(e){} return; }
+      const mem=this.groupMembers(g); if(mem.length<3){ try{toast('대표 그룹 편성이 부족해');}catch(e){} return; }
+      const res=this.battle(mem, oppScore);
+      this._showBattle(g, {name:oppName, logo:oppLogo||'🎤'}, res);
+    },
+    _countUp(id, to, ms){ const el=document.getElementById(id); if(!el)return; const t0=Date.now();
+      const step=()=>{ const p=Math.min(1,(Date.now()-t0)/ms); el.textContent=Math.round(to*(0.15+0.85*p)).toLocaleString(); if(p<1)requestAnimationFrame(step); else el.textContent=to.toLocaleString(); };
+      requestAnimationFrame(step); },
+    _showBattle(g, opp, res){
+      const ov=document.getElementById('ov'); if(!ov)return; ov.className='ov on';
+      ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
+      const trend=this.currentTrend();
+      const crTag=(r)=> r.crit? `<div class="bt-crit ${r.up?'up':'down'}">${r.up?'⚡ CRITICAL':'💧 불발'}</div>`:'<div class="bt-crit-none"></div>';
+      ov.innerHTML=`<div class="ev-card bt-card">
+        <div class="bt-title">⚔️ 무대 대결</div>
+        <div class="bt-trend">${trend.ic} 트렌드 «${esc(trend.nm)}»</div>
+        <div class="bt-row">
+          <div class="bt-side"><span class="bt-logo">${this.logoHtml(g.logo,46)}</span>
+            <div class="bt-nm">${esc(g.name)}</div><div class="bt-pw" id="btMyPw">0</div>${crTag(res.my)}</div>
+          <div class="bt-vs">VS</div>
+          <div class="bt-side"><span class="bt-logo">${this.logoHtml(opp.logo,46)}</span>
+            <div class="bt-nm">${esc(opp.name)}</div><div class="bt-pw" id="btOpPw">0</div>${crTag(res.opp)}</div>
+        </div>
+        <div class="bt-result ${res.win?'win':'lose'}" id="btResult" style="opacity:0">${res.win?'🏆 승리!':'😢 패배…'}</div>
+        <button class="btn" id="btClose" style="opacity:0" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">확인</button>
+      </div>`;
+      this._countUp('btMyPw', res.my.final, 750);
+      this._countUp('btOpPw', res.opp.final, 750);
+      setTimeout(()=>{ const rEl=document.getElementById('btResult'), cEl=document.getElementById('btClose');
+        if(rEl){ rEl.style.transition='opacity .45s'; rEl.style.opacity='1'; }
+        if(cEl){ cEl.style.transition='opacity .45s'; cEl.style.opacity='1'; }
+        try{ sfx(res.win?'win':'lose'); }catch(e){} }, 850);
+    },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
@@ -4130,12 +4183,15 @@ window.addEventListener("popstate", ()=>{
         }
       }
       const box=document.getElementById('leagueBoard');
+      this._board=board;                         // 배틀 도전 진입용(openBattleAt)
+      const hasRep=!!this.repGroup();
       if(box){
         box.innerHTML=board.slice(0,30).map((r,i)=>{
           const medal=["🥇","🥈","🥉"][i]||`${i+1}`;
+          const chal=(!r.me && hasRep)? `<button class="bt-go" onclick="event.stopPropagation();DG.openBattleAt(${i})" title="대결">⚔️</button>` : '';
           return `<div class="lb-row ${r.me?'me':''}"><span class="r">${medal}</span>
             <span class="who"><span class="lg-logo">${this.logoHtml(r.logo,24)}</span> ${esc(r.name)}${r.me?' <b style="color:var(--accent)">·'+t("lg_me")+'</b>':''}<small>${r.n}/9</small></span>
-            <span class="sc">${r.score.toLocaleString()}</span></div>`;
+            <span class="sc">${r.score.toLocaleString()}</span>${chal}</div>`;
         }).join("");
       }
       const note=document.getElementById('leagueNote');
