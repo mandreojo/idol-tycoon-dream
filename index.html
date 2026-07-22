@@ -567,16 +567,12 @@
 
   <!-- OFFICE (드림그룹 허브) -->
   <section class="screen" id="s-office">
-    <div class="sub-head">
-      <button class="menu-btn" onclick="Game.reset()" aria-label="back" title="뒤로">←</button>
-      <h2 id="officeTitle">🏢 우리 기획사</h2>
-      <button class="menu-btn" onclick="DG.editAgency()" title="기획사 정보 수정" style="margin-left:auto">✏️</button>
-    </div>
+    <div class="home-profile" id="homeProfile"></div>
+    <div id="homeHero"></div>
     <div id="dgGroup"></div>
     <div id="dgGroups"></div>
-    <div id="dgCards"></div>
-    <button class="btn ghost" onclick="DG.goAchv()" style="margin-top:14px">🏅 업적 <span id="officeAchv" class="muted" style="font-size:13px"></span></button>
-    <button class="btn" onclick="Game.goSelect()" style="margin-top:9px">＋ 새 연습생 육성</button>
+    <div class="home-cta" id="homeCta"></div>
+    <div id="homeWidgets"></div>
   </section>
 
   <!-- SELECT -->
@@ -2744,7 +2740,46 @@ window.addEventListener("popstate", ()=>{
 
 <!-- ===== 드림그룹 메타 (육성카드 유전 + 기획사) ===== -->
 <style>
-  #s-office .sub-head h2{margin:0}
+  /* ── 홈 대시보드 ── */
+  #s-office{padding-top:14px}
+  .home-profile{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:14px 15px;box-shadow:var(--shadow-sm)}
+  .hp-top{display:flex;align-items:center;gap:11px}
+  .hp-logo{font-size:24px;width:44px;height:44px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:var(--hi)}
+  .hp-id{flex:1;min-width:0}
+  .hp-name{font-weight:800;font-size:17px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hp-role{font-size:12px;color:var(--sub)}
+  .hp-edit{background:var(--panel);border:1px solid var(--line);color:var(--sub);width:34px;height:34px;border-radius:10px;font-size:15px;cursor:pointer;flex:0 0 auto}
+  .hp-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+  .hp-stat{background:var(--bg);border-radius:12px;padding:9px 4px;text-align:center;cursor:pointer;border:1px solid transparent}
+  .hp-stat:active{border-color:var(--accent)}
+  .hp-stat b{display:block;font-size:19px;color:var(--accent2);font-weight:800;line-height:1.1}
+  .hp-stat span{font-size:11px;color:var(--sub)}
+  .hero{border-radius:18px;padding:17px;margin-top:12px;border:1px solid var(--line);box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+  .hero.on-boarding{background:linear-gradient(135deg,#3a2159,#2a1c42)}
+  .hero.hero-stage{background:linear-gradient(135deg,#4a2f24,#2f2145);border-color:#6a4a2a}
+  .hero.hero-ready{background:linear-gradient(135deg,#1f3a2c,#22203a);border-color:#2a6a4a}
+  .hero.hero-build{background:linear-gradient(135deg,#2a2145,#251c39)}
+  .hero-badge{display:inline-block;font-size:11px;font-weight:700;color:var(--gold);background:rgba(255,194,71,.13);padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .hero-t{font-size:19px;font-weight:800;color:var(--txt);line-height:1.25}
+  .hero-d{font-size:13px;color:var(--sub);margin-top:5px;line-height:1.5}
+  .hero-cta{margin-top:13px;width:100%}
+  .hs-row{display:flex;align-items:center;gap:13px}
+  .hs-logo{font-size:34px;width:56px;height:56px;border-radius:16px;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:var(--hi)}
+  .hs-txt{flex:1;min-width:0}
+  .hero-btns{display:flex;gap:8px;margin-top:13px}
+  .hero-btns .btn{flex:1;margin:0}
+  .home-cta{margin-top:13px}
+  .home-cta .btn{width:100%}
+  .hw-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:13px}
+  .hw{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:var(--shadow-sm)}
+  .hw:active{border-color:var(--accent)}
+  .hw-ic{font-size:22px}
+  .hw-t{font-size:11px;color:var(--sub);margin-top:2px}
+  .hw-v{font-size:18px;font-weight:800;color:var(--txt);margin-top:3px;line-height:1.1}
+  .hw-v small{font-size:11px;color:var(--sub);font-weight:600}
+  .hw-s{font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hw-bar{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
+  .hw-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
@@ -3248,11 +3283,92 @@ window.addEventListener("popstate", ()=>{
     go(){ this.load(); if(!this.data.agency){ this.renderAgency(); show('s-agency'); return; } this.renderOffice(); show('s-office'); },
     renderOffice(){
       this.load();
-      const a=this.agency(); const ot=document.getElementById('officeTitle');
-      if(ot) ot.innerHTML=`${this.logoHtml(a.logo,26)} ${esc(a.name)}`;
+      const a=this.agency();
       const gi=this.groupInfo();
+      const roster=(this.data.roster||[]);
+      const cm=this.committedRids();
+      const freeCount=roster.filter(r=>!cm.has(r.rid)).length;
+      const groups=this.data.groups||[];
+      const cardTypes=this.ownedTypes();
+      const rep=this.repGroup();
+
+      // ── 프로필 바 ──
+      document.getElementById('homeProfile').innerHTML=
+        `<div class="hp-top">
+           <span class="hp-logo">${this.logoHtml(a.logo,30)}</span>
+           <div class="hp-id"><div class="hp-name">${esc(a.name)}</div><div class="hp-role">프로듀서</div></div>
+           <button class="hp-edit" onclick="DG.editAgency()" title="기획사 정보 수정">✏️</button>
+         </div>
+         <div class="hp-stats">
+           <div class="hp-stat" onclick="DG.goRoster()"><b>${freeCount}</b><span>무소속</span></div>
+           <div class="hp-stat" onclick="DG.showLeague()"><b>${groups.length}</b><span>데뷔 그룹</span></div>
+           <div class="hp-stat" onclick="DG.goCards()"><b>${cardTypes.length}</b><span>카드</span></div>
+         </div>`;
+
+      // ── 상태별 히어로 ──
+      let hero='';
+      if(roster.length===0 && groups.length===0){
+        hero=`<div class="hero on-boarding">
+           <div class="hero-badge">🎬 프로듀서 데뷔</div>
+           <div class="hero-t">첫 연습생을 발굴하세요</div>
+           <div class="hero-d">원석을 찾아 키우고, 조합해 신인 그룹으로 데뷔시켜요.</div>
+           <button class="btn hero-cta" onclick="Game.goSelect()">✨ 첫 육성 시작</button>
+         </div>`;
+      } else if(rep){
+        const tier=this.tierOf(this.groupScore(rep));
+        hero=`<div class="hero hero-stage">
+           <div class="hero-badge">🏆 우리 대표 그룹</div>
+           <div class="hs-row">
+             <span class="hs-logo">${this.logoHtml(rep.logo,42)}</span>
+             <div class="hs-txt"><div class="hero-t">${esc(rep.name)}</div>
+               <div class="hero-d">${tier.ic} ${esc(tier.nm)} · ${rep.grade}등급 · ${rep.n}/9명</div></div>
+           </div>
+           <div class="hero-btns">
+             <button class="btn ghost" onclick="DG.showLeague()">🏆 랭킹</button>
+             <button class="btn ghost" onclick="DG.shareSavedGroup(${rep.gid})">📸 그룹 정보</button>
+           </div>
+         </div>`;
+      } else if(gi.n>=2){
+        hero=`<div class="hero hero-ready">
+           <div class="hero-badge">🎤 데뷔 준비 완료</div>
+           <div class="hero-t">${esc(this.groupName())}</div>
+           <div class="hero-d">${gi.grade}등급 · ${gi.n}/9명 데뷔조가 무대를 기다려요.</div>
+           <button class="btn hero-cta" onclick="DG.doDebut()">🎬 데뷔시키기</button>
+         </div>`;
+      } else {
+        hero=`<div class="hero hero-build">
+           <div class="hero-badge">📋 데뷔조 편성</div>
+           <div class="hero-t">데뷔조를 완성하세요</div>
+           <div class="hero-d">아래에서 연습생을 포지션에 배치해 2명 이상 모으면 활동이 시작돼요. (현재 ${gi.n}/최소 2명)</div>
+           ${freeCount?`<button class="btn hero-cta" onclick="DG.autoFill()">🎯 자동 편성</button>`
+             :`<button class="btn hero-cta" onclick="Game.goSelect()">✨ 연습생 육성하기</button>`}
+         </div>`;
+      }
+      document.getElementById('homeHero').innerHTML=hero;
+
+      // ── 육성 CTA(항상) + 위젯(업적·그룹차트·카드) ──
+      document.getElementById('homeCta').innerHTML=
+        `<button class="btn" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`;
+      const achvD=this.achvDone(), achvT=ACHV.length, achvPct=achvT?Math.round(achvD/achvT*100):0;
+      let chartW;
+      if(rep){ const tier=this.tierOf(this.groupScore(rep));
+        chartW=`<div class="hw-v">${tier.ic}</div><div class="hw-s">${esc(tier.nm)}</div>`; }
+      else { chartW=`<div class="hw-v">–</div><div class="hw-s">데뷔조 등록</div>`; }
+      document.getElementById('homeWidgets').innerHTML=
+        `<div class="hw-grid">
+           <div class="hw" onclick="DG.goAchv()"><div class="hw-ic">🏅</div><div class="hw-t">업적</div>
+             <div class="hw-v">${achvD}<small>/${achvT}</small></div><div class="hw-bar"><i style="width:${achvPct}%"></i></div></div>
+           <div class="hw" onclick="DG.showLeague()"><div class="hw-ic">🏆</div><div class="hw-t">그룹 차트</div>${chartW}</div>
+           <div class="hw" onclick="DG.goCards()"><div class="hw-ic">🎴</div><div class="hw-t">카드</div>
+             <div class="hw-v">${cardTypes.length}<small>/28</small></div><div class="hw-s">수집</div></div>
+         </div>`;
+
+      // 홈 진입 시 새 업적 감지
+      this.checkAchv();
+
+      // ── 편성 그리드(연습생이 있을 때만) ──
+      if(roster.length===0){ document.getElementById('dgGroup').innerHTML=''; document.getElementById('dgGroups').innerHTML=''; return; }
       // 동적 슬롯: 최소 2칸, 채운 자리+열어둔 만큼만 노출(최대 9). "9칸 다 채워야 할 것 같은" 압박 제거
-      const filled=this.filledCount();
       const openSet=this.openSlotSet();                 // 열어둔 포지션(+채운 자리+최소2칸). 순서 아닌 '선택'식
       const shown=POSITIONS.filter(p=>openSet.has(p.id));
       const slots=shown.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
@@ -3277,8 +3393,7 @@ window.addEventListener("popstate", ()=>{
            ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
          </div>
          ${gi.n>=2? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
-      // 데뷔(저장)한 그룹 목록 — 멤버 전속
-      const groups=this.data.groups||[];
+      // 데뷔(저장)한 그룹 목록 — 멤버 전속 (groups는 상단에서 선언)
       const _repGid=this.repGroupGid();
       document.getElementById('dgGroups').innerHTML = groups.length?
         `<div class="dg-sub" style="margin-top:15px"><b>🏆 데뷔한 그룹</b><span class="muted">${groups.length}/5팀</span></div>
@@ -3292,13 +3407,6 @@ window.addEventListener("popstate", ()=>{
                 <button class="cr-btn off" style="padding:5px 9px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.disbandGroup(${g.gid})">해체</button>
               </div>
             </div>`;}).join('')}</div>` : '';
-      // F5/C: 기획사 화면은 카드 '진입 버튼'만(상세 나열·합치기·도감은 s-cards 카드 보관함으로 분리 → 화면 간소화)
-      const cardTypes=this.ownedTypes();
-      document.getElementById('dgCards').innerHTML=
-        `<button class="btn ghost" style="margin-top:13px" onclick="DG.goCards()">🎴 육성 카드 보관함${cardTypes.length?` <span class="muted">(${cardTypes.length}종)</span>`:''}</button>`;
-      // 업적: 홈 진입 시 새 달성 감지 + 진행수 표시
-      this.checkAchv();
-      const oa=document.getElementById('officeAchv'); if(oa) oa.textContent=`(${this.achvDone()}/${ACHV.length})`;
     },
     // ===== 편성(포지션 배치) =====
     openAssign(slotId){ this.load(); this._slot=slotId; this.renderAssign(); show('s-assign'); },
