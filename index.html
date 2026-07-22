@@ -812,6 +812,29 @@
     <div class="spacer" style="max-height:12px"></div>
   </section>
 
+  <!-- 메뉴 탭 -->
+  <section class="screen" id="s-menu">
+    <div class="sub-head"><h2 style="margin:0">☰ 메뉴</h2></div>
+    <div class="menu-list">
+      <button class="menu-item" onclick="DG.goAchv()"><span class="mi-ic">🏅</span><span class="mi-t">업적</span><span class="mi-v muted" id="menuAchv"></span><span class="mi-ar">›</span></button>
+      <button class="menu-item" onclick="DG.showGroupDex()"><span class="mi-ic">📖</span><span class="mi-t">그룹 도감</span><span class="mi-ar">›</span></button>
+      <button class="menu-item" onclick="Game.showManual('intro')"><span class="mi-ic">❓</span><span class="mi-t">게임 소개</span><span class="mi-ar">›</span></button>
+      <button class="menu-item" onclick="DG.editAgency()"><span class="mi-ic">✏️</span><span class="mi-t">기획사 설정</span><span class="mi-ar">›</span></button>
+      <button class="menu-item" onclick="Game.openSettings()"><span class="mi-ic">🔊</span><span class="mi-t">소리·환경 설정</span><span class="mi-ar">›</span></button>
+      <button class="menu-item danger" onclick="Nav.exit()"><span class="mi-ic">✕</span><span class="mi-t">게임 나가기</span><span class="mi-v muted">하트오락실로</span></button>
+    </div>
+    <div class="spacer" style="max-height:12px"></div>
+  </section>
+
+  <!-- 하단 탭바 (몰입 앱인앱 메인 네비 · 육성/서브화면선 자동 숨김) -->
+  <nav class="tabbar" id="tabbar" style="display:none">
+    <button class="tab" data-tab="home" onclick="Nav.go('home')"><span class="tic">🏠</span>홈</button>
+    <button class="tab" data-tab="roster" onclick="Nav.go('roster')"><span class="tic">📋</span>숙소</button>
+    <button class="tab" data-tab="cards" onclick="Nav.go('cards')"><span class="tic">🎴</span>카드</button>
+    <button class="tab" data-tab="ranking" onclick="Nav.go('ranking')"><span class="tic">🏆</span>랭킹</button>
+    <button class="tab" data-tab="menu" onclick="Nav.go('menu')"><span class="tic">☰</span>메뉴</button>
+  </nav>
+
   <div class="ov" id="ov"></div>
   <div class="manual" id="manual" onclick="Game.closeManual(event)">
     <div class="manual-card" onclick="event.stopPropagation()">
@@ -2482,7 +2505,21 @@ function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   document.getElementById(id).classList.add("on"); document.getElementById("app").scrollTop=0;
   // 폰 뒤로가기 가드: 서브화면(선택·도감·명전·결과) 진입 시 히스토리 확보 → popstate로 가로채 타이틀 복귀(게임 밖 이탈 방지). 플레이화면은 armBackGuard가 담당.
-  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-forge"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"||id==="s-achv"){ try{ history.pushState({scr:id},""); }catch(e){} }}
+  if(id==="s-select"||id==="s-dex"||id==="s-end"||id==="s-office"||id==="s-cardpick"||id==="s-cards"||id==="s-forge"||id==="s-agency"||id==="s-debut"||id==="s-roster"||id==="s-assign"||id==="s-league"||id==="s-achv"||id==="s-menu"){ try{ history.pushState({scr:id},""); }catch(e){} }
+  updateTabbar(id);
+}
+// 하단 탭바: 어느 화면이 어느 탭에 속하는지 (없으면 탭바 숨김 = 육성 몰입/서브화면)
+const TAB_OF={ 's-office':'home','s-roster':'roster','s-cards':'cards','s-forge':'cards','s-league':'ranking','s-achv':'menu','s-dex':'menu','s-menu':'menu' };
+function updateTabbar(id){
+  const tb=document.getElementById('tabbar'); if(!tb) return;
+  const active=TAB_OF[id];
+  if(active){ tb.style.display='flex'; tb.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===active)); }
+  else tb.style.display='none';
+}
+const Nav={
+  go(tab){ if(tab==='home')DG.go(); else if(tab==='roster')DG.goRoster(); else if(tab==='cards')DG.goCards(); else if(tab==='ranking')DG.showLeague(); else if(tab==='menu')DG.showMenu(); },
+  exit(){ try{ if(window.CheddolBridge&&CheddolBridge.exit){CheddolBridge.exit();return;} }catch(e){} Game.reset(); }   // 하트오락실 복귀 브릿지(개발팀 연동) · 폴백=타이틀
+};
 function fmt(n){return Math.round(n||0).toLocaleString("en-US");}
 function clampState(s){ s.cond=Math.max(0,Math.min(100,s.cond)); s.mental=Math.max(0,Math.min(100,s.mental));  // 멘탈 100 캡(이벤트 초과 버그 수정)
   s.fans=Math.max(0,Math.round(s.fans)); STATS.forEach(st=>s[st.k]=Math.max(0,Math.min(800,Math.round(s[st.k])))); }  // 스탯 800 캡
@@ -2680,7 +2717,7 @@ window.addEventListener("popstate", ()=>{
     return;
   }
   // 드림그룹 메타 화면들: 폰 뒤로가기 = 각 화면 ← 버튼과 동일 액션
-  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-forge":()=>DG.goCards(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>Game.reset(),"s-achv":()=>DG.go()};
+  const dgBack={"s-office":()=>Game.reset(),"s-cardpick":()=>Game.goSelect(),"s-cards":()=>DG.go(),"s-forge":()=>DG.goCards(),"s-agency":()=>DG.exitAgency(),"s-debut":()=>DG.go(),"s-roster":()=>DG.go(),"s-assign":()=>DG.go(),"s-league":()=>DG.go(),"s-achv":()=>DG.showMenu(),"s-dex":()=>DG.showMenu(),"s-menu":()=>DG.go()};
   const dgCur=Object.keys(dgBack).find(id=>document.getElementById(id).classList.contains("on"));
   if(dgCur){ try{ history.pushState({scr:dgCur},""); }catch(e){}
     if(manualOn){ Game.closeManual(); return; } if(sheetOn){ Game.closeSheet(); return; }
@@ -2862,6 +2899,31 @@ window.addEventListener("popstate", ()=>{
   .rcard .rstar{font-size:10.5px;letter-spacing:1.5px;color:#ffd95e;text-shadow:0 0 7px rgba(255,190,60,.6);margin-bottom:1px}
   .rcard .rnm{font-size:16px;font-weight:900;color:#fff;line-height:1.05;-webkit-text-stroke:.4px rgba(0,0,0,.3);text-shadow:0 2px 5px rgba(0,0,0,.7)}
   .rcard .rsub{font-size:10px;color:#e8dcff;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ===== 하단 탭바 (몰입 앱인앱 네비) ===== */
+  .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;z-index:30;
+    display:flex;justify-content:space-around;padding:8px 8px calc(9px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(24,17,40,.5),rgba(12,9,23,.97));backdrop-filter:blur(12px);
+    border-top:1px solid rgba(255,255,255,.1)}
+  .tabbar .tab{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:10px;font-weight:800;color:#8a7ea8;flex:1;background:none;border:none;font-family:inherit;cursor:pointer;padding:2px 0}
+  .tabbar .tab .tic{font-size:22px;filter:grayscale(.4) opacity(.75);transition:.12s;line-height:1}
+  .tabbar .tab.on{color:#fff}
+  .tabbar .tab.on .tic{filter:none;transform:translateY(-1px)}
+  .tabbar .tab.on::before{content:"";position:absolute;top:-8px;width:32px;height:3px;border-radius:0 0 4px 4px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .tabbar .tab:active .tic{transform:scale(.9)}
+  /* 탭바 노출 화면은 하단 여백 확보(탭바에 안 가리게) */
+  #s-office,#s-roster,#s-cards,#s-forge,#s-league,#s-achv,#s-dex,#s-menu{padding-bottom:84px}
+  /* 메뉴 리스트 */
+  .menu-list{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  .menu-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font-family:inherit;cursor:pointer;
+    background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;padding:15px;color:var(--txt);font-size:15px;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  .menu-item:active{transform:scale(.99)}
+  .menu-item .mi-ic{font-size:20px;flex:none}
+  .menu-item .mi-t{flex:1}
+  .menu-item .mi-v{font-size:12px;font-weight:600}
+  .menu-item .mi-ar{color:#8a7ea8;font-size:18px}
+  .menu-item.danger{color:#ff8a96}
 </style>
 <script>
 (function(){
@@ -3272,6 +3334,7 @@ window.addEventListener("popstate", ()=>{
       if(newly.length){ this.persist(); let i=0; newly.forEach(a=>setTimeout(()=>{ try{ toast(`🏅 업적 달성! ${a.ic} ${a.nm}`); sfx('win'); }catch(e){} }, (i++)*750)); }
       return newly; },
     goAchv(){ this.load(); this.checkAchv(); this.renderAchv(); show('s-achv'); },
+    showMenu(){ this.load(); const m=document.getElementById('menuAchv'); if(m){ try{ m.textContent=this.achvDone()+' / '+ACHV.length; }catch(e){} } show('s-menu'); },
     renderAchv(){ const box=document.getElementById('achvList'); if(!box) return;
       const st=this.achvState(), done=st.filter(x=>x.done).length;
       const head=document.getElementById('achvHead'); if(head) head.innerHTML=`달성 <b style="color:var(--accent)">${done} / ${st.length}</b>`;
