@@ -302,7 +302,7 @@
   .lb-row .sc{font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
   /* 데뷔조 순위전 */
   .lb{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-  .lg-head{background:linear-gradient(135deg,#fff,var(--panel2));border:1px solid var(--line);border-radius:18px;padding:16px 14px;text-align:center;box-shadow:0 8px 22px -12px rgba(236,58,92,.35)}
+  .lg-head{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:16px 14px;text-align:center;box-shadow:0 8px 22px -12px rgba(236,58,92,.35)}
   .lg-tier-ic{font-size:42px;line-height:1}
   .lg-tier-nm{font-size:20px;font-weight:800;margin-top:5px}
   .lg-tier-sub{color:var(--sub);font-size:12.5px;margin-top:4px;line-height:1.5}
@@ -633,10 +633,7 @@
 
   <!-- 카드 보관함 (보유·강화 | 도감) -->
   <section class="screen" id="s-cards">
-    <div class="sub-head">
-      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
-      <h2>🎴 카드 보관함</h2>
-    </div>
+    <div class="sub-head"><h2 style="margin:0">🎴 카드 보관함</h2></div>
     <button class="btn" onclick="DG.goForge()" style="margin-bottom:11px">⚗️ 카드 조합소 열기</button>
     <div class="segtab" style="margin-bottom:9px">
       <button class="seg on" id="cseg-own" onclick="DG.cardsTab('own')">🎴 보유</button>
@@ -713,10 +710,7 @@
 
   <!-- 연습생 숙소 -->
   <section class="screen" id="s-roster">
-    <div class="sub-head">
-      <button class="menu-btn" onclick="DG.go()" aria-label="back" title="뒤로">←</button>
-      <h2>📋 연습생 숙소</h2>
-    </div>
+    <div class="sub-head"><h2 style="margin:0">📋 연습생 숙소</h2></div>
     <p class="muted" style="margin:2px 0 6px">육성한 연습생들. <b>편성</b>으로 데뷔조에, 안 쓸 연습생은 <b>은퇴</b>시켜 대표스탯 카드로.</p>
     <div id="rosterList"></div>
     <button class="btn" onclick="Game.goSelect()" style="margin-top:14px">＋ 새 연습생 육성</button>
