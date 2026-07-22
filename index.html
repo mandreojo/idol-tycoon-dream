@@ -795,16 +795,16 @@
     <div class="spacer" style="max-height:12px"></div>
   </section>
 
-  <!-- 데뷔조 순위전 (그룹 리더보드) -->
+  <!-- 랭킹 (그룹 차트 + 전설의 연습생) -->
   <section class="screen" id="s-league">
-    <div class="sub-head">
-      <button class="menu-btn" onclick="Game.reset()" aria-label="back" title="뒤로">←</button>
-      <h2 data-i18n="lg_title">🏆 데뷔 그룹 차트</h2>
+    <div class="sub-head"><h2 style="margin:0">🏆 랭킹</h2></div>
+    <div class="segtab rank-seg">
+      <button class="seg on" id="rseg-group" onclick="DG.setRankTab('group')">🏆 그룹</button>
+      <button class="seg" id="rseg-trainee" onclick="DG.setRankTab('trainee')">🏅 연습생</button>
     </div>
     <div id="leagueHead"></div>
     <p class="muted" style="margin:2px 2px 9px" id="leagueNote"></p>
     <div class="lb" id="leagueBoard"></div>
-    <button class="btn ghost" style="margin-top:14px" onclick="DG.go()" data-i18n="lg_to_office">🏢 기획사로</button>
     <div class="spacer" style="max-height:12px"></div>
   </section>
 
@@ -2780,6 +2780,7 @@ window.addEventListener("popstate", ()=>{
   .hw-s{font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hw-bar{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
   .hw-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .rank-seg{margin:2px 0 13px}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
@@ -3947,7 +3948,44 @@ window.addEventListener("popstate", ()=>{
           {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).catch(()=>{});
       }catch(e){}
     },
-    showLeague(){ this.load(); show('s-league'); this.renderLeague(); this.fetchGroupBoard().then(list=>this.renderLeague(list)); },
+    showLeague(){ this.load(); if(!this._rankTab)this._rankTab='group';
+      const g=document.getElementById('rseg-group'), tr=document.getElementById('rseg-trainee');
+      if(g)g.classList.toggle('on',this._rankTab==='group'); if(tr)tr.classList.toggle('on',this._rankTab==='trainee');
+      show('s-league'); this.renderRankTab(); },
+    setRankTab(tab){ this._rankTab=tab;
+      const g=document.getElementById('rseg-group'), tr=document.getElementById('rseg-trainee');
+      if(g)g.classList.toggle('on',tab==='group'); if(tr)tr.classList.toggle('on',tab==='trainee');
+      this.renderRankTab(); },
+    renderRankTab(){
+      if(this._rankTab==='trainee'){ this.renderTraineeBoard(); return; }
+      this.renderLeague();
+      this.fetchGroupBoard().then(list=>{ if(this._rankTab==='group') this.renderLeague(list); });
+    },
+    // 연습생 랭킹 = 전설의 연습생(개인 팬 리더보드). Game.fetchBoard 데이터 재활용, s-league에 렌더.
+    renderTraineeBoard(){
+      const head=document.getElementById('leagueHead'), note=document.getElementById('leagueNote'), box=document.getElementById('leagueBoard');
+      if(note) note.textContent='';
+      if(head) head.innerHTML=`<div class="lg-head"><div class="lg-tier-ic">🏅</div>
+        <div class="lg-tier-nm">전설의 연습생</div>
+        <div class="lg-tier-sub">전 세계 프로듀서가 키운 최고의 연습생들</div></div>`;
+      if(box) box.innerHTML=`<div class="lb-row"><span class="who muted">${t("hall_loading")}</span></div>`;
+      Game.fetchBoard().then(()=>{
+        if(this._rankTab!=='trainee') return;
+        const src=Game._boardCache||Game.localBoard();
+        const list=src.slice().sort((a,b)=>b.fans-a.fans).slice(0,30);
+        const meName=(Game.lastResult&&Game.lastResult.name);
+        if(!box) return;
+        if(!list.length){ box.innerHTML=`<div class="lb-row"><span class="who muted">${t("hall_empty")}</span></div>`; return; }
+        box.innerHTML=list.map((r,i)=>{
+          const me=r._me || (meName&&r.name===meName);
+          const medal=["🥇","🥈","🥉"][i]||`${i+1}`;
+          return `<div class="lb-row ${me?'me':''}"><span class="r">${medal}</span>
+            <span class="who">${r.emoji||"⭐"} ${esc(r.player||t("hall_anon"))}
+              <small>· ${esc(r.name||'')}${r.title?' · '+DG.titleMini(r.title):(r.ending?' · '+esc(r.ending):'')}</small></span>
+            <span class="sc">${fmt(r.fans||0)}</span></div>`;
+        }).join('');
+      });
+    },
     renderLeague(serverList){
       this.load();
       const _rg=this.repGroup();   // 순위전엔 대표 데뷔조 1팀만 출전
