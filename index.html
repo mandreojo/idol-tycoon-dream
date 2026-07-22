@@ -2809,6 +2809,42 @@ window.addEventListener("popstate", ()=>{
   .ros-av{flex:0 0 auto;width:48px;height:48px;border-radius:50%;background:#ffe7ee center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:22px}
   .ros-m{flex:1;min-width:0}
   .ros-nm{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ===== 숙소 = 딥 프리미엄 연습생 카드 컬렉션 (하이브리드: 수집화면만 딥) ===== */
+  #s-roster{background:
+    radial-gradient(ellipse 72% 44% at 22% -6%,#43306e 0,transparent 55%),
+    radial-gradient(ellipse 62% 40% at 94% 106%,#6e2a52 0,transparent 55%),
+    linear-gradient(165deg,#1a1430 0%,#0e0a1c 100%)}
+  #s-roster .sub-head h2{color:#fff}
+  #s-roster .menu-btn{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.22)}
+  #s-roster > p.muted{color:#c3b6dd}
+  #s-roster > p.muted b{color:#ffd98a}
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .rcard{position:relative;aspect-ratio:3/4.05;border-radius:14px;overflow:hidden;cursor:pointer;isolation:isolate;box-shadow:0 10px 24px -10px rgba(0,0,0,.7)}
+  .rcard .rph{position:absolute;inset:0;background-size:cover;background-position:top center;z-index:0}
+  .rcard .rph.noimg{display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(160deg,#3a3350,#241f38)}
+  .rcard .rgd{position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(6,4,12,.93) 8%,rgba(6,4,12,.4) 32%,transparent 54%)}
+  .rcard .rfr{position:absolute;inset:0;z-index:3;border-radius:14px;pointer-events:none;border:2.5px solid transparent}
+  .rcard.t1 .rfr{border-color:#5fa8e6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 0 16px rgba(60,130,230,.35)}
+  .rcard.t2 .rfr{border-color:#c98bff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 18px rgba(160,80,255,.4)}
+  .rcard.t3 .rfr{border:3px solid transparent;
+    background:conic-gradient(from 0deg,#ffe98a,#ffb43e,#fff3c0,#e79a2a,#ffe98a) border-box;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    box-shadow:inset 0 0 18px rgba(255,180,60,.45)}
+  .rcard.t4 .rfr{border:3px solid transparent;
+    background:conic-gradient(from 0deg,#ff5c8a,#ffd36b,#63f0c8,#5c9cff,#c77bff,#ff5c8a) border-box;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    box-shadow:inset 0 0 22px rgba(200,90,255,.45)}
+  .rcard .rbadge{position:absolute;top:0;left:0;z-index:4;font-size:10.5px;font-weight:900;color:#fff;padding:3px 11px 4px 8px;clip-path:polygon(0 0,100% 0,80% 100%,0 100%);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .rcard.t0 .rbadge{background:linear-gradient(120deg,#8a929c,#5c636e)}
+  .rcard.t1 .rbadge{background:linear-gradient(120deg,#3d7bd6,#5fa8e6)}
+  .rcard.t2 .rbadge{background:linear-gradient(120deg,#7d3fd0,#b06bff)}
+  .rcard.t3 .rbadge{background:linear-gradient(120deg,#e08a1a,#ffc94d);color:#4a2e00}
+  .rcard.t4 .rbadge{background:linear-gradient(120deg,#ff4d80,#c77bff)}
+  .rcard .rtag{position:absolute;top:7px;right:7px;z-index:4;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(10,6,20,.55);border:1px solid rgba(255,255,255,.4);color:#fff}
+  .rcard .rinfo{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:0 10px 9px}
+  .rcard .rstar{font-size:10.5px;letter-spacing:1.5px;color:#ffd95e;text-shadow:0 0 7px rgba(255,190,60,.6);margin-bottom:1px}
+  .rcard .rnm{font-size:16px;font-weight:900;color:#fff;line-height:1.05;-webkit-text-stroke:.4px rgba(0,0,0,.3);text-shadow:0 2px 5px rgba(0,0,0,.7)}
+  .rcard .rsub{font-size:10px;color:#e8dcff;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <script>
 (function(){
@@ -3234,22 +3270,28 @@ window.addEventListener("popstate", ()=>{
         </div>`; }).join('');
     },
     goRoster(){ this.load(); this.renderRoster(); show('s-roster'); },
+    gradeTier(g){ const rk=grank(g); return rk>=7?4:rk>=6?3:rk>=5?2:rk>=4?1:0; },   // 등급→레어도 프레임: SS→홀로UR · S→골드 · A→퍼플 · B→블루 · C이하→기본
     renderRoster(){
       const box=document.getElementById('rosterList'); if(!box) return;
       const commitSet=this.committedRids(), allR=(this.data.roster||[]);
       const list=allR.filter(r=>!commitSet.has(r.rid)).sort((a,b)=>grank(b.grade)-grank(a.grade));   // 숙소=무소속만(전속은 데뷔조 카드에서)
       const enrolled=allR.length-list.length;
-      const note = enrolled? `<p class="muted" style="font-size:12px;margin:0 0 8px;text-align:center">🏆 전속 ${enrolled}명은 데뷔조 카드에서 관리 · 여긴 무소속만</p>` : '';
-      if(!list.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${enrolled?`전속 ${enrolled}명은 데뷔조에 있어.<br>무소속 연습생이 없어 — 「새 연습생 육성」!`:'아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!'}</p>`; return; }
-      box.innerHTML=note+list.map(r=>{ const ts=this.topStat(r.stats), tt=this.topTitle(r.titles), inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null, av=r.img?`style="background-image:url('${r.img}')"`:'', rk=grank(r.grade), cnt=rk>=6?3:rk>=4?2:1;
-        const badge = commit? ` <span style="color:#c98a00;font-size:11px">🏆 ${esc(cg?cg.name:'전속')}</span>` : (inup? ' <span style="color:#18b06e;font-size:11px">편성됨</span>' : '');
-        return `<div class="ros-row${inup||commit?' cur':''}"><span class="ros-av" ${av} onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer">${r.img?'':'🎤'}</span>
-          <div class="ros-m" onclick="DG.showRosterDetail(${r.rid})" style="cursor:pointer"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${badge}</div>
-            <div class="muted" style="font-size:12px">대표 ${STATNM[ts]} ${Math.round(r.stats[ts]||0)}${tt?` <span style="color:#c98a00">· ${TITLES[tt].ic}${TITLES[tt].nm}</span>`:''}</div></div>
-          ${commit? '' : `<div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto">
-            ${inup?'':`<button class="cr-btn" style="padding:6px 11px;font-size:12px" onclick="DG.doQuick(${r.rid})">편성</button>`}
-            <button class="cr-btn off" style="padding:6px 11px;font-size:11px;background:#f3e6e6;color:#c0392b" onclick="DG.doDiscard(${r.rid})">은퇴<br><small>${STATNM[ts]}★1×${cnt}</small></button>
-          </div>`}</div>`;}).join('');
+      const note = enrolled? `<p class="muted" style="font-size:12px;margin:0 0 8px;text-align:center;color:#c3b6dd">🏆 전속 ${enrolled}명은 데뷔조 카드에서 관리 · 여긴 무소속만</p>` : '';
+      if(!list.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px;color:#c3b6dd">${enrolled?`전속 ${enrolled}명은 데뷔조에 있어.<br>무소속 연습생이 없어 — 「새 연습생 육성」!`:'아직 육성한 연습생이 없어.<br>「새 연습생 육성」으로 시작!'}</p>`; return; }
+      box.innerHTML=note+`<div class="rgrid">`+list.map(r=>{
+        const ts=this.topStat(r.stats), tt=this.topTitle(r.titles);
+        const inup=this.lineupRids().indexOf(r.rid)>=0, commit=commitSet.has(r.rid), cg=commit?this.groupOfRid(r.rid):null;
+        const tier=this.gradeTier(r.grade), stars='★'.repeat(tier+1);
+        const tag = commit?`🏆 ${esc((cg&&cg.name)||'전속')}`:(inup?'편성됨':'');
+        const ph = r.img?`<div class="rph" style="background-image:url('${r.img}')"></div>`:`<div class="rph noimg">🎤</div>`;
+        return `<div class="rcard t${tier}" onclick="DG.showRosterDetail(${r.rid})">
+          ${ph}<div class="rgd"></div>
+          <div class="rbadge">${r.grade}</div>${tag?`<div class="rtag">${esc(tag)}</div>`:''}
+          <div class="rfr"></div>
+          <div class="rinfo"><div class="rstar">${stars}</div><div class="rnm">${esc(r.name)}</div>
+            <div class="rsub">${STATNM[ts]} ${Math.round(r.stats[ts]||0)}${tt?` · ${TITLES[tt].ic}${TITLES[tt].nm}`:''}</div></div>
+        </div>`;
+      }).join('')+`</div>`;
     },
     // 숙소에서 연습생 눌러 육성 결과 다시 보기 (레이더 + 스탯 등급). 로스터에 저장된 stats 재활용
     showRosterDetail(rid){ this.load(); const r=this.rosterById(rid); if(!r||!r.stats) return;
@@ -3266,6 +3308,10 @@ window.addEventListener("popstate", ()=>{
         <canvas id="rosRadar" width="420" height="420" style="width:220px;height:220px;margin:0 auto"></canvas>
         <div style="margin:6px 2px 12px;font-size:13px">${rows}</div>
         ${(r.titles&&r.titles.length)?`<div style="margin:0 2px 12px"><div class="muted" style="font-size:12px;margin-bottom:5px">🏅 획득 칭호 ${r.titles.length}</div><div class="dg-titles">${r.titles.map(id=>this.titleChip(id)).join('')}</div></div>`:''}
+        ${!commit?`<div style="display:flex;gap:8px;margin-bottom:9px">
+          ${this.lineupRids().indexOf(rid)>=0?'':`<button class="btn" style="flex:1;padding:13px" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.doQuick(${rid})">＋ 데뷔조 편성</button>`}
+          <button class="btn ghost" style="flex:1;padding:13px;color:#c0392b" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.doDiscard(${rid})">은퇴</button>
+        </div>`:''}
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
       try{ drawRadar(document.getElementById('rosRadar'), sv, {dark:false, big:true}); }catch(e){}
     },
