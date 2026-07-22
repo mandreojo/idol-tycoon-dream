@@ -1232,29 +1232,6 @@ const DEBUT_W = SCHEDULES.full.debut;
 const COMPETS = SCHEDULES.full.compets;
 
 // ===== 엔딩 도감 (반복 플레이 훅) =====
-const ENDING_DEX=[
-  {id:"ss",      emoji:"🌟", name:"육각형 슈퍼스타", tier:"SS", hint:"6가지 재능을 모두 정상급으로"},
-  {id:"onetop",  emoji:"👑", name:"원톱형 월드스타", tier:"S",  hint:"한 재능을 압도적으로 키워 대상권에"},
-  {id:"allround",emoji:"🌈", name:"만능 올라운더",   tier:"S",  hint:"약점 없이 고르게 최상급으로"},
-  {id:"stage",   emoji:"🎆", name:"무대 장악 퍼포머",tier:"S",  hint:"무대 4종(보컬·댄스·비주얼·끼)을 압도적으로"},
-  {id:"crown",   emoji:"🎉", name:"이변의 대관식",   tier:"A",  hint:"실력보다 화제성·팬덤으로 대상까지"},
-  {id:"bigstar", emoji:"⭐", name:"믿고 보는 대형 스타",tier:"A", hint:"빈틈없이 두루 성장시켜 입상"},
-  {id:"stageA",  emoji:"🎭", name:"무대형 스타",     tier:"A",  hint:"무대는 최강이지만 랩·작곡은 아직"},
-  {id:"actingstar",emoji:"🎤", name:"대세 래퍼",      tier:"S",  hint:"랩을 확실한 주무기로 세워 월드까지"},
-  {id:"songwriter",emoji:"🎹", name:"싱어송라이터",   tier:"S",  hint:"작곡을 주무기로 세워 월드까지"},
-  {id:"fandom",   emoji:"💞", name:"SNS 팬덤 제국",   tier:"A",  hint:"실력보다 순수 화력·팬덤만으로 대상"},
-  {id:"soloist",  emoji:"🪄", name:"외길 장인",       tier:"A",  hint:"한 재능만 극단적으로, 나머진 포기"},
-  {id:"longrun", emoji:"🌱", name:"롱런형 아이돌",   tier:"B",  hint:"한 방은 없어도 꾸준함으로 월드까지"},
-  {id:"rookie",  emoji:"🐣", name:"아쉬운 유망주",   tier:"C",  hint:"실력은 붙었는데 월드 진출에서 미끄러짐"},
-  {id:"local",   emoji:"🌗", name:"지역 스타",       tier:"C",  hint:"월드 진출의 벽을 넘지 못하고"},
-  {id:"disband", emoji:"💔", name:"팀 해체",         tier:"F",  hint:"바닥에서 끝나버린 비운의 결말"},
-  {id:"slacker", emoji:"🛋️", name:"숨만 쉰 아이돌",  tier:"F",  hint:"🥚 이스터에그 · 훈련을 아예 안 하면…?"},
-];
-const DEX_BY_EMOJI={"🌟":"ss","👑":"onetop","🏆":"allround","🌈":"allround","🎆":"stage",
-  "🎉":"crown","⭐":"bigstar","✨":"bigstar","🌱":"longrun","🌗":"local","💔":"disband",
-  "🎤":"actingstar","🎹":"songwriter","💞":"fandom","🪄":"soloist","🐣":"rookie","🛋️":"slacker"};
-function dexIdOf(end){ if(end.emoji==="🎭") return end.tier==="C"?"local":"stageA";
-  return DEX_BY_EMOJI[end.emoji]||"local"; }
 
 const Game = {
   st:null, lastResult:null, selIdol:null, curMode:"search", trainMode:"full", customSpec:null, customImg:null, customGender:"F",
@@ -2412,23 +2389,7 @@ const Game = {
     }catch(e){}
   },
 
-  // ===== 엔딩 도감 =====
-  dexGot(){ try{ return new Set(JSON.parse(localStorage.getItem("idol_dex")||"[]")); }catch(e){ return new Set(); } },
-  dexAdd(id){ if(!id) return false; const g=this.dexGot(); if(g.has(id)) return false;
-    g.add(id); try{ localStorage.setItem("idol_dex", JSON.stringify([...g])); }catch(e){} return true; },
-  showDex(){
-    const got=this.dexGot();
-    document.getElementById("dexLine").innerHTML=t("dex_count",{n:got.size,total:ENDING_DEX.length});
-    document.getElementById("dexGrid").innerHTML=ENDING_DEX.map(d=>{
-      const has=got.has(d.id);
-      return `<div class="dexcell ${has?"got":"lock"}">
-        <div class="dex-emoji">${has?d.emoji:"🔒"}</div>
-        <div class="dex-tier" style="background:${GRADE_COLOR[d.tier]}">${d.tier}</div>
-        <div class="dex-name">${has?esc(t("d_"+d.id+"_n")):t("dex_locked")}</div>
-        <div class="dex-hint">${esc(t("d_"+d.id+"_h"))}</div></div>`;
-    }).join("");
-    show("s-dex");
-  },
+  // (개인 엔딩 도감 dexGot/dexAdd/showDex = D-3b서 그룹 도감으로 이관, 죽은코드 제거)
 };
 
 // ===== 레이더 차트 =====
