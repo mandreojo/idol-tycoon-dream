@@ -3292,6 +3292,30 @@ window.addEventListener("popstate", ()=>{
       const raw=list.reduce((a,x)=>a+x.pct,0);
       return {pct:Math.min(40,raw), raw, capped:raw>40, list};
     },
+    // ===== 전투력 (경쟁전④⑤) = (편성 적합도 + 트렌드 스탯 보너스) × (1+시너지). 트렌드 스탯 강하면 유리(상한 없음) =====
+    TREND_STAT: {vocal:'vocal', rapper:'acting', dancer:'dance', center:'visual', producer:'creative'},
+    battlePower(members, trend){
+      if(!members){ members=this.slots().map(s=>({type:s.type, r:this.rosterById(this.data.lineup[s.sid])})).filter(m=>m.r); }
+      if(trend===undefined) trend=this.currentTrend();
+      let base=0; members.forEach(m=> base+=this.posScore(m.r.stats,m.type));
+      const tstat=trend&&this.TREND_STAT[trend.pos];
+      let tb=0; if(tstat) members.forEach(m=> tb+=(m.r.stats[tstat]||0));
+      tb=Math.round(tb*0.5);                                  // 트렌드 스탯 합의 50%를 전투력에 가산
+      const syn=this.groupSynergy(members, trend).pct;
+      return {power:Math.round((base+tb)*(1+syn/100)), base, trendBonus:tb, syn};
+    },
+    // 크리티컬 확률 — 순수 운 아니라 칭호(전설/스타성/에이스)로 올림
+    critChance(members){ if(!members){ members=this.slots().map(s=>({type:s.type, r:this.rosterById(this.data.lineup[s.sid])})).filter(m=>m.r); }
+      let c=0.12; const titles=new Set(); members.forEach(m=>(m.r.titles||[]).forEach(t=>titles.add(t)));
+      if(titles.has('legend'))c+=0.10; if(titles.has('star'))c+=0.06; if(titles.has('ace'))c+=0.05;
+      return Math.min(0.5,c); },
+    // 한 그룹의 굴림 = 전투력 × 운(±10%) × 크리(확률적 ±20%). 판정=육성90%+운10%
+    battleRoll(power, crit){ const luck=1+(Math.random()-0.5)*0.2; const isCrit=Math.random()<crit; const cm=isCrit?(Math.random()<0.5?1.2:0.8):1;
+      return {final:Math.round(power*luck*cm), crit:isCrit, up:cm>1}; },
+    // 비동기 배틀: 내 편성 vs 고스트(상대 전투력). 승패 + 양쪽 굴림 반환
+    battle(myMembers, oppPower){ const mp=this.battlePower(myMembers), mc=this.critChance(myMembers);
+      const my=this.battleRoll(mp.power, mc), opp=this.battleRoll(oppPower||1, 0.12);
+      return {win:my.final>=opp.final, my, opp, myPower:mp.power, oppPower:oppPower||1, myInfo:mp}; },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
