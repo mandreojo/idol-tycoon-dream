@@ -230,7 +230,7 @@
   .act .d{font-size:10px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* overlay */
-  .ov{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,240,243,.9);backdrop-filter:blur(6px);
+  .ov{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(14,10,24,.9);backdrop-filter:blur(6px);
     display:none;flex-direction:column;justify-content:center;align-items:center;padding:26px;z-index:20;text-align:center}
   .ov.on{display:flex}
   /* 유저 매뉴얼 모달 */
@@ -3466,8 +3466,9 @@ window.addEventListener("popstate", ()=>{
       }
       document.getElementById('homeHero').innerHTML=hero;
 
-      // ── 육성 CTA(항상) + 위젯(업적·그룹차트·카드) ──
-      document.getElementById('homeCta').innerHTML=
+      // ── 육성 CTA + 위젯(업적·그룹차트·카드) ── 온보딩(연습생0·그룹0)엔 히어로 CTA와 중복이라 숨김
+      const _onboard=(roster.length===0 && groups.length===0);
+      document.getElementById('homeCta').innerHTML= _onboard? '' :
         `<button class="btn" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`;
       const achvD=this.achvDone(), achvT=ACHV.length, achvPct=achvT?Math.round(achvD/achvT*100):0;
       let chartW;
