@@ -3518,7 +3518,7 @@ window.addEventListener("popstate", ()=>{
            <button class="btn hero-cta" onclick="Game.goSelect()">✨ 첫 육성 시작</button>
          </div>`;
       } else if(rep){
-        const tier=this.tierOf(this.groupScore(rep));
+        const tier=this.battleTier(this.battleSeason().pts);   // 랭킹과 동일한 승점 티어로 통일
         hero=`<div class="hero hero-stage">
            <div class="hero-badge">🏆 우리 대표 그룹</div>
            <div class="hs-row">
@@ -3549,13 +3549,17 @@ window.addEventListener("popstate", ()=>{
       }
       document.getElementById('homeHero').innerHTML=hero;
 
-      // ── 육성 CTA + 위젯(업적·그룹차트·카드) ── 온보딩(연습생0·그룹0)엔 히어로 CTA와 중복이라 숨김
+      // ── 육성 CTA + 위젯 ── 육성 세이브 있으면 '이어하기'(주), 온보딩(연습생0·그룹0)엔 히어로 CTA와 중복이라 숨김
       const _onboard=(roster.length===0 && groups.length===0);
-      document.getElementById('homeCta').innerHTML= _onboard? '' :
-        `<button class="btn" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`;
+      const _hasPlay=!!(typeof Game!=='undefined' && Game.hasSave && Game.hasSave());
+      let _cta='';
+      if(_hasPlay){ _cta=`<button class="btn" onclick="Game.continueGame()">▶ 육성 이어하기</button>`
+        +`<button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`; }
+      else if(!_onboard){ _cta=`<button class="btn" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`; }
+      document.getElementById('homeCta').innerHTML=_cta;
       const achvD=this.achvDone(), achvT=ACHV.length, achvPct=achvT?Math.round(achvD/achvT*100):0;
       let chartW;
-      if(rep){ const tier=this.tierOf(this.groupScore(rep));
+      if(rep){ const tier=this.battleTier(this.battleSeason().pts);
         chartW=`<div class="hw-v">${tier.ic}</div><div class="hw-s">${esc(tier.nm)}</div>`; }
       else { chartW=`<div class="hw-v">–</div><div class="hw-s">데뷔조 등록</div>`; }
       document.getElementById('homeWidgets').innerHTML=
