@@ -541,28 +541,15 @@
   </div>
 
   <!-- TITLE -->
+  <!-- 스플래시: 하트오락실서 입장 → 로고 잠깐 → 로비(홈) 자동 진입 -->
   <section class="screen on" id="s-title">
-    <button class="title-set" onclick="Game.openSettings()" aria-label="settings" title="설정">⚙️</button>
     <select id="langSel" class="langsel" onchange="Game.changeLang(this.value)" aria-label="language" style="display:none"></select>
-    <div class="spacer"></div>
-    <img id="titleMascot" src="assets/mascot.png" alt="">
-    <img id="logo" src="assets/logo.png" alt="최애돌">
-    <h1 class="center" style="font-size:21px;margin-top:12px" data-i18n="t_title">프로젝트 최애돌</h1>
-    <p class="muted center" style="margin-top:9px" data-i18n-html="t_tagline">
-      원석을 발굴해 스타로 키우고,<br>신인 그룹으로 데뷔시켜<br>정상에 올리는 프로듀서 시뮬.</p>
-    <div class="spacer"></div>
-    <button class="btn" id="continueBtn" style="display:none;margin-bottom:9px" onclick="Game.continueGame()" data-i18n="t_continue">▶ 이어하기</button>
-    <button class="btn" onclick="DG.go()">🏢 우리 기획사</button>
-    <button class="btn ghost" style="margin-top:9px" onclick="Game.goSelect()" data-i18n="t_pick">연습생 발굴 →</button>
-    <div style="display:flex;gap:9px;margin-top:9px">
-      <button class="btn ghost" style="flex:1" onclick="DG.showLeague()" data-i18n="t_league">🏆 데뷔 그룹 차트</button>
-      <button class="btn ghost" style="flex:1" onclick="DG.showGroupDex()" data-i18n="t_groupdex">📖 그룹 도감</button>
+    <div class="splash">
+      <img id="titleMascot" class="splash-mascot" src="assets/mascot.png" alt="">
+      <img id="logo" class="splash-logo" src="assets/logo.png" alt="최애돌">
+      <div class="splash-title" data-i18n="t_title">프로젝트 최애돌</div>
+      <div class="splash-dots"><i></i><i></i><i></i></div>
     </div>
-    <div style="display:flex;gap:9px;margin-top:9px">
-      <button class="btn ghost" style="flex:1" onclick="Game.showBoard()" data-i18n="t_hall">🏅 전설의 연습생</button>
-      <button class="btn ghost" style="flex:1" onclick="Game.showManual('intro')" data-i18n="t_intro">❓ 게임 소개</button>
-    </div>
-    <div class="spacer"></div>
   </section>
 
   <!-- OFFICE (드림그룹 허브) -->
@@ -2341,9 +2328,10 @@ const Game = {
   },
   reset(){
     ["shareLinkBtn","shareBtn","nameInput","saveBtn"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="";});
-    this.st=null;this.selIdol=null;this.lastResult=null; show("s-title");
-    this.refreshTitle();
+    this.st=null;this.selIdol=null;this.lastResult=null;
+    this.enterLobby();
   },
+  enterLobby(){ try{ if(window.DG){ DG.go(); return; } }catch(e){} show("s-office"); },   // 로비=홈(기획사 없으면 DG.go가 설정으로)
   refreshTitle(){ const b=document.getElementById("continueBtn"); if(b) b.style.display=this.hasSave()?"":"none"; },
 
   // ===== 플레이 중 메뉴 / 나가기 확인 (시트 모달) =====
@@ -2731,6 +2719,11 @@ window.addEventListener("popstate", ()=>{
   const d=Game.decodeResult(enc);
   if(d && d.name && d.v && d.v.length===6) Game.showSharedResult(d);
 })();
+// 앱 부팅: 공유링크(?r=) 아니면 스플래시 잠깐 → 로비(홈) 자동 진입 (하트오락실서 입장하면 바로 로비)
+(function(){
+  if(new URLSearchParams(location.search).get("r")) return;
+  setTimeout(()=>{ try{ Game.enterLobby(); }catch(e){} }, 1300);
+})();
 </script>
 
 <!-- ===== 드림그룹 메타 (육성카드 유전 + 기획사) ===== -->
@@ -2814,6 +2807,18 @@ window.addEventListener("popstate", ()=>{
   .bt-pts{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:12px}
   .bt-pts .up{color:var(--good)} .bt-pts .dn{color:var(--bad)}
   .bt-pts b{color:var(--gold)}
+  /* 스플래시(입장 로비 전환) */
+  #s-title{justify-content:center;align-items:center}
+  .splash{display:flex;flex-direction:column;align-items:center;gap:12px;animation:splashIn .55s ease both}
+  .splash-mascot{width:132px;height:132px;object-fit:contain;border-radius:34px;animation:splashFloat 2.4s ease-in-out infinite}
+  .splash-logo{width:172px;max-width:60vw;object-fit:contain;margin-top:4px}
+  .splash-title{font-size:15px;font-weight:800;color:var(--sub);letter-spacing:1.5px}
+  .splash-dots{display:flex;gap:7px;margin-top:14px}
+  .splash-dots i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:splashDot 1s ease-in-out infinite}
+  .splash-dots i:nth-child(2){animation-delay:.16s} .splash-dots i:nth-child(3){animation-delay:.32s}
+  @keyframes splashIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+  @keyframes splashFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+  @keyframes splashDot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
