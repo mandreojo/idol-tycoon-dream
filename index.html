@@ -3017,14 +3017,18 @@ window.addEventListener("popstate", ()=>{
   const RARPOOL = {3:['ssr_allstar','ssr_prodigy','ssr_nova'], 4:['ur_legend','ur_god']};   // 합성 결과 추첨 풀
   // 데뷔조 9포지션 = 리더1·센터1·보컬2·래퍼2·댄서2·프로듀서1. 각 자리 type = POSFORMULA 공식으로 평가.
   // 순서 = openSlotSet 최소2칸 노출순(리더·센터가 기본 필수 슬롯 느낌으로 먼저 열림)
-  const POSITIONS=[
-    {id:'leader',  type:'leader',   nm:'리더'},
-    {id:'center',  type:'center',   nm:'센터'},
-    {id:'vocal1',  type:'vocal',    nm:'메인보컬'}, {id:'vocal2', type:'vocal',  nm:'서브보컬'},
-    {id:'rap1',    type:'rapper',   nm:'메인래퍼'}, {id:'rap2',   type:'rapper', nm:'서브래퍼'},
-    {id:'dance1',  type:'dancer',   nm:'메인댄서'}, {id:'dance2', type:'dancer', nm:'서브댄서'},
-    {id:'producer',type:'producer', nm:'프로듀서'},
-  ];
+  // 동적 슬롯: 포지션 타입 정의. leader=필수·첫칸, center=최대1, 나머지=무제한(총 9인 상한).
+  // 슬롯 인스턴스는 data.slots=[{sid,type}] 동적 배열(경쟁전: 보컬그룹/힙합크루 등 자유 편성).
+  const POSTYPES = {
+    leader:   {nm:'리더',    max:1},
+    center:   {nm:'센터',    max:1},
+    vocal:    {nm:'보컬',    max:9},
+    rapper:   {nm:'래퍼',    max:9},
+    dancer:   {nm:'댄서',    max:9},
+    producer: {nm:'프로듀서', max:9},
+  };
+  const POSTYPE_ADD = ['center','vocal','rapper','dancer','producer'];   // '자리 추가' 메뉴(리더 제외, 첫칸 고정)
+  const MAX_MEMBERS = 9, MIN_SLOTS = 3;
   const GR = ['F','E','D','C','B','A','S','SS'];
   const grank = g => Math.max(0, GR.indexOf(g));
 
@@ -3093,7 +3097,7 @@ window.addEventListener("popstate", ()=>{
     {id:'groups5', ic:'🏛️', nm:'엔터 제국',      desc:'그룹 5팀 데뷔',             goal:5,   cur:d=>(d.data.groups||[]).length},
     {id:'full9',   ic:'💃', nm:'완전체',         desc:'9인 완성 그룹 데뷔',         goal:1,   cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
     {id:'full9x3', ic:'🎉', nm:'멀티 완전체',    desc:'9인 그룹 3팀 데뷔',          goal:3,   cur:d=>(d.data.groups||[]).filter(g=>g.n>=9).length},
-    {id:'allpos',  ic:'🧩', nm:'육각형 편성',    desc:'6개 포지션 모두 채운 그룹',   goal:1,   cur:d=>(d.data.groups||[]).filter(g=>{const ts=new Set();POSITIONS.forEach(p=>{if(g.lineup&&g.lineup[p.id])ts.add(p.type);});return ts.size>=6;}).length},
+    {id:'allpos',  ic:'🧩', nm:'육각형 편성',    desc:'6개 포지션 모두 채운 그룹',   goal:1,   cur:d=>(d.data.groups||[]).filter(g=>{const ts=new Set();(g.slots||[]).forEach(s=>{if(g.lineup&&g.lineup[s.sid])ts.add(s.type);});return ts.size>=6;}).length},
     {id:'gradeA',  ic:'🥉', nm:'명문 그룹',      desc:'A등급 이상 그룹 데뷔',        goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=5).length},
     {id:'gradeS',  ic:'🥇', nm:'월드클래스',     desc:'S등급 이상 그룹 데뷔',        goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=6).length},
     {id:'gradeSS', ic:'🌠', nm:'역대급 그룹',    desc:'SS등급 그룹 데뷔',           goal:1,   cur:d=>(d.data.groups||[]).filter(g=>grank(g.grade)>=7).length},
@@ -3205,8 +3209,17 @@ window.addEventListener("popstate", ()=>{
     isCommitted(rid){ return this.committedRids().has(rid); },
     groupOfRid(rid){ return (this.data.groups||[]).find(g=>Object.keys(g.lineup||{}).some(k=>g.lineup[k]===rid)); },
     idkeyInLineup(idkey, exceptSlot){ for(const sid in this.data.lineup){ if(sid===exceptSlot)continue; const r=this.rosterById(this.data.lineup[sid]); if(r&&r.idkey===idkey)return true; } return false; },
-    filledCount(){ let n=0; POSITIONS.forEach(p=>{ if(this.rosterById(this.data.lineup[p.id])) n++; }); return n; },
-    groupInfo(){ let sum=0,n=0; POSITIONS.forEach(p=>{ const r=this.rosterById(this.data.lineup[p.id]); if(r){ sum+=this.posScore(r.stats,p.type); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
+    // ===== 동적 슬롯 (data.slots=[{sid,type}]. leader=slots[0] 고정) =====
+    defaultSlots(){ return [{sid:1,type:'leader'},{sid:2,type:'vocal'},{sid:3,type:'dancer'}]; },
+    slots(){ if(!Array.isArray(this.data.slots)||!this.data.slots.length){ this.data.slots=this.defaultSlots(); this.data.slotSeq=3; } return this.data.slots; },
+    slotById(sid){ return this.slots().find(s=>String(s.sid)===String(sid)); },
+    slotIco(slot){ return slot?(POSICO[slot.type]||'🎤'):'🎤'; },
+    slotNm(slot){ if(!slot)return ''; const t=slot.type, base=(POSTYPES[t]||{}).nm||t;
+      if((POSTYPES[t]||{}).max===1) return base;                       // 리더·센터=단수라 번호 없음
+      const same=this.slots().filter(s=>s.type===t);
+      return same.length<=1? base : base+' '+(same.findIndex(s=>String(s.sid)===String(slot.sid))+1); },
+    filledCount(){ let n=0; this.slots().forEach(s=>{ if(this.rosterById(this.data.lineup[s.sid])) n++; }); return n; },
+    groupInfo(){ let sum=0,n=0; this.slots().forEach(s=>{ const r=this.rosterById(this.data.lineup[s.sid]); if(r){ sum+=this.posScore(r.stats,s.type); n++; } }); return {sum,n,grade:n?grade(Math.round(sum/n)):'–'}; },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
     repGroupGid(){ const gs=this.data.groups||[]; if(!gs.length)return null; return gs.some(g=>g.gid===this.data.repGid)?this.data.repGid:gs[0].gid; },   // repGid 없거나 무효면 첫 그룹
     repGroup(){ const gid=this.repGroupGid(); return gid==null?null:(this.data.groups||[]).find(g=>g.gid===gid); },
@@ -3225,7 +3238,7 @@ window.addEventListener("popstate", ()=>{
     quickAssign(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       if(this.isCommitted(rid)) return {err:'committed'};
       if(this.idkeyInLineup(r.idkey,null)) return {err:'dup', name:r.name};
-      let best=null, bv=-1; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id])return; const s=this.posScore(r.stats,p.type); if(s>bv){bv=s;best=p.id;} });
+      let best=null, bv=-1; this.slots().forEach(s=>{ if(this.data.lineup[s.sid])return; const sc=this.posScore(r.stats,s.type); if(sc>bv){bv=sc;best=s.sid;} });
       if(!best) return {err:'full'};
       this.data.lineup[best]=rid; this.persist(); return {ok:true, slot:best}; },
     discard(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
@@ -3237,11 +3250,11 @@ window.addEventListener("popstate", ()=>{
       return {ok:true, card:CARDS[cardType].nm, cnt}; },
 
     // ===== 그룹 데뷔(저장) = 프리셋 스냅샷. 멤버는 전속 확정, 현 편성버퍼는 비워 새 데뷔조 시작 =====
-    debutGroup(name, logo){ this.load(); const gi=this.groupInfo(); if(gi.n<2) return {err:'few'};
-      const lineup={}; POSITIONS.forEach(p=>{ if(this.data.lineup[p.id]) lineup[p.id]=this.data.lineup[p.id]; });
+    debutGroup(name, logo){ this.load(); const gi=this.groupInfo(); if(gi.n<3) return {err:'few'};
+      const lineup={}, slots=[]; this.slots().forEach(s=>{ if(this.data.lineup[s.sid]){ lineup[s.sid]=this.data.lineup[s.sid]; slots.push({sid:s.sid,type:s.type}); } });
       const g={gid:++this.data.groupSeq, name:(name||this.groupName()).slice(0,14), logo:logo||this.agency().logo,
-               lineup, grade:gi.grade, sum:gi.sum, n:gi.n, savedAt:Date.now()};
-      this.data.groups.push(g); this.data.lineup={}; this.persist(); return {ok:true, g}; },
+               lineup, slots, grade:gi.grade, sum:gi.sum, n:gi.n, savedAt:Date.now()};
+      this.data.groups.push(g); this.data.slots=this.defaultSlots(); this.data.slotSeq=3; this.data.lineup={}; this.persist(); return {ok:true, g}; },
 
     onFinish(st, statVals, end){
       this.load();
@@ -3329,7 +3342,7 @@ window.addEventListener("popstate", ()=>{
              <button class="btn ghost" onclick="DG.shareSavedGroup(${rep.gid})">📸 그룹 정보</button>
            </div>
          </div>`;
-      } else if(gi.n>=2){
+      } else if(gi.n>=3){
         hero=`<div class="hero hero-ready">
            <div class="hero-badge">🎤 데뷔 준비 완료</div>
            <div class="hero-t">${esc(this.groupName())}</div>
@@ -3340,7 +3353,7 @@ window.addEventListener("popstate", ()=>{
         hero=`<div class="hero hero-build">
            <div class="hero-badge">📋 데뷔조 편성</div>
            <div class="hero-t">데뷔조를 완성하세요</div>
-           <div class="hero-d">아래에서 연습생을 포지션에 배치해 2명 이상 모으면 활동이 시작돼요. (현재 ${gi.n}/최소 2명)</div>
+           <div class="hero-d">아래에서 연습생을 포지션에 배치해 3명 이상 모으면 활동이 시작돼요. (현재 ${gi.n}/최소 3명)</div>
            ${freeCount?`<button class="btn hero-cta" onclick="DG.autoFill()">🎯 자동 편성</button>`
              :`<button class="btn hero-cta" onclick="Game.goSelect()">✨ 연습생 육성하기</button>`}
          </div>`;
@@ -3369,31 +3382,31 @@ window.addEventListener("popstate", ()=>{
 
       // ── 편성 그리드(연습생이 있을 때만) ──
       if(roster.length===0){ document.getElementById('dgGroup').innerHTML=''; document.getElementById('dgGroups').innerHTML=''; return; }
-      // 동적 슬롯: 최소 2칸, 채운 자리+열어둔 만큼만 노출(최대 9). "9칸 다 채워야 할 것 같은" 압박 제거
-      const openSet=this.openSlotSet();                 // 열어둔 포지션(+채운 자리+최소2칸). 순서 아닌 '선택'식
-      const shown=POSITIONS.filter(p=>openSet.has(p.id));
-      const slots=shown.map(p=>{ const r=this.rosterById(this.data.lineup[p.id]);
-        if(r){ const val=this.posScore(r.stats,p.type), av=r.img?`style="background-image:url('${r.img}')"`:'';
-          return `<div class="dg-slot filled" onclick="DG.openAssign('${p.id}')"><div class="dg-pos">${POSICO[p.type]} ${p.nm}</div>
+      // 동적 슬롯: 리더 첫칸 고정 + 자유 편성(보컬그룹/힙합크루…). 최소 3칸·최대 9인
+      const shown=this.slots();
+      const slotCells=shown.map(s=>{ const r=this.rosterById(this.data.lineup[s.sid]); const nm=this.slotNm(s), ic=this.slotIco(s);
+        if(r){ const val=this.posScore(r.stats,s.type), av=r.img?`style="background-image:url('${r.img}')"`:'';
+          return `<div class="dg-slot filled" onclick="DG.openAssign('${s.sid}')"><div class="dg-pos">${ic} ${nm}</div>
             <span class="dg-av" ${av}>${r.img?'':'🎤'}</span>
             <div class="dg-nm">${esc(r.name)}</div><div class="dg-gr">${grade(val)} · ${val}</div></div>`; }
-        return `<div class="dg-slot" onclick="DG.openAssign('${p.id}')">${shown.length>2?`<span class="dg-slot-x" onclick="event.stopPropagation();DG.removeSlot('${p.id}')" title="이 자리 닫기">✕</span>`:''}<div class="dg-pos">${POSICO[p.type]} ${p.nm}</div>
+        const canClose=(s.type!=='leader' && shown.length>MIN_SLOTS);
+        return `<div class="dg-slot" onclick="DG.openAssign('${s.sid}')">${canClose?`<span class="dg-slot-x" onclick="event.stopPropagation();DG.removeSlot('${s.sid}')" title="이 자리 닫기">✕</span>`:''}<div class="dg-pos">${ic} ${nm}</div>
           <span class="dg-av empty">＋</span><div class="dg-nm muted">배치</div></div>`;
       }).join('');
       document.getElementById('dgGroup').innerHTML=
-        `<div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=2?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
+        `<div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=3?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
           <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
-          <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 2명 이상 편성하면 활동 시작'}</div></div>
-         <div class="dg-grid nine">${slots}</div>
+          <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 3명 이상 편성하면 활동 시작'}</div></div>
+         <div class="dg-grid nine">${slotCells}</div>
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
            <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 숙소 (${(function(cm){return (DG.data.roster||[]).filter(r=>!cm.has(r.rid)).length;})(this.committedRids())})</button>
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
-           ${shown.length<9? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
-           ${gi.n>=2? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
+           ${shown.length<MAX_MEMBERS? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
+           ${gi.n>=3? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
          </div>
-         ${gi.n>=2? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
+         ${gi.n>=3? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
       // 데뷔(저장)한 그룹 목록 — 멤버 전속 (groups는 상단에서 선언)
       const _repGid=this.repGroupGid();
       document.getElementById('dgGroups').innerHTML = groups.length?
@@ -3412,21 +3425,22 @@ window.addEventListener("popstate", ()=>{
     // ===== 편성(포지션 배치) =====
     openAssign(slotId){ this.load(); this._slot=slotId; this.renderAssign(); show('s-assign'); },
     renderAssign(){
-      const slot=POSITIONS.find(p=>p.id===this._slot); if(!slot) return;
-      const cur=this.rosterById(this.data.lineup[slot.id]);
-      const t=document.getElementById('assignTitle'); if(t) t.innerHTML=`${POSICO[slot.type]} ${slot.nm} 배치`;
+      const slot=this.slotById(this._slot); if(!slot) return;
+      const cur=this.rosterById(this.data.lineup[slot.sid]);
+      const snm=this.slotNm(slot);
+      const t=document.getElementById('assignTitle'); if(t) t.innerHTML=`${this.slotIco(slot)} ${snm} 배치`;
       const list=(this.data.roster||[]).slice().filter(r=>!this.isCommitted(r.rid)).sort((a,b)=>this.posScore(b.stats,slot.type)-this.posScore(a.stats,slot.type));
       let html='';
-      if(cur) html+=`<button class="btn ghost" onclick="DG.unassign('${slot.id}');DG.renderAssign()" style="margin-bottom:9px">✕ 이 자리 비우기 (현재 ${esc(cur.name)})</button>`;
+      if(cur) html+=`<button class="btn ghost" onclick="DG.unassign('${slot.sid}');DG.renderAssign()" style="margin-bottom:9px">✕ 이 자리 비우기 (현재 ${esc(cur.name)})</button>`;
       if(!list.length) html+='<p class="muted" style="text-align:center;padding:20px">편성할 무소속 연습생이 없어.<br>새로 육성하거나, 전속은 이미 데뷔한 그룹 소속이야.</p>';
-      else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.type), dup=this.idkeyInLineup(r.idkey,slot.id), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
+      else html+=list.map(r=>{ const val=this.posScore(r.stats,slot.type), dup=this.idkeyInLineup(r.idkey,slot.sid), isCur=cur&&cur.rid===r.rid, av=r.img?`style="background-image:url('${r.img}')"`:'';
         // 이미 다른 자리에 있으면 → 이동 가능(선택 시 기존 자리 자동 해지). 현재 포지션 표시
         let otherPos='';
-        if(dup&&!isCur){ const osid=Object.keys(this.data.lineup).find(sid=>{ const rr=this.rosterById(this.data.lineup[sid]); return rr&&rr.idkey===r.idkey; }); otherPos=osid?((POSITIONS.find(p=>p.id===osid)||{}).nm||''):''; }
+        if(dup&&!isCur){ const osid=Object.keys(this.data.lineup).find(sid=>{ const rr=this.rosterById(this.data.lineup[sid]); return rr&&rr.idkey===r.idkey; }); otherPos=osid?this.slotNm(this.slotById(osid)):''; }
         const label = isCur?'배치됨' : (dup? `${esc(otherPos)}→이동` : '배치');
         return `<div class="ros-row${isCur?' cur':''}"><span class="ros-av" ${av}>${r.img?'':'🎤'}</span>
           <div class="ros-m"><div class="ros-nm">${esc(r.name)} <span class="muted" style="font-size:12px">${r.grade}</span>${dup&&!isCur?` <span style="color:#18b06e;font-size:11px">● ${esc(otherPos)}</span>`:''}</div>
-            <div class="muted" style="font-size:12px">${slot.nm} 적합 <b style="color:#ec3a5c">${grade(val)}·${val}</b></div></div>
+            <div class="muted" style="font-size:12px">${snm} 적합 <b style="color:#ec3a5c">${grade(val)}·${val}</b></div></div>
           <button class="cr-btn" onclick="DG.pickForSlot(${r.rid})">${label}</button></div>`;}).join('');
       document.getElementById('assignList').innerHTML=html;
     },
@@ -3521,51 +3535,51 @@ window.addEventListener("popstate", ()=>{
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
     autoFill(){ this.load();
-      const openSet=this.openSlotSet();
-      const slots=POSITIONS.filter(p=>openSet.has(p.id));
+      const slotList=this.slots();
       // 재율애비: '이미 배치된 칸도 수정' = 전속(commit) 자리만 두고 나머지 전역 재배치
       const newLineup={}, usedRid=new Set(), usedKey=new Set();
-      POSITIONS.forEach(p=>{ const rid=this.data.lineup[p.id]; if(rid && this.isCommitted(rid)){ newLineup[p.id]=rid; usedRid.add(rid); const r=this.rosterById(rid); if(r)usedKey.add(r.idkey); } });
+      slotList.forEach(s=>{ const rid=this.data.lineup[s.sid]; if(rid && this.isCommitted(rid)){ newLineup[s.sid]=rid; usedRid.add(rid); const r=this.rosterById(rid); if(r)usedKey.add(r.idkey); } });
       const pool=(this.data.roster||[]).filter(r=>!this.isCommitted(r.rid) && !usedRid.has(r.rid));
       // (열린 빈슬롯 × 가용 연습생) 모든 쌍을 점수순 그리디 배정 → 포지션순 그리디보다 전역 최적에 근접
       const pairs=[];
-      slots.forEach(p=>{ if(newLineup[p.id])return; pool.forEach(r=>pairs.push({sid:p.id, rid:r.rid, idkey:r.idkey, s:this.posScore(r.stats,p.type)})); });
-      pairs.sort((a,b)=>b.s-a.s);
+      slotList.forEach(s=>{ if(newLineup[s.sid])return; pool.forEach(r=>pairs.push({sid:s.sid, rid:r.rid, idkey:r.idkey, sc:this.posScore(r.stats,s.type)})); });
+      pairs.sort((a,b)=>b.sc-a.sc);
       pairs.forEach(pr=>{ if(newLineup[pr.sid]||usedRid.has(pr.rid)||usedKey.has(pr.idkey))return;
         newLineup[pr.sid]=pr.rid; usedRid.add(pr.rid); usedKey.add(pr.idkey); });
       this.data.lineup=newLineup; this.persist(); this.renderOffice();
       const placed=Object.values(newLineup).filter(rid=>!this.isCommitted(rid)).length;
       try{ toast(placed? `🎯 자동 편성 ${placed}명 배치!` : '편성할 무소속 연습생이 없어'); }catch(e){}
     },
-    // 열린 포지션 집합 = 명시적으로 연 것(openPos) + 채운 자리(항상) + 최소 2칸. 순서 아닌 '선택'식
-    openSlotSet(){ const valid=new Set(POSITIONS.map(p=>p.id));   // 개편 전 옛 포지션 id(visual/charm 등) 유령 제거 → size 부풀림·자리추가 오차단 방지
-      const s=new Set((this.data.openPos||[]).filter(id=>valid.has(id)));
-      POSITIONS.forEach(p=>{ if(this.data.lineup[p.id]) s.add(p.id); });
-      for(const p of POSITIONS){ if(s.size>=2) break; s.add(p.id); }
-      return s; },
-    // 자리 추가 — 어느 포지션 열지 고르게(댄서 잘 키웠는데 5칸째까지 열어야 하던 문제 해결)
-    addSlot(){ this.load(); const openSet=this.openSlotSet();
-      if(openSet.size>=9){ toast('멤버는 최대 9명이야'); return; }
-      const avail=POSITIONS.filter(p=>!openSet.has(p.id));
+    // 자리 추가 — 포지션 타입 선택(보컬/래퍼/댄서/프로듀서 무제한, 센터 최대1). 리더는 첫칸 고정.
+    addSlot(){ this.load();
+      if(this.slots().length>=MAX_MEMBERS){ toast('멤버는 최대 9명이야'); return; }
+      const avail=POSTYPE_ADD.filter(t=>this.slots().filter(s=>s.type===t).length < (POSTYPES[t].max||9));
       const ov=document.getElementById('ov'); ov.className='ov on';
       ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
       ov.innerHTML=`<div class="ev-card"><div class="ev-title">＋ 어느 자리를 추가할까?</div>
-        <p class="muted" style="margin:2px 0 12px">추가할 포지션을 골라</p>
+        <p class="muted" style="margin:2px 0 12px">보컬·래퍼·댄서·프로듀서는 여러 명 가능</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px">
-        ${avail.map(p=>`<button class="btn ghost" style="flex:0 0 auto;padding:9px 15px" onclick="DG.pickSlot('${p.id}')">${POSICO[p.type]} ${esc(p.nm)}</button>`).join('')}</div>
+        ${avail.map(t=>`<button class="btn ghost" style="flex:0 0 auto;padding:9px 15px" onclick="DG.pickSlot('${t}')">${POSICO[t]} ${esc(POSTYPES[t].nm)}</button>`).join('')}</div>
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
     },
-    pickSlot(id){ this.load(); const s=this.openSlotSet(); s.add(id);
-      this.data.openPos=[...s]; this.persist();
+    pickSlot(type){ this.load();
+      if(this.slots().length>=MAX_MEMBERS || !POSTYPES[type]){ return; }
+      if(this.slots().filter(s=>s.type===type).length >= (POSTYPES[type].max||9)){ toast('이 포지션은 더 못 늘려'); return; }
+      if(!this.data.slotSeq) this.data.slotSeq=this.slots().reduce((m,s)=>Math.max(m,+s.sid||0),0);
+      this.data.slots.push({sid:++this.data.slotSeq, type});
+      this.persist();
       const ov=document.getElementById('ov'); ov.className='ov'; ov.onclick=null;
       this.renderOffice();
     },
-    // 빈 자리 닫기(슬롯 축소) — 5인→4인 등. 멤버 있는 자리·최소2칸은 거부
-    removeSlot(id){ this.load();
-      if(this.rosterById(this.data.lineup[id])){ try{toast('멤버가 있는 자리야 · 편성을 먼저 해제해줘');}catch(e){} return; }
-      const open=[...this.openSlotSet()].filter(x=>x!==id);
-      if(open.length<2){ try{toast('데뷔조는 최소 2자리는 있어야 해');}catch(e){} return; }
-      this.data.openPos=open; this.persist(); this.renderOffice();
+    // 빈 자리 닫기 — 리더 불가·멤버 있는 자리 불가·최소 3칸 유지
+    removeSlot(sid){ this.load();
+      if(this.rosterById(this.data.lineup[sid])){ try{toast('멤버가 있는 자리야 · 편성을 먼저 해제해줘');}catch(e){} return; }
+      const slot=this.slotById(sid);
+      if(slot && slot.type==='leader'){ try{toast('리더는 필수 자리야');}catch(e){} return; }
+      if(this.slots().length<=MIN_SLOTS){ try{toast('데뷔조는 최소 3자리는 있어야 해');}catch(e){} return; }
+      this.data.slots=this.slots().filter(s=>String(s.sid)!==String(sid));
+      delete this.data.lineup[sid];
+      this.persist(); this.renderOffice();
       try{toast('자리 닫음');}catch(e){}
     },
     // 공통 확인 모달(#9 컴포넌트화 첫 조각) — 시스템 confirm 대체, 다른 커스텀 팝업과 톤 통일. ov 없으면 confirm 폴백
@@ -3589,7 +3603,7 @@ window.addEventListener("popstate", ()=>{
         onOk:()=>{ const res=this.discard(rid); if(res.ok) toast(`은퇴 → ${res.card} ★1 ${res.cnt}장`); this.renderRoster(); }}); },
     // 현 데뷔조를 그룹으로 데뷔(저장) → 멤버 전속. 이름 입력받아 스냅샷
     // 데뷔 = 전용 세리머니 화면(그룹명·로고 짓기). 기존 prompt 1줄 → s-debut 승격.
-    doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<2){ toast('2명 이상 편성해야 데뷔할 수 있어'); return; }
+    doDebut(){ this.load(); const gi=this.groupInfo(); if(gi.n<3){ toast('3명 이상 편성해야 데뷔할 수 있어'); return; }
       if((this.data.groups||[]).length>=5){ toast('데뷔조는 최대 5팀 · 기존 그룹을 먼저 해체해줘'); return; }
       this.renderDebut(); show('s-debut');
     },
@@ -3597,11 +3611,11 @@ window.addEventListener("popstate", ()=>{
     renderDebut(){ this.load();
       this._debutLogo=this.agency().logo||'🏢';
       // 편성 멤버 미리보기 (포지션 순)
-      const mem=POSITIONS.map(p=>{ const rid=this.data.lineup[p.id]; if(!rid) return null;
+      const mem=this.slots().map(s=>{ const rid=this.data.lineup[s.sid]; if(!rid) return null;
         const r=this.rosterById(rid); if(!r) return null;
         const av=r.img?`style="background-image:url('${r.img}')"`:'';
         return `<div style="width:84px;text-align:center"><span class="dg-av" ${av} style="margin:0 auto">${r.img?'':'🎤'}</span>
-          <div class="dg-nm" style="margin-top:3px">${esc(r.name)}</div><div class="muted" style="font-size:11px">${POSICO[p.type]} ${p.nm}</div></div>`;
+          <div class="dg-nm" style="margin-top:3px">${esc(r.name)}</div><div class="muted" style="font-size:11px">${this.slotIco(s)} ${this.slotNm(s)}</div></div>`;
       }).filter(Boolean).join('');
       const box=document.getElementById('debutMembers'); if(box) box.innerHTML=mem;
       // 그룹명 기본값 (편성버퍼 이름이 기본이면 비움)
@@ -3655,7 +3669,7 @@ window.addEventListener("popstate", ()=>{
     },
     // 저장된 그룹 카드 공유: 현 편성버퍼를 잠시 그룹으로 스왑 후 카드 생성, 끝나면 복구
     shareSavedGroup(gid){ const g=(this.data.groups||[]).find(x=>x.gid===gid); if(!g)return;
-      this.previewGroupCard({lineup:g.lineup, name:g.name});   // 프리뷰 모달 먼저(#3), override로 정확한 그룹(load() 덮어쓰기 버그 근본수정)
+      this.previewGroupCard({lineup:g.lineup, name:g.name, slots:g.slots});   // 프리뷰 모달 먼저(#3), override로 정확한 그룹(slots=저장 스냅샷)
     },
 
     renderResult(box, res){
@@ -4060,7 +4074,8 @@ window.addEventListener("popstate", ()=>{
       const W=1080,H=1350, FF="'Jua','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
       try{ await document.fonts.load("40px 'Jua'"); await document.fonts.load("700 40px 'Jua'"); await document.fonts.ready; }catch(e){}
       let aLogo=null; if(a.logo && a.logo.indexOf('data:')===0){ try{ aLogo=await loadImg(a.logo,false); }catch(e){} }
-      const mem=POSITIONS.map(p=>{ const r=this.rosterById(lineup[p.id]); return r?{p,r,val:this.posScore(r.stats,p.type)}:{p,r:null}; });
+      const slotList=(opt&&opt.slots)||this.slots();
+      const mem=slotList.map(s=>{ const r=this.rosterById(lineup[s.sid]); return r?{s,r,val:this.posScore(r.stats,s.type)}:{s,r:null}; });
       const faces=await Promise.all(mem.map(async m=>{ if(!m.r||!m.r.img) return null; try{ const cis=cardImgSrc(m.r.img); return cis.src? await loadImg(cis.src,cis.cross): null; }catch(e){ return null; } }));
       const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d'); x.textBaseline='alphabetic';
       const fit=(txt,mw,w,s)=>{ x.font=`${w} ${s}px ${FF}`; while(s>14 && x.measureText(txt).width>mw){ s-=2; x.font=`${w} ${s}px ${FF}`; } return s; };
@@ -4087,7 +4102,7 @@ window.addEventListener("popstate", ()=>{
         const remain=n-idx, k=Math.ceil(remain/(rows-r));   // 이 행 멤버 수(위 행부터 채우고 마지막 행이 나머지)
         for(let c=0;c<k;c++){
           const {m,face}=memFace[idx++], cx=W*(c+1)/(k+1), cy=rowYs[r];
-          x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${POSICO[m.p.type]} ${m.p.nm}`, cx, cy-R-12);
+          x.textAlign='center'; x.fillStyle='#9a8f9a'; x.font=`700 22px ${FF}`; x.fillText(`${POSICO[m.s.type]||''} ${(POSTYPES[m.s.type]||{}).nm||''}`, cx, cy-R-12);
           if(face){ x.save(); x.beginPath(); x.arc(cx,cy,R,0,7); x.clip(); const mm=Math.min(face.naturalWidth,face.naturalHeight);
             x.drawImage(face,(face.naturalWidth-mm)/2,(face.naturalHeight-mm)/2,mm,mm,cx-R,cy-R,R*2,R*2); x.restore(); }
           else { x.fillStyle='#322748'; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); x.font="52px 'Apple Color Emoji','Noto Color Emoji',sans-serif"; x.fillText('🎤',cx,cy+18); }
