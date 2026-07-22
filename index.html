@@ -2811,6 +2811,9 @@ window.addEventListener("popstate", ()=>{
   .bt-result{font-size:26px;font-weight:900;margin:16px 0 6px}
   .bt-result.win{color:var(--gold)} .bt-result.lose{color:var(--sub)}
   .bt-go{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-size:13px;padding:5px 10px;border-radius:10px;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:var(--btn-glow)}
+  .bt-pts{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:12px}
+  .bt-pts .up{color:var(--good)} .bt-pts .dn{color:var(--bad)}
+  .bt-pts b{color:var(--gold)}
   .dg-head{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-top:10px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
   .dg-h-l{font-size:13px;color:#8a8a97}
   .dg-h-g{font-size:36px;color:#ec3a5c;font-weight:bold;line-height:1.1}
@@ -3068,6 +3071,14 @@ window.addEventListener("popstate", ()=>{
     {pos:'center',   nm:'비주얼 시대',   ic:'✨', desc:'첫인상이 전부'},
     {pos:'producer', nm:'자컨 붐',       ic:'🎬', desc:'창작이 팬을 모아'},
   ];
+  // 배틀 티어(경쟁전⑤) — 승점 누적 구간. 시즌마다 리셋. ⚠️수치 초안
+  const BATTLE_TIERS = [
+    {min:0,   ic:'🥉', nm:'브론즈'},
+    {min:120, ic:'🥈', nm:'실버'},
+    {min:300, ic:'🥇', nm:'골드'},
+    {min:550, ic:'💎', nm:'플래티넘'},
+    {min:900, ic:'👑', nm:'다이아'},
+  ];
   const GR = ['F','E','D','C','B','A','S','SS'];
   const grank = g => Math.max(0, GR.indexOf(g));
 
@@ -3263,6 +3274,11 @@ window.addEventListener("popstate", ()=>{
     seasonNo(){ return Math.max(0, Math.floor((Date.now()-SEASON_EPOCH)/SEASON_MS)); },
     currentTrend(){ return TRENDS[this.seasonNo()%TRENDS.length]; },
     seasonEndsInDays(){ const next=(this.seasonNo()+1)*SEASON_MS+SEASON_EPOCH; return Math.max(0,Math.ceil((next-Date.now())/86400000)); },
+    // 배틀 승점(경쟁전⑤) — 시즌 바뀌면 자동 리셋(티어/랭킹만, 그룹·카드 자산은 유지)
+    battleSeason(){ const no=this.seasonNo();
+      if(!this.data.battleSeason || this.data.battleSeason.no!==no){ this.data.battleSeason={no, pts:0, w:0, l:0}; this.persist(); }
+      return this.data.battleSeason; },
+    battleTier(pts){ let t=BATTLE_TIERS[0]; for(const x of BATTLE_TIERS){ if(pts>=x.min)t=x; } return t; },
     // ===== 시너지 조합 (경쟁전②) — 4축 합산, 상한 +40%. members 미지정=현재 편성, trend 미지정=이번 시즌 =====
     // ⚠️수치 초안(밸런싱 대기). ①콘셉트 몰이는 트렌드 포지션 일치 시 ×1.5.
     groupSynergy(members, trend){
@@ -3333,7 +3349,13 @@ window.addEventListener("popstate", ()=>{
       const g=this.repGroup(); if(!g){ try{toast('먼저 홈에서 대표 데뷔조를 정해줘');}catch(e){} return; }
       const mem=this.groupMembers(g); if(mem.length<3){ try{toast('대표 그룹 편성이 부족해');}catch(e){} return; }
       const res=this.battle(mem, oppScore);
+      // ⑤ 승점: 승리=상대 강할수록↑(18~), 패배=-12(최소 0). 시즌 승점→티어
+      const bs=this.battleSeason();
+      res.delta = res.win? Math.round(18+(oppScore||0)/220) : -12;
+      bs.pts=Math.max(0, bs.pts+res.delta); if(res.win)bs.w=(bs.w||0)+1; else bs.l=(bs.l||0)+1;
+      res.pts=bs.pts; res.tier=this.battleTier(bs.pts); this.persist();
       this._showBattle(g, {name:oppName, logo:oppLogo||'🎤'}, res);
+      if(this._rankTab==='group') setTimeout(()=>{ try{ this.renderLeague(); }catch(e){} }, 900);   // 배틀 후 헤드 티어 갱신
     },
     _countUp(id, to, ms){ const el=document.getElementById(id); if(!el)return; const t0=Date.now();
       const step=()=>{ const p=Math.min(1,(Date.now()-t0)/ms); el.textContent=Math.round(to*(0.15+0.85*p)).toLocaleString(); if(p<1)requestAnimationFrame(step); else el.textContent=to.toLocaleString(); };
@@ -3354,13 +3376,12 @@ window.addEventListener("popstate", ()=>{
             <div class="bt-nm">${esc(opp.name)}</div><div class="bt-pw" id="btOpPw">0</div>${crTag(res.opp)}</div>
         </div>
         <div class="bt-result ${res.win?'win':'lose'}" id="btResult" style="opacity:0">${res.win?'🏆 승리!':'😢 패배…'}</div>
+        <div class="bt-pts" id="btPts" style="opacity:0">${res.tier?`<span class="${res.delta>=0?'up':'dn'}">${res.delta>=0?'+':''}${res.delta} 승점</span> · ${res.tier.ic} ${esc(res.tier.nm)} <b>${res.pts}</b>`:''}</div>
         <button class="btn" id="btClose" style="opacity:0" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">확인</button>
       </div>`;
       this._countUp('btMyPw', res.my.final, 750);
       this._countUp('btOpPw', res.opp.final, 750);
-      setTimeout(()=>{ const rEl=document.getElementById('btResult'), cEl=document.getElementById('btClose');
-        if(rEl){ rEl.style.transition='opacity .45s'; rEl.style.opacity='1'; }
-        if(cEl){ cEl.style.transition='opacity .45s'; cEl.style.opacity='1'; }
+      setTimeout(()=>{ [ 'btResult','btPts','btClose' ].forEach(id=>{ const el=document.getElementById(id); if(el){ el.style.transition='opacity .45s'; el.style.opacity='1'; } });
         try{ sfx(res.win?'win':'lose'); }catch(e){} }, 850);
     },
     // ===== 데뷔조 프리셋(최대5) + 대표 그룹 =====
@@ -4170,12 +4191,12 @@ window.addEventListener("popstate", ()=>{
       const head=document.getElementById('leagueHead');
       if(head){
         if(myBest){
-          const tier=this.tierOf(myBest.score);
+          const bs=this.battleSeason(); const tier=this.battleTier(bs.pts);
           const rank=board.findIndex(r=>r===myBest)+1;
           head.innerHTML=`<div class="lg-head">
             <div class="lg-tier-ic">${tier.ic}</div><div class="lg-tier-nm">${esc(tier.nm)}</div>
-            <div class="lg-tier-sub">${this.logoHtml(myBest.logo,20)} ${esc(myBest.name)} · ${myBest.score.toLocaleString()}점 · ${myBest.n}/9명</div>
-            <div class="lg-rank-badge">${t("lg_rank",{r:rank})}</div></div>`;
+            <div class="lg-tier-sub">${this.logoHtml(myBest.logo,20)} ${esc(myBest.name)} · 승점 <b>${bs.pts}</b> · ${bs.w||0}승 ${bs.l||0}패</div>
+            <div class="lg-rank-badge">시즌 ${this.seasonNo()} · D-${this.seasonEndsInDays()} · ${t("lg_rank",{r:rank})}</div></div>`;
         } else {
           head.innerHTML=`<div class="lg-head"><div class="lg-tier-ic">🎬</div>
             <div class="lg-tier-nm">${t("lg_none_t")}</div>
