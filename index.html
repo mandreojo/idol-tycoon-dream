@@ -4122,15 +4122,18 @@ window.addEventListener("popstate", ()=>{
     ],
     groupScore(g){ return Math.round(g.sum||0); },   // ⚠️임시(내일 밸런싱): 멤버 posScore 합
     tierOf(sc){ let t=this.LEAGUE_TIERS[0]; for(const x of this.LEAGUE_TIERS){ if(sc>=x.min)t=x; } return t; },
-    // 시드 라이벌 그룹(서버 규칙 열리기 전 로컬 순위 체감용). 첫 생성 후 고정.
+    // 시드 라이벌 그룹(서버 규칙 열리기 전 로컬 순위 체감용). 시즌 바뀌면 재생성(콜드스타트 방지·시즌마다 변주).
     _leagueSeed(){
-      let s=null; try{ s=JSON.parse(localStorage.getItem('dg_league_seed')||'null'); }catch(e){}
-      if(!Array.isArray(s)||!s.length){
-        const base=[4300,3750,3200,2850,2500,2150,1850,1550,1300,1050];   // RIVAL_POOL 10개와 1:1(이름 중복 방지)
-        s=base.map((sc,i)=>({name:RIVAL_POOL[i]+' 프로젝트', logo:RIVAL_EMOJI[i]||'🎤', score:sc, n:5+((i*3)%5), seed:true}));
-        try{ localStorage.setItem('dg_league_seed', JSON.stringify(s)); }catch(e){}
+      const no=this.seasonNo(); let obj=null;
+      try{ obj=JSON.parse(localStorage.getItem('dg_league_seed')||'null'); }catch(e){}
+      if(!obj || obj.no!==no || !Array.isArray(obj.list) || !obj.list.length){
+        const base=[4300,3750,3200,2850,2500,2150,1850,1550,1300,1050];   // RIVAL_POOL 10개와 1:1
+        const list=base.map((sc,i)=>{ const shift=((no*37+i*53)%420)-210, k=(i+no)%RIVAL_POOL.length;
+          return {name:RIVAL_POOL[k]+' 프로젝트', logo:RIVAL_EMOJI[k]||'🎤', score:Math.max(400,sc+shift), n:5+((i+no)%5), seed:true}; });
+        obj={no, list};
+        try{ localStorage.setItem('dg_league_seed', JSON.stringify(obj)); }catch(e){}
       }
-      return s;
+      return obj.list;
     },
     async fetchGroupBoard(){
       // 서버 공유: leaderboard 컬렉션 재활용(쓰기 허용). 그룹은 ending='GRP:n' 마커 + fans=점수. 개인명전과 필터로 분리.
