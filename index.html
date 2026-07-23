@@ -3879,6 +3879,7 @@ window.addEventListener("popstate", ()=>{
            <div class="hero-t">${esc(_resume.name)}</div>
            <div class="hero-d">${_resume.week}/${_resume.total}턴에서 멈춰 있어 — 이어서 키우자!</div>
            <button class="btn hero-cta" onclick="Game.continueGame()">▶️ 이어하기</button>
+           ${rep?`<button class="btn ghost" style="margin-top:8px" onclick="DG.showBattleLobby()">⚔️ ${esc(rep.name)} 대결하러 가기</button>`:''}
          </div>`;
       } else if(roster.length===0 && groups.length===0){
         hero=`<div class="hero on-boarding">
@@ -4885,7 +4886,8 @@ window.addEventListener("popstate", ()=>{
           head.innerHTML=`<div class="lg-head">
             <div class="lg-tier-ic">${tier.ic}</div><div class="lg-tier-nm">${esc(tier.nm)}</div>
             <div class="lg-tier-sub">${this.logoHtml(myBest.logo,20)} ${esc(myBest.name)} · 승점 <b>${bs.pts}</b> · ${bs.w||0}승 ${bs.l||0}패</div>
-            <div class="lg-rank-badge">시즌 ${this.seasonNo()} · D-${this.seasonEndsInDays()} · ${t("lg_rank",{r:rank})}</div></div>`;
+            <div class="lg-rank-badge">시즌 ${this.seasonNo()} · D-${this.seasonEndsInDays()} · ${t("lg_rank",{r:rank})}</div>
+            <button class="btn" style="margin-top:10px;width:100%" onclick="DG.showBattleLobby()">⚔️ 배틀 로비 — 대결하러 가기</button></div>`;
         } else {
           head.innerHTML=`<div class="lg-head"><div class="lg-tier-ic">🎬</div>
             <div class="lg-tier-nm">${t("lg_none_t")}</div>
@@ -4908,7 +4910,7 @@ window.addEventListener("popstate", ()=>{
             <span class="sc">${(myBest.pts||0).toLocaleString()}<small class="lb-unit">P</small></span></div>`; }
       }
       const note=document.getElementById('leagueNote');
-      if(note) note.textContent = 'P = 시즌 승점(대결 승리로 획득) · 대결은 홈 대표그룹 ⚔️에서' + (this._leagueServer? ' · 서버 공유 중' : '');   // ⑪ 지표 설명 + ⑦ 진입 안내
+      if(note) note.textContent = 'P = 시즌 승점(대결 승리로 획득) · 위 ⚔️ 버튼으로 대결' + (this._leagueServer? ' · 서버 공유 중' : '');   // ⑪ 지표 설명 + ⑦ 진입 안내
     },
     editAgency(){ this.renderAgency(); show('s-agency'); },
     exitAgency(){ this.load(); if(this.data.agency) this.go(); else Game.reset(); },   // 첫 설정 중이면 타이틀로
