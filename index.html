@@ -1410,6 +1410,8 @@ const Game = {
     this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode, trainCount:{}};   // mode=full(24턴)/quick(12턴 간이) · trainCount=영역별 훈련 횟수
     DG.applyEquipped(this.st);   // 드림그룹: 장착한 육성카드 시작 보정
     { const _e=DG.effOf(DG.equipped); this.st.cardGrowth=1+(_e.growth||0); this.st.cardGate=1+(_e.gate||0); }   // 특수효과: 성장률·관문파워 배수 (SSR/UR 카드)
+    // 학원마스식 성장 비포/애프터: 첫날 스탯 스냅샷(카드 보정 포함) → 결과 레이더에 회색 고스트로 "첫날의 너 vs 지금"
+    this.st.day1={}; STATS.forEach(st=>this.st.day1[st.k]=Math.round(this.st[st.k]));
     DG.consumeEquipped();        // 카드 소모형: 장착 카드 1장씩 소모(지속 플레이 유인)
     this._fansShown=0;   // 새 게임: 팬 카운트업 기준 리셋
     this.logWeek(t("start_log",{name:esc(idolName(idol))}));
@@ -2153,7 +2155,16 @@ const Game = {
     }
     document.getElementById("endStage").textContent=
       reachedWorld?(finalRank?t("end_stage_world",{rank:finalRank}):t("end_stage_world_nr")):t("end_stage_out");
-    drawRadar(document.getElementById("radar"), statVals, {dark:false, big:true});  // 온스크린 육각형 라벨 키움(재율애비: 항목 폰트 너무 작음)
+    // 첫날 고스트: start()가 남긴 day1 스냅샷을 회색 대시 폴리곤으로(성장 비포/애프터 체감). 구세이브(이어하기)엔 없을 수 있어 가드
+    const _ghost = (s.day1 && STATS.every(st=>s.day1[st.k]!=null)) ? STATS.map(st=>s.day1[st.k]) : null;
+    drawRadar(document.getElementById("radar"), statVals, {dark:false, big:true, ghost:_ghost});  // 온스크린 육각형 라벨 키움(재율애비: 항목 폰트 너무 작음)
+    const _rad=document.getElementById("radar");
+    if(_rad && _ghost && !document.getElementById("day1cap")){
+      const cap=document.createElement("div"); cap.id="day1cap"; cap.className="muted";
+      cap.style.cssText="text-align:center;font-size:11.5px;margin-top:-4px";
+      cap.innerHTML="<span style='opacity:.75'>┄ 첫날의 나</span> → <b style='color:var(--accent)'>지금</b>";
+      _rad.insertAdjacentElement("afterend", cap);
+    } else if(!_ghost){ const c=document.getElementById("day1cap"); if(c) c.remove(); }
     show("s-end");
   },
   // 결과 → 공유 링크 인코딩/디코딩
@@ -2531,6 +2542,15 @@ function drawRadarCtx(x, cx, cy, R, vals, opts){
   // 축
   for(let i=0;i<N;i++){ x.beginPath(); x.moveTo(cx,cy);
     x.lineTo(cx+Math.cos(ang(i))*R, cy+Math.sin(ang(i))*R); x.strokeStyle=grid; x.stroke(); }
+  // 첫날 고스트 폴리곤(학원마스식 비포/애프터) — opts.ghost=[숫자배열, vals와 같은 순서]
+  if(opts.ghost && opts.ghost.length===N){
+    x.beginPath();
+    for(let i=0;i<N;i++){ const r=Math.max(R*0.12, R*Math.min(800,opts.ghost[i])/800);   // 최소 12% 바닥: 첫날 스탯(~12/800)이 점으로 붕괴돼 안 보이는 것 방지(시각 전달용)
+      const px=cx+Math.cos(ang(i))*r, py=cy+Math.sin(ang(i))*r; i?x.lineTo(px,py):x.moveTo(px,py); }
+    x.closePath();
+    x.fillStyle="rgba(160,150,190,.13)"; x.fill();
+    x.save(); x.setLineDash([6,5]); x.strokeStyle="rgba(200,190,230,.5)"; x.lineWidth=1.6; x.stroke(); x.restore();
+  }
   // 데이터 폴리곤 (스탯은 누적 P 0~800 스케일)
   const MAXV=800;
   x.beginPath();
@@ -3963,6 +3983,12 @@ window.addEventListener("popstate", ()=>{
           localStorage.setItem('dg_fav_greet', today);
           const greets=[`오늘도 와줬네요, 프로듀서님! 💖`,`${fav.name}, 오늘도 연습 중이에요!`,`프로듀서님 얼굴 보니까 힘나요 ✨`,`오늘은 어떤 하루로 만들까요?`];
           setTimeout(()=>{ try{ toast(`💖 ${fav.name}: "${greets[Math.floor(Math.random()*greets.length)]}"`); sfx('sparkle'); }catch(e){} }, 900);
+          // 최애 선물: 15% 확률로 연습하다 얻은 카드 1장을 선물(애정 보상, 하루 1회 인사에 묶임) ⚠️확률 임시
+          if(Math.random()<0.15){
+            const gid=this.rollRandomCard(this.topStat(fav.stats), grank(fav.grade));
+            const wasNew=!this.owned(gid); this.add(gid,1,1); if(wasNew) this.data.newCards[gid]=1; this.persist();
+            setTimeout(()=>{ try{ toast(`💝 ${fav.name}: "연습하다 이거 얻었는데… 프로듀서님 드릴게요!" (${this.nmOf(gid)} +1)`); sfx('win'); }catch(e){} }, 2600);
+          }
         } }catch(e){}
       // ── 시즌 정산 모달: 시즌 넘어가고 첫 홈 진입 때 지난 시즌 결산 + 새 트렌드 브리핑(2주 루프의 복귀 보람) ──
       this.battleSeason();   // 리셋/정산 캡처 트리거
