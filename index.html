@@ -1236,9 +1236,10 @@ const SCHEDULES = {
     debutCut:{total:340, peak:150, min:100},
     milestones:[{w:6,k:"ms_debut"},{w:12,k:"ms_music1"},{w:18,k:"ms_award"},{w:24,k:"ms_global_award"}],
     compets:{
-      12:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:140},
-      18:{type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:210},
-      24:{type:"award", emoji:"👑", tk:"cp_t_52", base:280, final:true},
+      // 밸런스 패치(2026-07-23 몬테카를로 1000런 기반): 예선 완화(13%→~30% 1위)·생존전 완화(탈락 66%→45%)·파이널 상향(생존자 프리패스 방지)
+      12:{type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:125},
+      18:{type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:190},
+      24:{type:"award", emoji:"👑", tk:"cp_t_52", base:300, final:true},
     },
   },
   quick: {
@@ -1246,9 +1247,10 @@ const SCHEDULES = {
     debutCut:{total:170, peak:80, min:55},
     milestones:[{w:3,k:"ms_debut"},{w:6,k:"ms_music1"},{w:9,k:"ms_award"},{w:12,k:"ms_global_award"}],
     compets:{
-      6: {type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:70},
-      9: {type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:105},
-      12:{type:"award", emoji:"👑", tk:"cp_t_52", base:140, final:true},
+      // 간이는 카드 초기보정 비중이 커서 후반 관문을 정식보다 세게 — '간이+카드=상위호환'(우승 92%→39%) 차단. 목표: 모든 지표가 정식보다 약간 아래
+      6: {type:"stage", emoji:"📺", tk:"cp_t_20", field:["vocal","dance","visual","charm"], base:80},
+      9: {type:"award", emoji:"🛫", tk:"cp_t_36", gate:true, base:137},
+      12:{type:"award", emoji:"👑", tk:"cp_t_52", base:217, final:true},
     },
   },
 };
@@ -1547,7 +1549,7 @@ const Game = {
     }
     const j=rollJudge(s.cond,s.mental), J=JUDGE[j];
     const stat=STATS.find(x=>x.k===kind);
-    const baseGain=22+Math.round(Math.random()*7);   // 케어 턴세 상쇄용 성장 보정(sim 확정)
+    const baseGain=25+Math.round(Math.random()*7);   // 밸런스 패치: 22→25 (E등급 도배 완화, 몬테카를로 기반. 관문 base와 세트 조정)
     // ⑭ 특기 가점: 타고난 특기 훈련이 더 잘 자람 (준특기는 소폭). 버튼 ⭐특기 배지로 노출.
     const keys=STATS.map(x=>x.k), si=keys.indexOf(s.idol.spec);
     const talent = kind===s.idol.spec ? 1.22 : (kind===keys[(si+3)%keys.length] ? 1.1 : 1.0);
@@ -1797,7 +1799,9 @@ const Game = {
     const s=this.st, cut=this.sch().debutCut;
     const total=STATS.reduce((a,st)=>a+s[st.k],0);
     const peak=Math.max(...STATS.map(st=>s[st.k]));
-    const pass = peak>=cut.min && (total>=cut.total || peak>=cut.peak);   // 올F 컷: 최소 한 스탯 F 탈출 없으면 데뷔 실패(훈련 안 하고 초기스탯·이벤트만으론 못 뚫음)
+    // 첫판 보호: 완주 경험 0이면 데뷔심사 컷 15% 완화(온보딩 첫 경험에서 1/3이 실패하는 가혹함 방지)
+    let cm=1; try{ DG.load(); if(!(DG.data.runs>0)) cm=0.85; }catch(e){}
+    const pass = peak>=cut.min*cm && (total>=cut.total*cm || peak>=cut.peak*cm);   // 올F 컷: 최소 한 스탯 F 탈출 없으면 데뷔 실패(훈련 안 하고 초기스탯·이벤트만으론 못 뚫음)
     const bonus = pass ? Math.round(1500+total*4) : Math.round(total*2);
     s.fans+=bonus;
     this.logWeek(pass?t("debut_pass_log"):t("debut_fail_log"));
