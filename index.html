@@ -914,7 +914,7 @@ const REST = {k:"rest", ico:"😴", t:"휴식", d:"컨디션 회복 + 멘탈 ↑
 
 // 에셋 캐시버스터: 애니/스프라이트 갱신이 브라우저·Pages 하드캐시에 막혀 구버전 표시되던 문제 방지.
 // 애니 바꿀 때마다 이 값 갱신(날짜+접미).
-const ASSET_VER = "20260715t";
+const ASSET_VER = "20260723a";   // 버디=레티 교체(서사 정합: 연습실 코치=레티)
 // ===== Firebase (Firestore REST) — 서버 공유 리더보드. apiKey는 브라우저용 공개키(시크릿 아님), 실보안은 Security Rules =====
 const FB_PID="idol-tycoon", FB_KEY="AIzaSyCUgSzgS2DBf58G6-lHzO77Qn0ZkZglAeE";
 const FS_BASE=`https://firestore.googleapis.com/v1/projects/${FB_PID}/databases/(default)/documents`;
@@ -1500,12 +1500,12 @@ const Game = {
     const pbox=document.getElementById("practiceBox");
     pbox.className="practice"+(urgent?" urgent":"");
     pbox.innerHTML=
-      `<img class="pr-buddy" src="assets/emo/buddy.png" alt="">
+      `<img class="pr-buddy" src="assets/emo/buddy.png?v=${ASSET_VER}" alt="">
        <div class="pr-info">
          <div class="pr-label">${dday>0?t("pr_next_dday",{d:dday}):t("pr_next_now")} ${foreChip}</div>
          <div class="pr-next">${t(nx.k)}</div>
          <div class="pr-track"><i style="width:${prog}%"></i></div>
-         <div class="pr-coach">🐥 ${this.coachLine(s, dday, fore)}</div>
+         <div class="pr-coach">🐰 ${this.coachLine(s, dday, fore)}</div>
        </div>`;
     document.getElementById("actionBox").innerHTML=
       `<div class="agrid">${TRAININGS.map(tr=>`
