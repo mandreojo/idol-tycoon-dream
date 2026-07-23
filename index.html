@@ -1593,9 +1593,11 @@ const Game = {
         </div>
         <div class="train-say" id="pxSay">${t("fx_"+kind)}…</div>
       </div>`;
-    // ── Phase 2: 결과 (1.1초 뒤 결과 애니로 전환, 같은 캐릭터) ──
+    // ── Phase 2: 결과 (1.1초 뒤 결과 애니로 전환, 같은 캐릭터). 탭하면 즉시 결과(연출 스킵 — 반복 플레이 편의) ──
     clearTimeout(this._pxPhase);
-    this._pxPhase=setTimeout(()=>{
+    let _p2done=false;
+    const _phase2=()=>{
+      if(_p2done) return; _p2done=true; ov.onclick=null;   // 1회 실행 가드(스킵 탭·타이머 이중 실행 방지)
       const el=document.getElementById('emoChar');
       const sprite = jkey==="perfect" ? "great" : jkey;   // 각성 전용컷 없음 → great 재사용
       sfx(jkey);   // 결과음(great/ok/fail/dbad/perfect) — 판정 컷 전환과 동시에
@@ -1619,7 +1621,9 @@ const Game = {
         const h=document.createElement("div");h.className="muted";h.style.marginTop="12px";
         h.textContent=t("tap_continue");ov.appendChild(h);
       }, 450);
-    }, 1100);
+    };
+    this._pxPhase=setTimeout(_phase2, 1100);
+    ov.onclick=()=>{ ov.onclick=null; clearTimeout(this._pxPhase); _phase2(); };   // 연출 스킵 탭
   },
   pxSparkle(container, count, colors, down){
     const stage=container.querySelector('.px-stage'); if(!stage) return;
@@ -2762,9 +2766,11 @@ initLangSwitch();
 applyI18n();
 Game.refreshTitle();
 // 첫 방문 시 게임 소개 1회 자동(공유링크 ?r= 진입은 제외)
+// ⚠️스플래시(1.3s) 시점에 띄우면 홈·컷씬 위에 겹쳐 잔존하던 버그 → 스플래시 끝나고 홈(s-office) 도착 후에만
 if(!new URLSearchParams(location.search).get("r") && !localStorage.getItem("idol_seen_intro")){
   localStorage.setItem("idol_seen_intro","1");
-  setTimeout(()=>{ if(document.getElementById("s-title").classList.contains("on")) Game.showManual("intro"); }, 700);
+  setTimeout(()=>{ const on=document.querySelector('.screen.on');
+    if(on && (on.id==="s-office"||on.id==="s-agency")) Game.showManual("intro"); }, 2100);
 }
 // 뒤로가기 가드: 플레이 중이면 페이지를 떠나지 않고 나가기 확인 시트 노출
 window.addEventListener("popstate", ()=>{
@@ -2994,6 +3000,8 @@ window.addEventListener("popstate", ()=>{
   .tcard.on{outline:3px solid #ffd35c;outline-offset:2px;transform:translateY(-3px);transition:transform .15s}
   .tcard.on::after{content:"✓";position:absolute;top:6px;right:6px;z-index:6;width:20px;height:20px;border-radius:50%;
     background:#ffd35c;color:#4a2e00;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .tcard .tc-new{position:absolute;top:7px;left:-13px;z-index:6;background:#ff3b5c;color:#fff;font-size:9px;font-weight:900;
+    letter-spacing:.5px;padding:2px 16px;transform:rotate(-38deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
   .tcard.tpop{animation:tpop .5s cubic-bezier(.3,1.5,.5,1) both}
   @keyframes tpop{0%{transform:scale(.3) rotate(-6deg);opacity:0}70%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
   .card-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:9px}
@@ -3375,6 +3383,8 @@ window.addEventListener("popstate", ()=>{
       } else if(!d.cards||typeof d.cards!=='object'||Array.isArray(d.cards)){ d.cards={}; }
       // ⑮ 내구도(wear) 정합성: 없으면 신설, 스택이 없거나 값이 이상한 항목은 정리 (구세이브=전부 새 카드 취급)
       if(!d.wear||typeof d.wear!=='object'||Array.isArray(d.wear)) d.wear={};
+      // NEW 뱃지(수집형 국룰): 새로 얻고 아직 상세로 확인 안 한 카드 표시
+      if(!d.newCards||typeof d.newCards!=='object'||Array.isArray(d.newCards)) d.newCards={};
       Object.keys(d.wear).forEach(k=>{ const p=k.split(':'), n=(d.cards[p[0]]&&d.cards[p[0]][p[1]])||0, w=d.wear[k];
         if(!n || typeof w!=='number' || w<1 || w>=3) delete d.wear[k]; });
       if(typeof d.ridSeq!=='number') d.ridSeq = d.roster.reduce((m,r)=>Math.max(m,r.rid||0),0);
@@ -3580,7 +3590,9 @@ window.addEventListener("popstate", ()=>{
         .sort((a,b)=>a.d-b.d).slice(0,3);
       document.getElementById('battleFoes').innerHTML= this._foes.length? this._foes.map((f,i)=>
         `<div class="lb-row"><span class="r">🎯</span>
-          <span class="who"><span class="lg-logo">${this.logoHtml(f.logo,24)}</span> ${esc(f.name)}<small>${f.n}/9 · ${f.pts}P</small></span>
+          <span class="who"><span class="lg-logo">${this.logoHtml(f.logo,24)}</span> ${esc(f.name)}<small>${f.n}/9 · ${f.pts}P</small>
+            ${(()=>{ const r=bp.power/Math.max(1,f.score);   // 전력 비교 칩(우마무스메식 상대 전력 가늠)
+              return r>=1.15?'<small style="color:#4fd6a0;font-weight:800">△ 우세</small>':r<=0.87?'<small style="color:#ff7d95;font-weight:800">▽ 강적</small>':'<small style="color:#ffd35c;font-weight:800">≈ 접전</small>'; })()}</span>
           <button class="bt-go" onclick="DG.openFoe(${i})">⚔️ 대결</button></div>`).join('')
         : `<div class="lb-row"><span class="who muted">상대를 찾는 중…</span></div>`;
       // ⑦ 티어가 뭔지 — 기준표 상시 노출
@@ -3690,7 +3702,7 @@ window.addEventListener("popstate", ()=>{
       if(debuted && fansV>prevBest){ try{localStorage.setItem('dg_best_fans',String(fansV));}catch(e){} }
       const tc=(st&&st.trainCount)||{}; let trainedK=this.topStat(stats), mxT=-1; STATS.forEach(x=>{ if((tc[x.k]||0)>mxT){mxT=tc[x.k]||0; trainedK=x.k;} });   // 기본 카드 = 능치 높은게 아니라 '가장 많이 훈련한 영역'
       const drops=this.rollCards(trainedK, gr, debuted, stats);
-      const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); return {id, isNew:wasNew}; });
+      const dropInfo=drops.map(id=>{ const wasNew=!this.owned(id); this.add(id,1,1); if(wasNew) this.data.newCards[id]=1; return {id, isNew:wasNew}; });
       this.data.runs++; this.persist();
       return {drops:dropInfo, joinMsg, debuted, newRid, titles, newRecord, fans:fansV};
     },
@@ -3762,7 +3774,7 @@ window.addEventListener("popstate", ()=>{
       if(roster.length===0 && groups.length===0){
         hero=`<div class="hero on-boarding">
            <div class="hero-badge">🎬 프로듀서 데뷔</div>
-           <div class="hero-t">첫 연습생을 발굴하세요</div>
+           <div class="hero-t">첫 연습생을 발굴하자</div>
            <div class="hero-d">원석을 찾아 키우고, 조합해 신인 그룹으로 데뷔시켜요.</div>
            <button class="btn hero-cta" onclick="Game.goSelect()">✨ 첫 육성 시작</button>
          </div>`;
@@ -3790,8 +3802,8 @@ window.addEventListener("popstate", ()=>{
       } else {
         hero=`<div class="hero hero-build">
            <div class="hero-badge">📋 데뷔조 편성</div>
-           <div class="hero-t">데뷔조를 완성하세요</div>
-           <div class="hero-d">아래에서 연습생을 포지션에 배치해 3명 이상 모으면 활동이 시작돼요. (현재 ${gi.n}/최소 3명)</div>
+           <div class="hero-t">데뷔조를 완성하자</div>
+           <div class="hero-d">아래에서 연습생을 포지션에 배치해 3명 이상 모으면 활동이 시작돼. (현재 ${gi.n}/최소 3명)</div>
            ${freeCount?`<button class="btn hero-cta" onclick="DG.autoFill()">🎯 자동 편성</button>`
              :`<button class="btn hero-cta" onclick="Game.goSelect()">✨ 연습생 육성하기</button>`}
          </div>`;
@@ -4005,6 +4017,7 @@ window.addEventListener("popstate", ()=>{
     },
     // 카드 상세 팝업(숙소 상세와 동일 패턴): 이름·레어도·별·효과·보유 별별 개수
     showCardDetail(type){ this.load(); const c=CARDS[type]; if(!c) return;
+      if(this.data.newCards && this.data.newCards[type]){ delete this.data.newCards[type]; this.persist(); }   // NEW 확인 처리
       const owned=this.owned(type), bs=this.bestStar(type);
       const stars=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(type,s); if(!n)continue;
         const w=this.wearOf(type,s);   // ⑮ 쓰던 장이 있으면 남은 내구도 표기
@@ -4186,12 +4199,20 @@ window.addEventListener("popstate", ()=>{
     renderCardPick(){
       const box=document.getElementById('cardPickList'); if(!box) return;
       const types=this.ownedTypes();
-      // ③ card-demo 스타일 + ⑮ 내구도(이번에 닳을 장 기준). 탭=장착 토글(최대 2)
-      box.innerHTML=`<div class="tgrid two" style="margin-top:12px">${types.map(id=>{ const bs=this.bestStar(id);
+      // ③ card-demo 스타일 + ⑮ 내구도(이번에 닳을 장 기준). 탭=장착 토글(최대 2) + ✨추천(수집형 국룰 편의)
+      box.innerHTML=`<button class="btn ghost" style="margin-top:10px;width:100%" onclick="DG.pickBest()">✨ 추천 장착 (최강 2장)</button>
+      <div class="tgrid two" style="margin-top:10px">${types.map(id=>{ const bs=this.bestStar(id);
         const ct=this.consumeTarget(id), dur=ct?this.durLeft(id,ct):0;
-        return this.tcardHTML(id,{star:bs, attr:`data-id="${id}" onclick="DG.toggle('${id}',this)"`,
+        return this.tcardHTML(id,{star:bs, cls:this.equipped.indexOf(id)>=0?'on':'', attr:`data-id="${id}" onclick="DG.toggle('${id}',this)"`,
           foot:`<div class="tc-meta" style="margin-top:2px">🔋 내구도 ${dur}/${this.DUR_MAX}</div>`});
       }).join('')}</div>`;
+    },
+    // 추천 장착 = 레어도 → 강화 별 순 상위 2장 (⚠️단순 휴리스틱, 특기 시너지 계산은 후속)
+    pickBest(){ this.load();
+      const rank=id=>this.rrOf(id)*10+this.bestStar(id);
+      this.equipped=this.ownedTypes().sort((a,b)=>rank(b)-rank(a)).slice(0,2);
+      this.renderCardPick(); try{sfx('sparkle');}catch(e){}
+      try{toast('✨ '+this.equipped.map(id=>this.nmOf(id)).join(' + ')+' 장착!');}catch(e){}
     },
     toggle(id, el){
       const i=this.equipped.indexOf(id);
@@ -4256,6 +4277,7 @@ window.addEventListener("popstate", ()=>{
       else if(o==='success'){ this.add(idA,starA,-1); this.add(idB,starB,-1); this.add(result,1,1); }
       else { this.add(idA,starA,-1); }                                                            // 실패: 재료 1개 소실
       if(o!=='fail'){ if(!this.data.forge)this.data.forge={}; this.data.forge.c=(this.data.forge.c||0)+1;   // 업적: 합성 성공 누적
+        if(!preOwn){ if(!this.data.newCards)this.data.newCards={}; this.data.newCards[result]=1; }   // NEW 뱃지
         const rrR=this.rrOf(result); if(rrR>=3)this.data.forge.ssr=(this.data.forge.ssr||0)+1; if(rrR>=4)this.data.forge.ur=(this.data.forge.ur||0)+1; }
       this.persist();
       return {outcome:o, result, rr:cA.rr, wasNew:(o!=='fail')&&!preOwn};
@@ -4274,8 +4296,9 @@ window.addEventListener("popstate", ()=>{
       const locked=!!o.locked;
       const star=o.star!=null?o.star:this.bestStar(id);
       const spk=(c.rr>=3&&!locked)?`<span class="spk" style="top:14px;left:10px">✦</span><span class="spk" style="top:46%;right:12px;animation-delay:.8s">✦</span><span class="spk" style="bottom:38px;left:16px;animation-delay:1.5s">✧</span>`:'';
+      const isNew=!locked && !o.noNew && this.data.newCards && this.data.newCards[id];   // NEW 뱃지(상세 확인 전까지)
       return `<div class="tcard ${cls}${locked?' locked':''}${o.cls?' '+o.cls:''}" ${o.attr||''}>
-        <div class="tc-sheen"></div>${spk}
+        <div class="tc-sheen"></div>${spk}${isNew?'<span class="tc-new">NEW</span>':''}
         <div class="tc-top"><span>${o.tag!=null?o.tag:esc(this.tcardCat(id))}</span><span class="tc-badge">${RARITY[c.rr]}</span></div>
         <div class="tc-art"><span class="tc-em">${locked?'❔':c.em}</span></div>
         <div class="tc-foot"><div class="tc-nm">${locked?'???':esc(c.nm)}</div>
@@ -4346,6 +4369,8 @@ window.addEventListener("popstate", ()=>{
         on('⚗️ 합성하기'); }
     },
     doForge(){ const v=this.forgeVerdictInfo(); if(v.kind!=='merge'&&v.kind!=='combine') return;
+      // 🔁 한번 더용 재료 기억 (강화=같은 카드 2장 / 합성=a+b)
+      this._lastForge = v.kind==='merge' ? [{id:v.id,star:v.star},{id:v.id,star:v.star}] : [{...v.a},{...v.b}];
       let res;
       if(v.kind==='merge'){ res=this.merge(v.id,v.star); if(res.err){toast('강화 실패: 재료 부족'); this.load(); this.renderForge(); return;} res.mode='merge'; }
       else { res=this.combine(v.a.id,v.a.star,v.b.id,v.b.star); if(res.err){toast('합성 실패: 재료 부족'); this.load(); this.renderForge(); return;} res.mode='combine'; }
@@ -4376,13 +4401,23 @@ window.addEventListener("popstate", ()=>{
           cardHtml=this.tcardHTML(res.result,{star:1, cls:'tpop'});   // ③ 결과 카드가 펑 등장 = "레어 떴다" 손맛
           try{sfx('win');}catch(e){} cf(); }
       }
+      // 🔁 한번 더: 같은 재료 조합이 아직 가능하면 원탭 반복 (연금술 노가다 편의)
+      let againBtn='';
+      if(this._lastForge){ const saved=this.forge; this.forge=this._lastForge.map(x=>({...x}));
+        const v2=this.forgeVerdictInfo(); this.forge=saved;
+        if(v2.kind==='merge'||v2.kind==='combine') againBtn=`<button class="btn ghost" style="flex:1" onclick="DG.forgeAgain()">🔁 한번 더</button>`; }
       ov.innerHTML=`<div style="width:100%;max-width:300px;text-align:center">
         ${cardHtml?`<div style="width:168px;margin:0 auto 10px">${cardHtml}</div>`:''}
         <div class="ev-card" style="text-align:center">
         ${big?`<div style="font-size:54px;line-height:1.1">${big}</div>`:''}
         <div class="ev-title" style="margin-top:6px">${title}</div>
         <div style="margin:9px 3px 15px;font-size:14px;line-height:1.5">${body}</div>
-        <button class="btn" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.renderForge()">확인</button></div></div>`;
+        <div style="display:flex;gap:8px">${againBtn}<button class="btn" style="flex:1" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.renderForge()">확인</button></div></div></div>`;
+    },
+    forgeAgain(){ if(!this._lastForge) return;
+      this.forge=this._lastForge.map(x=>({...x}));
+      const ov=document.getElementById('ov'); ov.className='ov'; ov.onclick=null;
+      this.renderForge(); this.doForge();
     },
     // ===== 카드 보관함 (보유 탭 | 도감 탭) =====
     goCards(){ this.load(); this._cardTab='own'; this._cardFilter='all'; show('s-cards'); this.syncCardTab(); this.renderCards(); },
