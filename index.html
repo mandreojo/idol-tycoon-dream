@@ -1402,6 +1402,7 @@ const Game = {
   },
   start(){
     const idol=this._pickIdol(); if(!idol) return;
+    this._finished=false;   // 새 판 = finish 멱등 가드 해제
     const mode=(this.trainMode==="quick")?"quick":"full";
     const {base} = talentOf(idol.spec);
     this.st = {idol, ...base, cond:100, fans:0, week:1, busy:false, log:[], mode, trainCount:{}};   // mode=full(24턴)/quick(12턴 간이) · trainCount=영역별 훈련 횟수
@@ -1718,6 +1719,7 @@ const Game = {
     let raw; try{ raw=localStorage.getItem("idol_save"); }catch(e){}
     if(!raw){ toast(t("toast_no_save")); return; }
     try{ this.st=JSON.parse(raw); }catch(e){ toast(t("toast_save_broken")); this.clearSave(); return; }
+    this._finished=false;   // 이어하기도 진행 중인 판 = finish 가드 해제
     if(!this.st.log) this.st.log=[];
     this._fansShown=this.st.fans;   // 이어하기: 저장된 팬 수부터(0→튐 방지)
     show("s-play"); this.startWeek(); this.armBackGuard();
@@ -1840,6 +1842,7 @@ const Game = {
       head = win?t("cp_final_win_head"):t("cp_final_lose_head",{rank:myRank});
       sub = (win?t("cp_final_win_sub"):t("cp_final_lose_sub"))+t("cp_final_bonus",{b:fmt(b)});
       onCont=()=>{ document.getElementById("ov").className="ov";
+        s.busy=true;   // 결과 로딩(3.4s) 동안 입력 잠금 — 이 틈의 진행이 finish 중복을 만들던 버그 방지
         this.resultLoading(()=>this.finish(true, myRank)); }; btn=t("cp_final_btn");
     }
     this.logWeek(`${c.emoji} <b>${t(c.tk)}</b> — ${head.replace(/<[^>]+>/g,"")}`);
@@ -2067,8 +2070,11 @@ const Game = {
   },
 
   finish(reachedWorld, finalRank, shared){
+    // 멱등 가드: 어떤 경로(버튼 연타·로딩 중 입력·안전망 재관문)로든 finish 중복 실행 시 로스터/카드/runs 중복 적립되던 버그 차단
+    if(!shared){ if(this._finished){ show("s-end"); return; } this._finished=true; }
     if(!shared) this.clearSave();   // 게임 종료 — 이어하기 삭제
     const s=this.st;
+    if(s) s.busy=true;   // 종료 처리 중 훈련 입력 잠금
     const statTotal=STATS.reduce((a,st)=>a+s[st.k],0);
     if(!shared) s.fans+=Math.round(statTotal*35 + s.mental*8);  // 공유 결과는 이미 최종 팬
     const end=this.ending(reachedWorld, finalRank);
