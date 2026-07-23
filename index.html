@@ -2949,6 +2949,53 @@ window.addEventListener("popstate", ()=>{
   .dg-res-titles{background:var(--panel2);border:1px solid #ffe6b8;border-radius:12px;padding:12px;margin-top:9px}
   .dg-record{background:linear-gradient(90deg,#ffe0ec,#ffd0de);border:1.5px solid #ff8ab0;border-radius:12px;padding:10px;text-align:center;font-size:14px;color:#c0286a;margin-bottom:9px;animation:statPulse .7s ease-out}
   .dg-equip{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;margin-top:8px}
+  /* ===== ③ 육성카드 = card-demo '때깔' 컴포넌트 (레어도 프레임·홀로 회전·광택 스윕·반짝이, CSS만) ===== */
+  .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+  .tgrid.two{grid-template-columns:repeat(2,1fr);gap:11px}
+  .tcard{position:relative;border-radius:16px;overflow:hidden;padding:10px 10px 9px;display:flex;flex-direction:column;
+    color:#fff;isolation:isolate;aspect-ratio:134/186;box-shadow:0 10px 24px -8px rgba(0,0,0,.55);cursor:pointer}
+  .tcard .tc-top{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:900;letter-spacing:.4px;z-index:3}
+  .tcard .tc-badge{padding:1.5px 7px;border-radius:999px;background:rgba(0,0,0,.28);backdrop-filter:blur(2px)}
+  .tcard .tc-art{flex:1;display:flex;align-items:center;justify-content:center;z-index:2;position:relative;min-height:0}
+  .tcard .tc-em{font-size:44px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+  .tcard .tc-art::before{content:"";position:absolute;width:76px;height:76px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 66%);z-index:-1}
+  .tcard .tc-foot{z-index:3}
+  .tcard .tc-nm{font-size:13px;font-weight:900;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .tcard .tc-meta{font-size:9.5px;opacity:.92;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.5);line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .tcard .tc-stars{margin-top:3px;font-size:11.5px;letter-spacing:1px;color:#ffe07a;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .tcard .tc-sheen{position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 47%,transparent 60%);
+    background-size:250% 250%;animation:tsheen 3.6s ease-in-out infinite}
+  @keyframes tsheen{0%{background-position:140% 0}55%,100%{background-position:-40% 0}}
+  .tcard.n{background:linear-gradient(160deg,#8a929c,#5c636e);border:2px solid #b9c0c8}
+  .tcard.r{background:linear-gradient(160deg,#4d8fe0,#2456a8);border:2px solid #8fc0ff;box-shadow:0 10px 24px -8px rgba(45,110,210,.6)}
+  .tcard.sr{background:linear-gradient(160deg,#a45cf0,#6a24c8);border:2px solid #d3a5ff;box-shadow:0 10px 26px -6px rgba(150,60,240,.6)}
+  .tcard.ssr{border:2px solid transparent;background:
+    linear-gradient(160deg,#4a3410,#221704) padding-box,
+    conic-gradient(from 0deg,#ffe98a,#ffb43e,#fff1b8,#e79a2a,#ffe98a) border-box;
+    box-shadow:0 12px 30px -6px rgba(240,160,30,.6)}
+  .tcard.ssr::before{content:"";position:absolute;inset:0;z-index:0;opacity:.5;mix-blend-mode:screen;
+    background:conic-gradient(from 0deg,rgba(255,220,120,.5),rgba(255,180,60,0) 25%,rgba(255,240,180,.5) 50%,rgba(230,150,40,0) 75%,rgba(255,220,120,.5));
+    animation:tspin 6s linear infinite}
+  .tcard.ur{border:2px solid transparent;background:
+    linear-gradient(160deg,#241033,#0d0618) padding-box,
+    conic-gradient(from 0deg,#ff5c8a,#ffd36b,#63f0c8,#5c9cff,#c77bff,#ff5c8a) border-box;
+    box-shadow:0 14px 34px -6px rgba(200,90,255,.65)}
+  .tcard.ur::before{content:"";position:absolute;inset:0;z-index:0;opacity:.55;mix-blend-mode:screen;
+    background:conic-gradient(from 0deg,rgba(255,92,138,.6),rgba(255,211,107,0) 20%,rgba(99,240,200,.6) 40%,rgba(92,156,255,0) 60%,rgba(199,123,255,.6) 80%,rgba(255,92,138,.6));
+    animation:tspin 5s linear infinite}
+  .tcard.ur .tc-em{filter:drop-shadow(0 0 12px rgba(255,255,255,.8)) drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+  @keyframes tspin{to{transform:rotate(360deg)}}
+  .tcard .spk{position:absolute;z-index:5;font-size:11px;opacity:0;pointer-events:none;animation:twk 2.4s ease-in-out infinite}
+  @keyframes twk{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.1)}}
+  .tcard.locked{filter:grayscale(1);opacity:.55}
+  .tcard.on{outline:3px solid #ffd35c;outline-offset:2px;transform:translateY(-3px);transition:transform .15s}
+  .tcard.on::after{content:"✓";position:absolute;top:6px;right:6px;z-index:6;width:20px;height:20px;border-radius:50%;
+    background:#ffd35c;color:#4a2e00;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .tcard.tpop{animation:tpop .5s cubic-bezier(.3,1.5,.5,1) both}
+  @keyframes tpop{0%{transform:scale(.3) rotate(-6deg);opacity:0}70%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
   .card-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:9px}
   .card-row.rare{border-color:#ffb43e;background:rgba(255,180,60,.13)}
   .card-row .cr-em{font-size:26px;flex:0 0 auto}
@@ -3964,13 +4011,15 @@ window.addEventListener("popstate", ()=>{
         stars.push(`★${s} × ${n}장${w?` <span style="color:#f0a01e">(1장 🔋${this.DUR_MAX-w}/${this.DUR_MAX})</span>`:''}`); }
       const ov=document.getElementById('ov'); ov.className='ov on';
       ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
-      ov.innerHTML=`<div class="ev-card" style="max-width:320px;text-align:center">
-        <div style="font-size:44px;line-height:1.1">${owned?c.em:'❔'}</div>
-        <div class="ev-title" style="margin-top:4px">${this.rarBadge(type)} ${owned?esc(c.nm):'???'}</div>
+      // ③ 실물 카드 크게 + 상세 정보
+      ov.innerHTML=`<div style="width:100%;max-width:300px;text-align:center">
+        <div style="width:172px;margin:0 auto 10px">${this.tcardHTML(type,{star:bs, locked:!owned, cls:'tpop'})}</div>
+        <div class="ev-card" style="text-align:center;padding-top:13px">
+        <div class="ev-title" style="margin-top:0">${this.rarBadge(type)} ${owned?esc(c.nm):'???'}</div>
         <div class="muted" style="margin:4px 0 10px">${RARITY[c.rr]} 레어도${owned?` · 최고 ${this.starStr(bs)}`:''}</div>
         <div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13.5px;line-height:1.5;margin-bottom:10px">${owned?this.cardDesc(type,bs):((c.hyb||c.rr>=3)?'아직 미보유<br>⚗️ 조합소에서 합성해 얻을 수 있어':'아직 미보유<br>육성을 마치면 얻을 수 있어')}</div>
         ${owned&&stars.length?`<div class="muted" style="font-size:12px;margin-bottom:10px">보유: ${stars.join(' · ')}</div>`:''}
-        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
+        <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div></div>`;
     },
     doQuick(rid){ const r=this.quickAssign(rid); if(r.err==='dup'){ toast('이미 데뷔조에 있어'); return; } if(r.err==='full'){ toast('데뷔조 9자리가 꽉 찼어'); return; } if(r.err){ toast('편성 실패'); return; } toast('데뷔조 편성 완료! 🎉'); this.renderRoster(); },
     // 자동 편성: 열린 빈 자리를 무소속·미편성 로스터 best-fit로 채움
@@ -4114,8 +4163,11 @@ window.addEventListener("popstate", ()=>{
 
     renderResult(box, res){
       if(!box) return;
-      const chips=res.drops.length? res.drops.map(d=>{ const id=d.id, c=CARDS[id], bs=this.bestStar(id);
-        return `<span class="dg-chip rr-${c.rr}">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted">${d.isNew?'✨새 카드':'＋★1'}</span></span>`;}).join('')
+      // ③ 획득 카드 = card-demo 카드가 펑 터지며 등장(스태거) — "레어 떴다" 손맛
+      const chips=res.drops.length? `<div class="tgrid" style="grid-template-columns:repeat(${Math.min(3,res.drops.length)},minmax(0,110px));justify-content:center">${res.drops.map((d,i)=>{
+        return this.tcardHTML(d.id,{star:1, cls:'tpop', attr:`style="animation-delay:${i*0.18}s" onclick="DG.showCardDetail('${d.id}')"`,
+          meta:d.isNew?'✨ 새 카드!':'＋1장', noStars:true});
+      }).join('')}</div>`
         : '<span class="muted">이번엔 육성카드를 못 얻었어요</span>';
       const rec = res.newRecord ? `<div class="dg-record">🎉 <b>최고 팬 신기록!</b> ${fmt(res.fans)}명</div>` : '';
       const titleChips=(res.titles&&res.titles.length)? `<div class="dg-res-titles"><b>🏅 획득 칭호</b><div class="dg-titles" style="margin-top:6px">${res.titles.map(id=>this.titleChip(id)).join('')}</div></div>` : '';
@@ -4134,9 +4186,12 @@ window.addEventListener("popstate", ()=>{
     renderCardPick(){
       const box=document.getElementById('cardPickList'); if(!box) return;
       const types=this.ownedTypes();
-      box.innerHTML=`<div class="dg-chips" style="margin-top:12px">${types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
-        const ct=this.consumeTarget(id), dur=ct?this.durLeft(id,ct):0;   // ⑮ 이번에 닳을 장(최저 별)의 남은 내구도
-        return `<span class="dg-chip pick rr-${c.rr}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted" style="font-size:11px">🔋${dur}/${this.DUR_MAX}</span><br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
+      // ③ card-demo 스타일 + ⑮ 내구도(이번에 닳을 장 기준). 탭=장착 토글(최대 2)
+      box.innerHTML=`<div class="tgrid two" style="margin-top:12px">${types.map(id=>{ const bs=this.bestStar(id);
+        const ct=this.consumeTarget(id), dur=ct?this.durLeft(id,ct):0;
+        return this.tcardHTML(id,{star:bs, attr:`data-id="${id}" onclick="DG.toggle('${id}',this)"`,
+          foot:`<div class="tc-meta" style="margin-top:2px">🔋 내구도 ${dur}/${this.DUR_MAX}</div>`});
+      }).join('')}</div>`;
     },
     toggle(id, el){
       const i=this.equipped.indexOf(id);
@@ -4209,6 +4264,25 @@ window.addEventListener("popstate", ()=>{
     rrOf(id){ return (CARDS[id]||{}).rr; },
     emOf(id){ return (CARDS[id]||{}).em||'🎴'; },
     nmOf(id){ return (CARDS[id]||{}).nm||id; },
+    // ③ 육성카드 렌더 = card-demo '때깔' 컴포넌트. o={star,meta,foot,tag,cls,attr,locked,noStars}
+    tcardCat(id){ const c=CARDS[id]; if(!c) return '';
+      if(c.hyb) return '하이브리드';
+      if(c.eff&&c.eff.stat){ const k=Object.keys(c.eff.stat)[0]; return STATNM[k]||''; }
+      return c.rr>=3?'스페셜':'올라운드'; },
+    tcardHTML(id, o){ o=o||{}; const c=CARDS[id]; if(!c) return '';
+      const cls=['n','r','sr','ssr','ur'][c.rr]||'n';
+      const locked=!!o.locked;
+      const star=o.star!=null?o.star:this.bestStar(id);
+      const spk=(c.rr>=3&&!locked)?`<span class="spk" style="top:14px;left:10px">✦</span><span class="spk" style="top:46%;right:12px;animation-delay:.8s">✦</span><span class="spk" style="bottom:38px;left:16px;animation-delay:1.5s">✧</span>`:'';
+      return `<div class="tcard ${cls}${locked?' locked':''}${o.cls?' '+o.cls:''}" ${o.attr||''}>
+        <div class="tc-sheen"></div>${spk}
+        <div class="tc-top"><span>${o.tag!=null?o.tag:esc(this.tcardCat(id))}</span><span class="tc-badge">${RARITY[c.rr]}</span></div>
+        <div class="tc-art"><span class="tc-em">${locked?'❔':c.em}</span></div>
+        <div class="tc-foot"><div class="tc-nm">${locked?'???':esc(c.nm)}</div>
+          <div class="tc-meta">${o.meta!=null?o.meta:(locked?'':esc(this.cardDesc(id,star)))}</div>
+          ${(!locked&&!o.noStars&&star>0)?`<div class="tc-stars">${'★'.repeat(Math.min(5,star))}</div>`:''}
+          ${o.foot||''}</div></div>`;
+    },
     goForge(){ this.load(); this.forge=[null,null]; show('s-forge'); this.renderForge(); },
     pickForge(slot){ this.load();
       const other=this.forge&&this.forge[1-slot];
@@ -4221,10 +4295,9 @@ window.addEventListener("popstate", ()=>{
       if(!items.length){ ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px"><div class="ev-title">올릴 카드가 없어</div><p class="muted" style="margin:8px 0 14px">육성을 완주하면 카드가 생겨.${other?'<br>(다른 슬롯 카드는 중복 사용 불가)':''}</p><button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`; return; }
       ov.innerHTML=`<div class="ev-card" style="max-width:340px"><div class="ev-title" style="margin-bottom:2px">${slot===0?'왼쪽':'오른쪽'} 슬롯에 올릴 카드</div>
         <p class="muted" style="margin:0 0 10px;font-size:12px">탭해서 선택</p>
-        <div class="forge-pick">${items.map(it=>`<button class="fp-chip rr-${this.rrOf(it.id)}" onclick="DG.setForge(${slot},'${it.id}',${it.star})">
-          <span style="font-size:22px">${this.emOf(it.id)}</span>
-          <span class="fp-nm">${this.rarBadge(it.id)} ${esc(this.nmOf(it.id))}</span>
-          <span class="fp-meta">★${it.star} · ${it.n}장</span></button>`).join('')}</div>
+        <div class="tgrid" style="max-height:52vh;overflow-y:auto;margin:0 0 12px">${items.map(it=>
+          this.tcardHTML(it.id,{star:it.star, attr:`onclick="DG.setForge(${slot},'${it.id}',${it.star})"`,
+            meta:`★${it.star} · ${it.n}장`, noStars:true})).join('')}</div>
         <button class="btn ghost" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null">닫기</button></div>`;
     },
     setForge(slot,id,star){ if(!this.forge)this.forge=[null,null]; this.forge[slot]={id,star:+star};
@@ -4287,25 +4360,29 @@ window.addEventListener("popstate", ()=>{
     },
     showForgeResult(res){ const ov=document.getElementById('ov'); ov.className='ov on';
       ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; this.renderForge(); } };
-      let big, title, body; const cf=()=>{ try{Game.confetti(48,false);}catch(e){} };
+      let big, title, body, cardHtml=''; const cf=()=>{ try{Game.confetti(48,false);}catch(e){} };
       if(res.mode==='merge'){ const nm=this.nmOf(res.type);
-        if(res.outcome==='gsuccess'){ big='🌟'; title='대성공!'; body=`<b>${esc(nm)}</b> ★${res.from+1} 승급 · 재료 1장 보존!`; try{sfx('win');}catch(e){} cf(); }
-        else if(res.outcome==='success'){ big='✨'; title='강화 성공'; body=`<b>${esc(nm)}</b> ★${res.from} → ★${res.from+1}`; try{sfx('win');}catch(e){} }
+        if(res.outcome==='gsuccess'){ title='🌟 대성공!'; body=`<b>${esc(nm)}</b> ★${res.from+1} 승급 · 재료 1장 보존!`;
+          cardHtml=this.tcardHTML(res.type,{star:res.from+1, cls:'tpop'}); try{sfx('win');}catch(e){} cf(); }
+        else if(res.outcome==='success'){ title='✨ 강화 성공'; body=`<b>${esc(nm)}</b> ★${res.from} → ★${res.from+1}`;
+          cardHtml=this.tcardHTML(res.type,{star:res.from+1, cls:'tpop'}); try{sfx('win');}catch(e){} }
         else if(res.outcome==='fail'){ big='💦'; title='실패…'; body='카드 1장 소실'; try{sfx('fail');}catch(e){} }
         else { big='💥'; title='대실패'; body='카드 2장 소실…'; try{sfx('fail');}catch(e){} }
       } else {
         if(res.outcome==='fail'){ big='💦'; title='합성 실패…'; body='재료 1장 소실'; try{sfx('fail');}catch(e){} }
         else { const rc=RAR_COLOR[this.rrOf(res.result)];
-          big=this.emOf(res.result);
           title=res.outcome==='gsuccess'?'🌟 대성공!':'✨ 합성 성공!';
-          body=`<b style="color:${rc}">${RARITY[this.rrOf(res.result)]}</b> <b>${esc(this.nmOf(res.result))}</b> 획득!${res.wasNew?' <span style="color:#18b06e">✨새 카드</span>':''}${res.outcome==='gsuccess'?'<br><span class="muted" style="font-size:12px">재료 1장 보존</span>':''}<br><span class="muted" style="font-size:12px">${esc(this.cardDesc(res.result,1))}</span>`;
+          body=`<b style="color:${rc}">${RARITY[this.rrOf(res.result)]}</b> <b>${esc(this.nmOf(res.result))}</b> 획득!${res.wasNew?' <span style="color:#18b06e">✨새 카드</span>':''}${res.outcome==='gsuccess'?'<br><span class="muted" style="font-size:12px">재료 1장 보존</span>':''}`;
+          cardHtml=this.tcardHTML(res.result,{star:1, cls:'tpop'});   // ③ 결과 카드가 펑 등장 = "레어 떴다" 손맛
           try{sfx('win');}catch(e){} cf(); }
       }
-      ov.innerHTML=`<div class="ev-card" style="text-align:center;max-width:300px">
-        <div style="font-size:54px;line-height:1.1">${big}</div>
+      ov.innerHTML=`<div style="width:100%;max-width:300px;text-align:center">
+        ${cardHtml?`<div style="width:168px;margin:0 auto 10px">${cardHtml}</div>`:''}
+        <div class="ev-card" style="text-align:center">
+        ${big?`<div style="font-size:54px;line-height:1.1">${big}</div>`:''}
         <div class="ev-title" style="margin-top:6px">${title}</div>
         <div style="margin:9px 3px 15px;font-size:14px;line-height:1.5">${body}</div>
-        <button class="btn" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.renderForge()">확인</button></div>`;
+        <button class="btn" onclick="var o=document.getElementById('ov');o.className='ov';o.onclick=null;DG.renderForge()">확인</button></div></div>`;
     },
     // ===== 카드 보관함 (보유 탭 | 도감 탭) =====
     goCards(){ this.load(); this._cardTab='own'; this._cardFilter='all'; show('s-cards'); this.syncCardTab(); this.renderCards(); },
@@ -4323,15 +4400,12 @@ window.addEventListener("popstate", ()=>{
         `<button class="cf-chip ${f===x?'on':''}" onclick="DG.setCardFilter('${x}')">${x==='all'?'전체':x}</button>`).join('')}</div>`;
       const types = f==='all'? all : all.filter(id=>RARITY[CARDS[id].rr]===f);
       if(!types.length){ box.innerHTML=`<p class="muted" style="text-align:center;padding:24px">${all.length?'이 레어도 카드가 없어':'아직 보유한 육성카드가 없어.<br>육성을 마치면 생겨!'}</p>`; return; }
-      box.innerHTML=types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
-        const schips=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(id,s); if(n)schips.push(`<span style="color:#f0a01e;font-weight:bold;margin-right:8px">★${s}×${n}</span>`); }
-        return `<div class="card-row rr-${c.rr}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
-          <span class="cr-em">${c.em}</span>
-          <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${c.nm} <span style="color:#f0a01e">${this.starStr(bs)}</span></div>
-            <div class="muted" style="font-size:12px">${this.cardDesc(id,bs)}</div>
-            <div style="font-size:12px;margin-top:3px">${schips.join('')}</div></div>
-          <div class="cr-r">${bs>=MAXSTAR?'<span class="cr-maxb">👑</span>':''}</div>
-        </div>`;}).join('');
+      // ③ card-demo 스타일 카드 그리드 (탭=상세)
+      box.innerHTML=`<div class="tgrid">`+types.map(id=>{ const bs=this.bestStar(id);
+        let tot=0; for(let s=1;s<=MAXSTAR;s++) tot+=this.countAt(id,s);
+        return this.tcardHTML(id,{star:bs, attr:`onclick="DG.showCardDetail('${id}')"`,
+          foot:`<div class="tc-meta" style="margin-top:2px">${tot}장 보유${bs>=MAXSTAR?' · 👑풀강':''}</div>`});
+      }).join('')+`</div>`;
     },
     renderCardsDex(){
       const box=document.getElementById('cardsList'), fbox=document.getElementById('cardsFilter'), hint=document.getElementById('cardsHint');
@@ -4339,13 +4413,11 @@ window.addEventListener("popstate", ()=>{
       const all=Object.keys(CARDS).sort((a,b)=>CARDS[a].rr-CARDS[b].rr);
       const ownedN=all.filter(id=>this.owned(id)).length;
       if(hint) hint.innerHTML=`<span class="cdex-prog">카드 도감 · 수집 <b>${ownedN}</b> / ${all.length}</span>`;
-      box.innerHTML=all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
-        return `<div class="card-row rr-${c.rr} ${owned?'':'locked'}" onclick="DG.showCardDetail('${id}')" style="cursor:pointer">
-          <span class="cr-em">${owned?c.em:'❔'}</span>
-          <div class="cr-m"><div class="cr-nm">${this.rarBadge(id)} ${owned?c.nm:'???'}${owned?` <span style="color:#f0a01e">${this.starStr(bs)}</span>`:''}</div>
-            <div class="muted" style="font-size:12px">${owned?this.cardDesc(id,bs):((c.hyb||c.rr>=3)?'⚗️ 조합소에서 합성':'육성으로 획득')}</div></div>
-          <div class="cr-r">${owned?'<span class="cr-own">보유</span>':'<span class="cr-miss">미보유</span>'}</div>
-        </div>`;}).join('');
+      // ③ 도감도 카드 그리드 — 미보유는 흑백 잠금(❔·???)
+      box.innerHTML=`<div class="tgrid">`+all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
+        return this.tcardHTML(id,{star:bs, locked:!owned, attr:`onclick="DG.showCardDetail('${id}')"`,
+          meta: owned? undefined : ((c.hyb||c.rr>=3)?'⚗️ 조합소에서 합성':'육성으로 획득')});
+      }).join('')+`</div>`;
     },
     doMerge(type,star){
       const r=this.merge(type,star);
