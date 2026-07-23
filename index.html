@@ -686,7 +686,7 @@
     </div>
     <div class="ag-emojis" id="agEmojis"></div>
     <input class="srch" id="agName" placeholder="기획사 이름 (최대 14자)" maxlength="14" style="margin-top:12px">
-    <input class="srch" id="agGroup" placeholder="데뷔조(그룹) 이름 (예: STELLAR)" maxlength="14" style="margin-top:8px">
+    <!-- 데뷔조 이름 입력 제거: 그룹명은 데뷔 세리머니에서 지음(옛 groupName이 편성 버퍼에 붙어 "대표그룹은 A인데 정보는 B" 혼동 유발) -->
     <button class="btn" onclick="DG.saveAgencyFromUI()" style="margin-top:12px">저장 →</button>
   </section>
 
@@ -3795,7 +3795,7 @@ window.addEventListener("popstate", ()=>{
       } else if(gi.n>=3){
         hero=`<div class="hero hero-ready">
            <div class="hero-badge">🎤 데뷔 준비 완료</div>
-           <div class="hero-t">${esc(this.groupName())}</div>
+           <div class="hero-t">새 데뷔조</div>
            <div class="hero-d">${gi.grade}등급 · ${gi.n}/9명 데뷔조가 무대를 기다려요.</div>
            <button class="btn hero-cta" onclick="DG.doDebut()">🎬 데뷔시키기</button>
          </div>`;
@@ -3846,7 +3846,7 @@ window.addEventListener("popstate", ()=>{
       }).join('');
       document.getElementById('dgGroup').innerHTML=
         `<div class="dg-sub" style="margin-top:15px"><b>📋 데뷔조 편성</b><span class="muted">${gi.n}/9명</span></div>
-         <div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=3?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
+         <div class="dg-head"><div class="dg-h-l">새 데뷔조 편성${gi.n>=3?' <span style="color:#18b06e;font-size:11px">● 활동 가능</span>':''}</div>
           <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
           <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 3명 이상 편성하면 활동 시작'}</div></div>
          <div class="dg-grid nine">${slotCells}</div>
@@ -3860,7 +3860,7 @@ window.addEventListener("popstate", ()=>{
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
            ${shown.length<MAX_MEMBERS? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
-           ${gi.n>=3? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
+           ${gi.n>=3? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard({name:'새 데뷔조 (편성 중)'})">📸 편성 미리보기</button>`:''}
          </div>
          ${gi.n>=3? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
       // ① 대표는 히어로에 1번만 표시 — 목록은 '다른 데뷔 그룹'(비대표)만. 대표 교체는 여기 ⭐로(대표 실수 해체 방지 겸).
@@ -4121,7 +4121,7 @@ window.addEventListener("popstate", ()=>{
       }).filter(Boolean).join('');
       const box=document.getElementById('debutMembers'); if(box) box.innerHTML=mem;
       // 그룹명 기본값 (편성버퍼 이름이 기본이면 비움)
-      const gn=document.getElementById('dbGroupName'); if(gn) gn.value=(this.data.groupName&&this.data.groupName!=='우리 데뷔조')?this.data.groupName:'';
+      const gn=document.getElementById('dbGroupName'); if(gn) gn.value='';   // 옛 groupName 프리필 제거(그룹명은 세리머니에서 새로 지음)
       this.renderDebutLogo();
       const EMO=['🏢','🏯','🎪','🌟','🎬','🎤','🎧','🎹','🔥','💎','👑','🌈','🍀','🐣','🐰','🦆','🚀','🎯'];
       const eb=document.getElementById('dbEmojis'); if(eb) eb.innerHTML=EMO.map(e=>
@@ -4718,8 +4718,7 @@ window.addEventListener("popstate", ()=>{
         img.src=e.target.result; }; rd.readAsDataURL(f); },
     saveAgencyFromUI(){ this.load();
       const name=(((document.getElementById('agName')||{}).value)||'').trim().slice(0,14) || '우리 기획사';
-      const gname=(((document.getElementById('agGroup')||{}).value)||'').trim().slice(0,14) || '우리 데뷔조';
-      this.data.agency={name, logo:this._agSel||'🏢'}; this.data.groupName=gname; this.persist();
+      this.data.agency={name, logo:this._agSel||'🏢'}; this.persist();   // groupName은 더이상 셋업에서 안 받음(세리머니에서 지음)
       try{toast('저장 완료! 🏢');}catch(e){} this.go();
     },
 
