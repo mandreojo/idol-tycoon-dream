@@ -221,6 +221,10 @@
   .act{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
     border-radius:13px;padding:11px 12px;cursor:pointer;transition:transform .08s,border-color .1s;text-align:left;width:100%}
   .act:active{transform:scale(.97)}
+  .act.spec{border-color:rgba(240,160,30,.55);box-shadow:inset 0 0 12px rgba(240,160,30,.10)}   /* ⑭ 타고난 특기 훈련 강조 */
+  .bloom-line{color:#ffd35c;font-weight:bold;font-size:15px;margin-bottom:4px;text-shadow:0 0 12px rgba(255,211,92,.45);animation:bloomPop .5s ease}
+  @keyframes bloomPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  .spec-tag{font-size:10px;color:#f0a01e;font-weight:bold;vertical-align:1px}
   .act.rest{background:var(--panel2)}
   .act.care{background:rgba(255,110,150,.14);border-color:rgba(255,120,160,.35)}
   .act.care .ico{filter:drop-shadow(0 1px 2px rgba(236,58,92,.3))}
@@ -613,7 +617,7 @@
       <button class="menu-btn" onclick="Game.goSelect()" aria-label="back" title="뒤로">←</button>
       <h2>🎴 육성카드 선택</h2>
     </div>
-    <p class="muted" style="margin:2px 0 4px">다음 육성에 힘을 실어줄 카드를 골라 · 최대 2개<br>⚠️ 장착 카드는 육성 시작 시 <b>1장 소모</b>돼 · 완주하면 다시 얻어 (안 골라도 OK)</p>
+    <p class="muted" style="margin:2px 0 4px">다음 육성에 힘을 실어줄 카드를 골라 · 최대 2개<br>🔋 장착하면 <b>내구도 1</b>이 닳아 · 3번 쓰면 그 장은 소멸 (안 골라도 OK)</p>
     <div id="cardPickList"></div>
     <button class="btn" onclick="Game.start()" style="margin-top:16px">육성 시작 🔥</button>
   </section>
@@ -1458,9 +1462,9 @@ const Game = {
        </div>`;
     document.getElementById("actionBox").innerHTML=
       `<div class="agrid">${TRAININGS.map(tr=>`
-        <button class="act" onclick="Game.train('${tr.k}')">
+        <button class="act${tr.k===s.idol.spec?" spec":""}" onclick="Game.train('${tr.k}')">
           <span class="ico">${tr.ico}</span>
-          <span class="body"><span class="t">${t("tr_"+tr.k+"_t")}</span><span class="d">${t("tr_"+tr.k+"_d")}</span></span>
+          <span class="body"><span class="t">${t("tr_"+tr.k+"_t")}${tr.k===s.idol.spec?' <span class="spec-tag">⭐특기</span>':''}</span><span class="d">${t("tr_"+tr.k+"_d")}</span></span>
         </button>`).join("")}</div>
       <div class="agrid">
         <button class="act rest" onclick="Game.train('rest')">
@@ -1496,10 +1500,12 @@ const Game = {
     const j=rollJudge(s.cond,s.mental), J=JUDGE[j];
     const stat=STATS.find(x=>x.k===kind);
     const baseGain=22+Math.round(Math.random()*7);   // 케어 턴세 상쇄용 성장 보정(sim 확정)
-    // 히든 특기 가점: 타고난 특기 훈련이 더 잘 자람 (준특기는 소폭). UI엔 안 보임.
+    // ⑭ 특기 가점: 타고난 특기 훈련이 더 잘 자람 (준특기는 소폭). 버튼 ⭐특기 배지로 노출.
     const keys=STATS.map(x=>x.k), si=keys.indexOf(s.idol.spec);
     const talent = kind===s.idol.spec ? 1.22 : (kind===keys[(si+3)%keys.length] ? 1.1 : 1.0);
-    let gain = J.mult>0 ? Math.round(baseGain*J.mult*growthMult(s[kind])*talent*(s.cardGrowth||1))
+    // ⑭ 재능 개화: 특기 훈련 + 성공 계열 판정(실패/대실패 제외)이면 18% 확률로 성장 ×1.6 ⚠️수치 임시
+    const bloom = kind===s.idol.spec && j!=='fail' && j!=='dbad' && J.mult>0 && Math.random()<0.18;
+    let gain = J.mult>0 ? Math.round(baseGain*J.mult*growthMult(s[kind])*talent*(s.cardGrowth||1)*(bloom?1.6:1))
                         : Math.round(baseGain*J.mult);
     const oldV=Math.round(s[kind]), oldG=grade(oldV), oldL=levelOf(oldV);
     s[kind]=Math.max(0,Math.min(800,s[kind]+gain));   // 스탯 상한 800(=SS 만점). 넘겨도 캡
@@ -1513,8 +1519,9 @@ const Game = {
     const gradeUp = newL>oldL;   // 게이지 100 넘겨 등급 상승
     if(gradeUp) this.logWeek(t("gradeup_log",{ico:stat.ico,stat:t("st_"+kind),from:oldG,to:newG}));
     const say=t("say_"+j);
+    const bloomLine = bloom ? `<div class="bloom-line">⭐ 재능 개화! 타고난 특기가 만개했다</div>` : '';   // ⑭ 크리 연출
     this.trainReveal(s.idol, kind, j, J,
-      t("train_delta",{ico:stat.ico,stat:t("st_"+kind),sign,gain,fans:fmt(fanGain),cond:J.cond}),
+      bloomLine + t("train_delta",{ico:stat.ico,stat:t("st_"+kind),sign,gain,fans:fmt(fanGain),cond:J.cond}),
       say,
       ()=>{ this.render(); this.bumpStat(kind, oldV, newV, oldG, newG);
             setTimeout(()=>this.afterTurn(), 900); });
@@ -1924,9 +1931,18 @@ const Game = {
     const stObj=STATS.find(x=>x.k===topK)||STATS[0];
     const stName = topK==='creative' ? t('st_creative_short') : t('st_'+topK);
     // 대표재능(육각형·종합에서 이미 보임)은 결과 타이틀에서 제거 → 종합등급 기반 서사 타이틀만
-    const OT={SS:'정상급 아이돌',S:'톱클래스 스타',A:'대형 유망주',B:'기대주',C:'성장 유망주',D:'새내기 연습생',E:'새내기 연습생',F:'새내기 연습생'};
+    // ⑯ 패턴 다양화: 등급별 이름 풀에서 랜덤 픽('새내기 연습생' 단조 해소)
+    const OT={SS:['정상급 아이돌','시대의 아이콘','국보급 아이돌'],
+              S: ['톱클래스 스타','차트 브레이커','대세 그 자체'],
+              A: ['대형 유망주','차세대 에이스','소속사의 희망'],
+              B: ['기대주','떠오르는 신인','가능성의 원석','연습실의 지박령'],
+              C: ['성장 유망주','노력형 신인','미완의 대기','오디션 단골'],
+              D: ['새내기 연습생','풋내기 연습생','걸음마 연습생','열정만렙 새내기'],
+              E: ['새내기 연습생','햇병아리 연습생','미가공 원석','응원이 필요한 새싹'],
+              F: ['새내기 연습생','왕초보 연습생','미가공 원석','대기만성(예정)']};
     const EMO={SS:'👑',S:'🌟',A:'✨',B:'🎤',C:'🎵',D:'🌱',E:'🌱',F:'🌱'};
-    const name=(allround?'올라운드 ':'')+(OT[overall]||'연습생');
+    const pool=OT[overall]||['연습생'];
+    const name=(allround?'올라운드 ':'')+pool[Math.floor(Math.random()*pool.length)];
     const emoji=allround?'🌈':(EMO[overall]||'🎤');
     return {...raw, name, emoji, overall, allround};
   },
@@ -3187,6 +3203,10 @@ window.addEventListener("popstate", ()=>{
         if(d.mat&&typeof d.mat==='object'){ Object.keys(d.mat).forEach(id=>put(id,1,d.mat[id]||0)); }
         d.cards=cards;
       } else if(!d.cards||typeof d.cards!=='object'||Array.isArray(d.cards)){ d.cards={}; }
+      // ⑮ 내구도(wear) 정합성: 없으면 신설, 스택이 없거나 값이 이상한 항목은 정리 (구세이브=전부 새 카드 취급)
+      if(!d.wear||typeof d.wear!=='object'||Array.isArray(d.wear)) d.wear={};
+      Object.keys(d.wear).forEach(k=>{ const p=k.split(':'), n=(d.cards[p[0]]&&d.cards[p[0]][p[1]])||0, w=d.wear[k];
+        if(!n || typeof w!=='number' || w<1 || w>=3) delete d.wear[k]; });
       if(typeof d.ridSeq!=='number') d.ridSeq = d.roster.reduce((m,r)=>Math.max(m,r.rid||0),0);
       // v<4: 데뷔(저장)한 그룹 프리셋 배열 신설. 그룹 멤버 rid = 전속(다른 데뷔조 편성 불가)
       d.groups = Array.isArray(d.groups)? d.groups : [];
@@ -3202,7 +3222,16 @@ window.addEventListener("popstate", ()=>{
     persist(){ try{ localStorage.setItem(KEY(), JSON.stringify(this.data)); }catch(e){} },
 
     // 카드 = 레어도(고정) × 강화 별(★1~5, 머지). 장착 효과는 보유 최고 별 기준.
-    add(type,star,n){ const cs=this.data.cards; if(!cs[type])cs[type]={}; cs[type][star]=(cs[type][star]||0)+n; if(cs[type][star]<=0)delete cs[type][star]; if(!Object.keys(cs[type]).length)delete cs[type]; },
+    add(type,star,n){ const cs=this.data.cards; if(!cs[type])cs[type]={}; cs[type][star]=(cs[type][star]||0)+n; if(cs[type][star]<=0)delete cs[type][star]; if(!Object.keys(cs[type]).length)delete cs[type];
+      // 스택이 비면 내구도(wear) 기록도 정리 (합성/강화로 마지막 장이 나가도 잔재 안 남게)
+      if(this.data.wear && !this.countAt(type,star)) delete this.data.wear[type+':'+star]; },
+    // ⑮ 내구도: 육성카드는 육성 1회당 내구도 1 소모, 3번 쓰면 그 장은 소멸. 합성·강화엔 무관(장수만 소모).
+    //   data.wear={"타입:별": 사용횟수(1~2)} — 스택에서 '지금 쓰는 1장'의 마모만 추적. 0/미기록=새 카드.
+    DUR_MAX: 3,
+    wearOf(type,star){ return (this.data.wear&&this.data.wear[type+':'+star])||0; },
+    durLeft(type,star){ return this.DUR_MAX - this.wearOf(type,star); },   // 다음에 소모될 1장의 남은 내구도
+    // 장착 시 실제 소모될 스택(최저 별) — UI 표기용
+    consumeTarget(type){ for(let s=1;s<=MAXSTAR;s++){ if(this.countAt(type,s)>0) return s; } return 0; },
     countAt(type,star){ return (this.data.cards[type]&&this.data.cards[type][star])||0; },
     bestStar(type){ const c=this.data.cards[type]; if(!c)return 0; let b=0; for(const k in c){ if(c[k]>0&&+k>b)b=+k; } return b; },
     owned(type){ return this.bestStar(type)>0; },
@@ -3224,9 +3253,14 @@ window.addEventListener("popstate", ()=>{
       if(x.growth)e.growth+=x.growth; if(x.gate)e.gate+=x.gate; }); return e; },
     applyEquipped(st){ if(!this.equipped||!this.equipped.length) return; const e=this.effOf(this.equipped);
       ORDER.forEach(k=>{ st[k]=Math.min(800,Math.round((st[k]||0)+(e.all||0)+(e.stat[k]||0))); }); },
-    consumeEquipped(){   // 카드 소모형: 장착한 카드 각 1장(최저 별부터) 소모 → 지속 플레이 유인
+    consumeEquipped(){   // ⑮ 내구도형: 장착한 카드는 육성 1회당 내구도 1 소모(최저 별 스택부터). 3번 쓰면 그 장 소멸.
       if(!this.equipped||!this.equipped.length) return; this.load();
-      this.equipped.forEach(type=>{ for(let s=1;s<=MAXSTAR;s++){ if(this.countAt(type,s)>0){ this.add(type,s,-1); break; } } });
+      if(!this.data.wear) this.data.wear={};
+      this.equipped.forEach(type=>{ const s=this.consumeTarget(type); if(!s) return;
+        const k=type+':'+s, used=(this.data.wear[k]||0)+1;
+        if(used>=this.DUR_MAX){ delete this.data.wear[k]; this.add(type,s,-1); }   // 내구도 소진 → 그 장 소멸(add가 잔여 wear 정리)
+        else this.data.wear[k]=used;
+      });
       this.persist();
     },
 
@@ -3487,16 +3521,31 @@ window.addEventListener("popstate", ()=>{
       this.data.runs++; this.persist();
       return {drops:dropInfo, joinMsg, debuted, newRid, titles, newRecord, fans:fansV};
     },
+    // ⑳⑲ 드랍 재설계(재율애비 확정): 최다 훈련영역 1장 확정 + 랜덤 추가 최대 2장(안 나올 수도).
+    //   랜덤은 레어도 차등확률(N>R>SR>SSR>UR, 상위등급도 뜸) + 육성 등급으로 약간 보정. ⚠️수치 임시(밸런싱 대기)
+    rollRandomCard(topK, gr){
+      // 레어도 추첨: 기본 N30/R54/SR12.4/SSR2.8/UR0.8(%) → 등급 gr(0~7)만큼 하위→상위 소폭 이동
+      const r=Math.random()*100, boost=gr*0.9;   // 등급 보정: SS(7)면 상위 쪽으로 ~6.3%p
+      const pSR=12.4+boost*0.62, pSSR=2.8+boost*0.28, pUR=0.8+boost*0.10, pR=54-boost*0.55;
+      if(r < pUR)                return RARPOOL[4][Math.floor(Math.random()*RARPOOL[4].length)];         // UR
+      if(r < pUR+pSSR)           return RARPOOL[3][Math.floor(Math.random()*RARPOOL[3].length)];         // SSR
+      if(r < pUR+pSSR+pSR){                                                                              // SR: 천재 또는 하이브리드
+        if(Math.random()<0.5) return 'genius';
+        const hybs=Object.keys(CARDS).filter(id=>CARDS[id].hyb);
+        return hybs[Math.floor(Math.random()*hybs.length)];
+      }
+      if(r < pUR+pSSR+pSR+pR){                                                                           // R: 스탯 카드 — 40% 훈련영역, 60% 랜덤(쌍 다양화)
+        const k = Math.random()<0.4 ? topK : ORDER[Math.floor(Math.random()*ORDER.length)];
+        return STATCARD[k];
+      }
+      return 'effort';                                                                                    // N
+    },
     rollCards(topK, topG, debuted, stats){
       const out=[]; const gr=grank(topG);   // 0(F)~7(SS)
       if(!debuted){ out.push('effort'); return out; }   // 데뷔 실패도 위로 1장
-      out.push(STATCARD[topK]);                          // 대표재능 카드 항상 1장(어떤 육성이든 대표 재능은 존재)
-      // 육성 성향을 카드가 반영: 6스탯 균등도 → 골고루형(노력파·천재=전스탯) vs 집중형(대표재능=특정스탯)
-      const vals=ORDER.map(k=>(stats&&stats[k])||0), mx=Math.max(1,...vals), mn=Math.min(...vals);
-      const even=(mn/mx)>=0.6;   // 최저스탯이 최고의 60%+ = 골고루 (⚠️임시 기준)
-      // 추가 카드는 확률(변수·뽑기 재미). 등급↑일수록 장수·고등급 확률↑. 성향: 골고루→노력파·천재(전스탯), 집중→대표재능(특정스탯)
-      if(Math.random() < 0.30 + gr*0.07) out.push(even?'effort':STATCARD[topK]);          // ② 2장째(등급 비례)
-      if(Math.random() < Math.max(0,(gr-2)*0.10)) out.push(even?'genius':STATCARD[topK]);  // ③ 3장째(고등급 대박, 골고루면 천재SR)
+      out.push(STATCARD[topK]);                          // ① 최다 훈련영역 카드 확정 1장
+      if(Math.random() < 0.34 + gr*0.05) out.push(this.rollRandomCard(topK,gr));   // ② 랜덤 1장째(등급 비례)
+      if(Math.random() < 0.06 + gr*0.05) out.push(this.rollRandomCard(topK,gr));   // ③ 랜덤 2장째(고등급일수록)
       return out.slice(0,3);
     },
 
@@ -3744,7 +3793,9 @@ window.addEventListener("popstate", ()=>{
     // 카드 상세 팝업(숙소 상세와 동일 패턴): 이름·레어도·별·효과·보유 별별 개수
     showCardDetail(type){ this.load(); const c=CARDS[type]; if(!c) return;
       const owned=this.owned(type), bs=this.bestStar(type);
-      const stars=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(type,s); if(n)stars.push(`★${s} × ${n}장`); }
+      const stars=[]; for(let s=1;s<=MAXSTAR;s++){ const n=this.countAt(type,s); if(!n)continue;
+        const w=this.wearOf(type,s);   // ⑮ 쓰던 장이 있으면 남은 내구도 표기
+        stars.push(`★${s} × ${n}장${w?` <span style="color:#f0a01e">(1장 🔋${this.DUR_MAX-w}/${this.DUR_MAX})</span>`:''}`); }
       const ov=document.getElementById('ov'); ov.className='ov on';
       ov.onclick=(e)=>{ if(e.target===ov){ ov.className='ov'; ov.onclick=null; } };
       ov.innerHTML=`<div class="ev-card" style="max-width:320px;text-align:center">
@@ -3918,7 +3969,8 @@ window.addEventListener("popstate", ()=>{
       const box=document.getElementById('cardPickList'); if(!box) return;
       const types=this.ownedTypes();
       box.innerHTML=`<div class="dg-chips" style="margin-top:12px">${types.map(id=>{ const c=CARDS[id], bs=this.bestStar(id);
-        return `<span class="dg-chip pick rr-${c.rr}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)}<br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
+        const ct=this.consumeTarget(id), dur=ct?this.durLeft(id,ct):0;   // ⑮ 이번에 닳을 장(최저 별)의 남은 내구도
+        return `<span class="dg-chip pick rr-${c.rr}" data-id="${id}" onclick="DG.toggle('${id}',this)">${this.rarBadge(id)} ${c.em} ${c.nm} ${this.starStr(bs)} <span class="muted" style="font-size:11px">🔋${dur}/${this.DUR_MAX}</span><br><span class="muted">${this.cardDesc(id,bs)}</span></span>`;}).join('')}</div>`;
     },
     toggle(id, el){
       const i=this.equipped.indexOf(id);
@@ -4023,9 +4075,13 @@ window.addEventListener("popstate", ()=>{
       const rrA=this.rrOf(a.id), rrB=this.rrOf(b.id);
       if(rrA!==rrB) return {kind:'err', msg:'합성은 같은 레어도끼리만 (R+R · SR+SR …)'};
       if(rrA>=4) return {kind:'err', msg:'UR은 더 합칠 수 없어'};
-      const result=this.combineResult(a.id,b.id);
-      if(!result) return {kind:'err', msg:'이 조합은 합성 규칙이 없어'};
-      return {kind:'combine', a, b, result, odds:this.combineOdds(rrA)};
+      // ㉕ 미리보기: R+R은 결과 확정(하이브리드), SR+ 이상은 풀 추첨이라 사전 롤 금지(실결과와 어긋남) → 후보군만
+      if(rrA===1){ const result=this.combineResult(a.id,b.id);
+        if(!result) return {kind:'err', msg:'이 조합은 합성 규칙이 없어'};
+        return {kind:'combine', mode:'det', a, b, result, owned:this.owned(result), odds:this.combineOdds(rrA)}; }
+      const pool=RARPOOL[rrA+1];
+      if(!pool) return {kind:'err', msg:'이 조합은 합성 규칙이 없어'};
+      return {kind:'combine', mode:'pool', a, b, pool, rrOut:rrA+1, odds:this.combineOdds(rrA)};
     },
     renderForge(){ if(!this.forge)this.forge=[null,null];
       [0,1].forEach(i=>{ const el=document.getElementById('fslot'+i); if(!el)return; const f=this.forge[i];
@@ -4040,7 +4096,15 @@ window.addEventListener("popstate", ()=>{
       if(v.kind==='incomplete'){ vd.innerHTML='<span class="muted">두 슬롯을 모두 채워줘</span>'; off(); btn.textContent='조합하기'; }
       else if(v.kind==='err'){ vd.innerHTML=`<span class="fv-err">✖ ${v.msg}</span>`; off(); btn.textContent='조합하기'; }
       else if(v.kind==='merge'){ vd.innerHTML=`<span class="fv-hi" style="color:#f0a01e">🔧 강화</span> · ★${v.star} → ★${v.star+1}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 🌟대성공 시 1장 보존</span>`; on('🔧 강화하기'); }
-      else { const rc=RAR_COLOR[this.rrOf(v.result)]; vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${rc}">${RARITY[this.rrOf(v.result)]}</b> ${esc(this.nmOf(v.result))}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 레어도 상승</span>`; on('⚗️ 합성하기'); }
+      else if(v.mode==='det'){   // ㉕ R+R 확정 결과: 도감 개방된 카드만 이름·확률 공개, 미개방은 ❔
+        if(v.owned){ const rc=RAR_COLOR[this.rrOf(v.result)]; vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${rc}">${RARITY[this.rrOf(v.result)]}</b> ${esc(this.nmOf(v.result))}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 레어도 상승</span>`; }
+        else vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${RAR_COLOR[this.rrOf(v.result)]}">${RARITY[this.rrOf(v.result)]}</b> ❔ 미개방 카드<br><span class="muted">합성해서 도감을 개방하면 결과·확률이 공개돼</span>`;
+        on('⚗️ 합성하기'); }
+      else {   // ㉕ SR+ 풀 추첨: 후보군만 표시(개방=이모지·미개방=❔), 하나라도 개방됐으면 확률 공개
+        const rc=RAR_COLOR[v.rrOut], anyOwned=v.pool.some(id=>this.owned(id));
+        const cand=v.pool.map(id=>this.owned(id)?this.emOf(id):'❔').join(' ');
+        vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${rc}">${RARITY[v.rrOut]}</b> ${v.pool.length}종 중 랜덤 <span style="font-size:15px">${cand}</span><br><span class="muted">${anyOwned?`성공 ${v.odds.gs+v.odds.s}% · 레어도 상승`:'합성해서 도감을 개방하면 확률이 공개돼'}</span>`;
+        on('⚗️ 합성하기'); }
     },
     doForge(){ const v=this.forgeVerdictInfo(); if(v.kind!=='merge'&&v.kind!=='combine') return;
       let res;
