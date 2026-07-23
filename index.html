@@ -2579,6 +2579,10 @@ function stopBgm(){
     BGMBUS.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.4); }catch(e){} }
 }
 function maybeStartBgm(){ if(bgmOn()&&!BGM_ON) startBgm(); }
+// ㉘ 탭 숨김/백그라운드 진입 시 오디오 전체 정지, 복귀 시 재개 (모바일 웹뷰 백그라운드 재생 버그 수정)
+document.addEventListener('visibilitychange', ()=>{ try{ if(!AC) return;
+  if(document.hidden){ AC.suspend(); } else { AC.resume(); } }catch(e){} });
+window.addEventListener('pagehide', ()=>{ try{ if(AC) AC.suspend(); }catch(e){} });
 // 첫 탭에서 오디오 unlock + BGM 시작(자동재생 정책 대응)
 document.addEventListener('pointerdown',function _once(){ ensureAudio(); maybeStartBgm();
   document.removeEventListener('pointerdown',_once); },{once:true});
@@ -3384,6 +3388,7 @@ window.addEventListener("popstate", ()=>{
       if(this.idkeyInLineup(r.idkey, slotId)) return {err:'dup', name:r.name};
       this.data.lineup[slotId]=rid; this.persist(); return {ok:true}; },
     unassign(slotId){ this.load(); delete this.data.lineup[slotId]; this.persist(); },
+    clearLineup(){ this.load(); this.data.lineup={}; this.persist(); this.renderOffice(); try{toast('편성을 비웠어');}catch(e){} },   // ⑤ 편성 전체 비우기(전속은 groups에 있어 무관)
     quickAssign(rid){ this.load(); const r=this.rosterById(rid); if(!r)return {err:'noidol'};
       if(this.isCommitted(rid)) return {err:'committed'};
       if(this.idkeyInLineup(r.idkey,null)) return {err:'dup', name:r.name};
@@ -3569,6 +3574,7 @@ window.addEventListener("popstate", ()=>{
          </div>`:''}
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
+           ${gi.n>0?`<button class="btn ghost" style="flex:0 0 auto;padding:15px 14px" onclick="DG.clearLineup()" title="편성 전체 비우기">↺</button>`:''}
            <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 숙소 (${(function(cm){return (DG.data.roster||[]).filter(r=>!cm.has(r.rid)).length;})(this.committedRids())})</button>
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
@@ -4195,6 +4201,13 @@ window.addEventListener("popstate", ()=>{
               <small>· ${esc(r.name||'')}${r.title?' · '+DG.titleMini(r.title):(r.ending?' · '+esc(r.ending):'')}</small></span>
             <span class="sc">${fmt(r.fans||0)}</span></div>`;
         }).join('');
+        // ㉒ 내 최근 기록이 표시범위 밖이면 맨 밑 고정줄 (서버가 상위 20만 줘서 정확 순위는 미상 → 기록으로 표시)
+        const _inList=list.some(r=>r._me||(meName&&r.name===meName));
+        if(!_inList && meName && Game.lastResult && Game.lastResult.fans!=null){
+          box.innerHTML+=`<div class="lb-row me"><span class="r">…</span>
+            <span class="who">⭐ ${esc(meName)} <b style="color:var(--accent)">· 내 기록 (랭크 집계 밖)</b></span>
+            <span class="sc">${fmt(Game.lastResult.fans)}</span></div>`;
+        }
       });
     },
     renderLeague(serverList){
@@ -4203,6 +4216,8 @@ window.addEventListener("popstate", ()=>{
       const mine=_rg? [{name:_rg.name, logo:_rg.logo||'🎤', score:this.groupScore(_rg), n:_rg.n||0, me:true}] : [];
       let others=(Array.isArray(serverList)&&serverList.length)? serverList.concat(this._leagueSeed()).slice(0,14) : this._leagueSeed();   // 서버 그룹 + 더미(시드) 보충
       if(_rg) others=others.filter(o=>o.name!==_rg.name);   // 서버에 올라간 내 대표그룹이 fetch로 되돌아온 중복 제거(내 그룹은 mine으로 따로 표시)
+      const _myAg=(this.agency()&&this.agency().name)||'';
+      if(_myAg) others=others.filter(o=>!(o.server && o.agency===_myAg));   // ⑧ 내 기획사의 옛 제출분(해체 그룹 포함) 차트 잔존 제거 — 내 것은 대표(mine)만
       const board=others.concat(mine).sort((a,b)=>b.score-a.score);
       const myBest = mine.length? mine.reduce((a,b)=>b.score>a.score?b:a) : null;
       const head=document.getElementById('leagueHead');
@@ -4231,6 +4246,11 @@ window.addEventListener("popstate", ()=>{
             <span class="who"><span class="lg-logo">${this.logoHtml(r.logo,24)}</span> ${esc(r.name)}${r.me?' <b style="color:var(--accent)">·'+t("lg_me")+'</b>':''}<small>${r.n}/9</small></span>
             <span class="sc">${r.score.toLocaleString()}</span>${chal}</div>`;
         }).join("");
+        // ㉒ 내 순위가 표시범위(30) 밖이어도 맨 밑 고정줄로 몇 등인지 보여줌 (등록한 보람)
+        if(myBest){ const myR=board.findIndex(x=>x===myBest)+1;
+          if(myR>30) box.innerHTML+=`<div class="lb-row me"><span class="r">…</span>
+            <span class="who"><span class="lg-logo">${this.logoHtml(myBest.logo,24)}</span> ${esc(myBest.name)} <b style="color:var(--accent)">· 내 순위 ${myR}등</b></span>
+            <span class="sc">${myBest.score.toLocaleString()}</span></div>`; }
       }
       const note=document.getElementById('leagueNote');
       if(note) note.textContent = this._leagueServer ? t("lg_note_server") : t("lg_note_local");
