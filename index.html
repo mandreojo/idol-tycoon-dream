@@ -1700,6 +1700,8 @@ const Game = {
     s.busy=false;
     if(w===sc.debut){ this.render(); return this.debutJudge(); }
     if(sc.compets[w]){ this.render(); return this.runCompet(w); }
+    // 안전망: 관문 주차를 건너뛴 세이브(스케줄 변경 후 이어하기 등)가 총 턴을 넘겨도 영원히 안 끝나던 잠복버그 → 최종 관문 즉시 실행
+    if(w>sc.total){ s.week=sc.total; this.render(); return this.runCompet(sc.total); }
     this.render();
     if(w>=3 && Math.random()<0.25){ s.busy=true; this.showEvent(()=>{ s.busy=false; this.render(); }); }
   },
