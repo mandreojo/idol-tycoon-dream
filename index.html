@@ -354,7 +354,7 @@
   .cs-mascot{width:72px;height:72px;border-radius:50%;object-fit:cover;flex:none;background:#322748;
     border:3px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.4);animation:bob 1.7s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-  .cs-bubble{background:var(--panel);color:#2b2530;border-radius:16px 16px 16px 4px;padding:12px 15px;
+  .cs-bubble{background:var(--panel);color:var(--txt);border:1px solid rgba(255,255,255,.14);border-radius:16px 16px 16px 4px;padding:12px 15px;   /* 다크 잔재 수정: 다크 배경+다크 글자라 대사 안 보이던 버그 */
     font-size:14px;font-weight:700;line-height:1.45;text-align:left;box-shadow:0 8px 20px rgba(0,0,0,.28)}
   .cs-tap{position:absolute;bottom:26px;left:0;right:0;color:rgba(255,255,255,.6);font-size:13px;
     z-index:1;animation:blink 1.4s ease-in-out infinite}
@@ -859,7 +859,7 @@
 </div>
 
 <!-- 콘텐츠(다국어·아이돌DB) 갱신 시 v= 날짜를 올려 캐시 무효화 → 재방문 유저에게도 반영 -->
-<script src="i18n.js?v=20260722a"></script>
+<script src="i18n.js?v=20260723a"></script>
 <script src="idols.js?v=20260715d"></script>
 <script>
 // 검색용 아이돌: idols.js의 window.IDOL_DB (최애돌 실데이터 상위 250명). 로드 실패 시 빈 배열.
@@ -2928,7 +2928,7 @@ window.addEventListener("popstate", ()=>{
   .dg-slot{background:var(--panel);border:1.5px dashed #ffc7d5;border-radius:14px;padding:9px 5px;text-align:center;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
   .dg-slot-x{position:absolute;top:2px;right:6px;font-size:13px;line-height:1;color:#d9a3b0;cursor:pointer;padding:4px;z-index:2}
   .dg-slot-x:hover{color:#c0392b}
-  .dg-slot.filled{border-style:solid;border-color:#ffe0e8}
+  .dg-slot.filled{border-style:solid;border-color:rgba(255,255,255,.28)}
   .dg-pos{font-size:11px;color:#8a8a97}
   .dg-av{width:46px;height:46px;border-radius:50%;background:#322748 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:22px}
   .dg-av.empty{background:none;color:#ffb3c6;font-size:26px}
@@ -2936,7 +2936,7 @@ window.addEventListener("popstate", ()=>{
   .dg-gr{font-size:12px;color:#ec3a5c;font-weight:bold}
   .dg-sub{display:flex;justify-content:space-between;align-items:center;margin:16px 0 7px;font-size:15px}
   .dg-chips{display:flex;flex-wrap:wrap;gap:6px}
-  .dg-chip{display:inline-block;background:var(--panel);border:1.5px solid #ffe0e8;border-radius:999px;padding:6px 11px;font-size:12.5px;line-height:1.35}
+  .dg-chip{display:inline-block;background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12.5px;line-height:1.35}
   .dg-chip.rare{border-color:#ffb43e;background:rgba(255,180,60,.13)}
   .dg-chip.pick{cursor:pointer}
   .dg-chip.pick.on{border-color:#ec3a5c;background:var(--panel2);box-shadow:0 0 0 2px rgba(236,58,92,.15)}
@@ -3009,7 +3009,7 @@ window.addEventListener("popstate", ()=>{
   .cr-maxb{font-size:24px}
   /* 카드 보관함: 필터칩 · 도감 미보유 */
   .cfilter{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
-  .cf-chip{border:1px solid #ffdbe1;background:var(--panel);color:#9a8f9a;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  .cf-chip{border:1px solid var(--line);background:var(--panel);color:var(--sub);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer}
   .cf-chip.on{background:#ec3a5c;color:#fff;border-color:#ec3a5c}
   .card-row.locked{opacity:.62;filter:grayscale(.75)}
   .cr-own{color:#18b06e;font-weight:800;font-size:13px}
@@ -3052,17 +3052,17 @@ window.addEventListener("popstate", ()=>{
   .forge-slot .fs-plus{font-size:36px;color:#ffb0c1}
   .forge-slot .fs-em{font-size:42px;line-height:1}
   .forge-slot .fs-nm{font-size:13px;font-weight:700;line-height:1.2}
-  .forge-slot .fs-meta{font-size:11px;color:#9a8f9a}
+  .forge-slot .fs-meta{font-size:11px;color:var(--sub)}
   .forge-slot .fs-x{position:absolute;top:5px;right:8px;font-size:14px;color:#c9b8c0;font-weight:700}
   .forge-op{font-size:24px;color:#c9a0d6;font-weight:800;flex:0 0 auto}
   .forge-verdict{min-height:50px;text-align:center;font-size:14px;line-height:1.55;margin-bottom:12px;display:flex;flex-direction:column;justify-content:center}
   .fv-hi{font-weight:800} .fv-err{color:#cc8a8a}
   .forge-pick{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;margin-bottom:8px}
   .fp-chip{display:flex;align-items:center;gap:10px;width:100%;font-family:inherit;text-align:left;
-    border:1.5px solid #ffe0e8;background:var(--panel);border-radius:12px;padding:9px 12px;cursor:pointer;font-size:14px}
+    border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;cursor:pointer;font-size:14px}
   .fp-chip.rare{border-color:#ffb43e;background:rgba(255,180,60,.13)}
   .fp-chip .fp-nm{flex:1;min-width:0}
-  .fp-chip .fp-meta{color:#9a8f9a;font-size:12px;font-weight:700;flex:0 0 auto}
+  .fp-chip .fp-meta{color:var(--sub);font-size:12px;font-weight:700;flex:0 0 auto}
   /* 합성 겹침 연출 */
   @keyframes faL{0%{transform:translateX(-42px) scale(1);opacity:1}55%{transform:translateX(0) scale(1.05)}100%{transform:translateX(0) scale(.35);opacity:0}}
   @keyframes faR{0%{transform:translateX(42px) scale(1);opacity:1}55%{transform:translateX(0) scale(1.05)}100%{transform:translateX(0) scale(.35);opacity:0}}
@@ -3074,7 +3074,7 @@ window.addEventListener("popstate", ()=>{
   .forge-collide .fa-glow{position:absolute;width:90px;height:90px;border-radius:50%;
     background:radial-gradient(circle,#fff 0%,#ffd36b 45%,rgba(255,107,138,0) 72%);animation:faGlow .82s ease-out .28s forwards;opacity:0}
   .forge-anim-msg{text-align:center;font-weight:700;color:#a855f7;margin-top:2px}
-  .cdex-prog{text-align:center;font-size:13px;color:#9a8f9a;margin:2px 0 10px}
+  .cdex-prog{text-align:center;font-size:13px;color:var(--sub);margin:2px 0 10px}
   .cdex-prog b{color:#ec3a5c}
   .ag-logo{display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:var(--panel2);border:2px solid var(--line);font-size:44px;cursor:pointer;overflow:hidden}
   .ag-emojis{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
@@ -3908,7 +3908,7 @@ window.addEventListener("popstate", ()=>{
       const head=document.getElementById('achvHead'); if(head) head.innerHTML=`달성 <b style="color:var(--accent)">${done} / ${st.length}</b>`;
       box.innerHTML=st.map(x=>{ const a=x.a;
         const hid=a.hidden&&!x.done;   // ㉔ 히든 업적: 달성 전엔 정체 숨김
-        return `<div style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid ${x.done?'#ffd9a0':'#f1e3e7'};border-radius:14px;padding:12px 14px;margin-bottom:8px;${x.done?'':'opacity:.7'}">
+        return `<div style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid ${x.done?'rgba(240,160,30,.55)':'var(--line)'};border-radius:14px;padding:12px 14px;margin-bottom:8px;${x.done?'':'opacity:.7'}">
           <span style="font-size:26px;flex:0 0 auto;${x.done?'':'filter:grayscale(1)'}">${hid?'❓':a.ic}</span>
           <div style="flex:1;min-width:0">
             <div style="font-weight:bold">${hid?'???':a.nm}${x.done?' <span style="color:#e8890c;font-size:12px">달성 ✓</span>':''}</div>
@@ -4147,7 +4147,7 @@ window.addEventListener("popstate", ()=>{
       const grid=document.getElementById('dexGrid');
       if(grid) grid.innerHTML = groups.length
         ? `<div style="display:flex;flex-direction:column;gap:9px">${groups.map(g=>
-           `<div style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid #f4dde3;border-radius:14px;padding:12px 14px;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">
+           `<div style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">
               <span style="flex:0 0 auto">${this.logoHtml(g.logo,40)}</span>
               <div style="flex:1;min-width:0"><div style="font-weight:bold;font-size:15px">${esc(g.name)}</div>
                 <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명 · 전속</div></div>
