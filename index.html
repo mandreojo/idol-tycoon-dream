@@ -1994,9 +1994,11 @@ const Game = {
               E: ['새내기 연습생','햇병아리 연습생','미가공 원석','응원이 필요한 새싹'],
               F: ['새내기 연습생','왕초보 연습생','미가공 원석','대기만성(예정)']};
     const EMO={SS:'👑',S:'🌟',A:'✨',B:'🎤',C:'🎵',D:'🌱',E:'🌱',F:'🌱'};
-    const pool=OT[overall]||['연습생'];
+    // 서사 부조화 방지: 종합등급 낮아도 파이널 우승/입상했으면 우승 서사가 우선 ("1위인데 새싹" 방지)
+    let pool=OT[overall]||['연습생'], emoji=allround?'🌈':(EMO[overall]||'🎤');
+    if(finalRank===1 && ['F','E','D','C','B'].includes(overall)){ pool=['이변의 우승자','기적의 신데렐라','파이널의 복병']; emoji='🏆'; }
+    else if(finalRank<=3 && finalRank>=1 && ['F','E','D','C'].includes(overall)){ pool=['파이널 다크호스','무대 위의 반전']; emoji='✨'; }
     const name=(allround?'올라운드 ':'')+pool[Math.floor(Math.random()*pool.length)];
-    const emoji=allround?'🌈':(EMO[overall]||'🎤');
     return {...raw, name, emoji, overall, allround};
   },
   _endingRaw(reachedWorld, finalRank){
