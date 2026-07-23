@@ -2736,6 +2736,9 @@ window.addEventListener("popstate", ()=>{
   .hw-v small{font-size:11px;color:var(--sub);font-weight:600}
   .hw-s{font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hw-bar{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
+  .hw.hw-wide{display:flex;align-items:center;gap:12px;text-align:left;margin-top:13px;padding:13px 15px}
+  .hw-wide-m{flex:1;min-width:0}
+  .hw-wide .hw-bar{margin-top:7px}
   .hw-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
   .rank-seg{margin:2px 0 13px}
   .rank-seg2{margin:-6px 0 13px}
@@ -3468,16 +3471,16 @@ window.addEventListener("popstate", ()=>{
            <button class="hp-edit" onclick="DG.editAgency()" title="기획사 정보 수정">✏️</button>
          </div>
          <div class="hp-stats">
-           <div class="hp-stat" onclick="DG.goRoster()"><b>${freeCount}</b><span>무소속</span></div>
-           <div class="hp-stat" onclick="DG.showLeague()"><b>${groups.length}</b><span>데뷔 그룹</span></div>
-           <div class="hp-stat" onclick="DG.goCards()"><b>${cardTypes.length}</b><span>카드</span></div>
+           <div class="hp-stat"><b>${freeCount}</b><span>무소속</span></div>
+           <div class="hp-stat"><b>${groups.length}</b><span>데뷔 그룹</span></div>
+           <div class="hp-stat"><b>${cardTypes.length}</b><span>카드</span></div>
          </div>`;
 
       // ── 트렌드 배너(경쟁전③): 마스코트 리니가 이번 시즌 대세 브리핑 ──
       const _trend=this.currentTrend(), _tdays=this.seasonEndsInDays();
       const _thot=(_trend.pos==='center'?'비주얼':(POSTYPES[_trend.pos]||{}).nm||'');
       document.getElementById('homeTrend').innerHTML=
-        `<div class="trend-banner" onclick="DG.showLeague()">
+        `<div class="trend-banner">
            <span class="trend-mascot">🐤</span>
            <div class="trend-txt"><div class="trend-nm">${_trend.ic} 이번 시즌 · <b>${esc(_trend.nm)}</b> <span class="trend-days">D-${_tdays}</span></div>
              <div class="trend-desc">리니 "${esc(_trend.desc)}! <b>${esc(_thot)}</b> 강한 그룹이 유리해"</div></div>
@@ -3502,7 +3505,6 @@ window.addEventListener("popstate", ()=>{
                <div class="hero-d">${tier.ic} ${esc(tier.nm)} · ${rep.grade}등급 · ${rep.n}/9명</div></div>
            </div>
            <div class="hero-btns">
-             <button class="btn ghost" onclick="DG.showLeague()">🏆 랭킹</button>
              <button class="btn ghost" onclick="DG.shareSavedGroup(${rep.gid})">📸 그룹 정보</button>
            </div>
          </div>`;
@@ -3533,17 +3535,12 @@ window.addEventListener("popstate", ()=>{
       else if(!_onboard){ _cta=`<button class="btn" onclick="Game.goSelect()">＋ 새 연습생 육성</button>`; }
       document.getElementById('homeCta').innerHTML=_cta;
       const achvD=this.achvDone(), achvT=ACHV.length, achvPct=achvT?Math.round(achvD/achvT*100):0;
-      let chartW;
-      if(rep){ const tier=this.battleTier(this.battleSeason().pts);
-        chartW=`<div class="hw-v">${tier.ic}</div><div class="hw-s">${esc(tier.nm)}</div>`; }
-      else { chartW=`<div class="hw-v">–</div><div class="hw-s">데뷔조 등록</div>`; }
+      // ㉖ 차트·카드 위젯은 하단탭과 중복 진입이라 제거(이동은 탭바로). 업적(탭 아님)만 홈 위젯 유지.
       document.getElementById('homeWidgets').innerHTML=
-        `<div class="hw-grid">
-           <div class="hw" onclick="DG.goAchv()"><div class="hw-ic">🏅</div><div class="hw-t">업적</div>
-             <div class="hw-v">${achvD}<small>/${achvT}</small></div><div class="hw-bar"><i style="width:${achvPct}%"></i></div></div>
-           <div class="hw" onclick="DG.showLeague()"><div class="hw-ic">🏆</div><div class="hw-t">그룹 차트</div>${chartW}</div>
-           <div class="hw" onclick="DG.goCards()"><div class="hw-ic">🎴</div><div class="hw-t">카드</div>
-             <div class="hw-v">${cardTypes.length}<small>/28</small></div><div class="hw-s">수집</div></div>
+        `<div class="hw hw-wide" onclick="DG.goAchv()">
+           <span class="hw-ic">🏅</span>
+           <div class="hw-wide-m"><div class="hw-t">업적</div><div class="hw-bar"><i style="width:${achvPct}%"></i></div></div>
+           <div class="hw-v">${achvD}<small>/${achvT}</small></div>
          </div>`;
 
       // 홈 진입 시 새 업적 감지
@@ -3564,7 +3561,8 @@ window.addEventListener("popstate", ()=>{
           <span class="dg-av empty">＋</span><div class="dg-nm muted">배치</div></div>`;
       }).join('');
       document.getElementById('dgGroup').innerHTML=
-        `<div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=3?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
+        `<div class="dg-sub" style="margin-top:15px"><b>📋 데뷔조 편성</b><span class="muted">${gi.n}/9명</span></div>
+         <div class="dg-head"><div class="dg-h-l">${esc(this.groupName())}${gi.n>=3?' <span style="color:#18b06e;font-size:11px">● 활동중</span>':''}</div>
           <div class="dg-h-g">${gi.n? gi.grade : '–'}</div>
           <div class="dg-h-s muted">${gi.n? `합산 ${gi.sum} · ${gi.n}/9명` : '숙소에서 3명 이상 편성하면 활동 시작'}</div></div>
          <div class="dg-grid nine">${slotCells}</div>
@@ -3574,28 +3572,28 @@ window.addEventListener("popstate", ()=>{
          </div>`:''}
          <div style="display:flex;gap:8px;margin-top:11px">
            <button class="btn ghost" style="flex:1" onclick="DG.autoFill()">🎯 자동 편성</button>
-           ${gi.n>0?`<button class="btn ghost" style="flex:0 0 auto;padding:15px 14px" onclick="DG.clearLineup()" title="편성 전체 비우기">↺</button>`:''}
-           <button class="btn ghost" style="flex:1" onclick="DG.goRoster()">📋 연습생 숙소 (${(function(cm){return (DG.data.roster||[]).filter(r=>!cm.has(r.rid)).length;})(this.committedRids())})</button>
+           ${gi.n>0?`<button class="btn ghost" style="flex:1" onclick="DG.clearLineup()">↺ 비우기</button>`:''}
          </div>
          <div style="display:flex;gap:8px;margin-top:8px">
            ${shown.length<MAX_MEMBERS? `<button class="btn ghost" style="flex:1;font-size:13px" onclick="DG.addSlot()">＋ 자리 추가 <span class="muted">(${shown.length}/9)</span></button>` : `<span class="muted" style="flex:1;text-align:center;font-size:12px;align-self:center">멤버 9명 꽉 참 (최대)</span>`}
            ${gi.n>=3? `<button class="btn ghost" style="flex:1" onclick="DG.previewGroupCard()">📸 그룹 정보</button>`:''}
          </div>
          ${gi.n>=3? `<button class="btn" style="margin-top:8px" onclick="DG.doDebut()">🎬 이 데뷔조 데뷔시키기 <span style="opacity:.8;font-size:12px">(${gi.n}명 전속 확정)</span></button>`:''}`;
-      // 데뷔(저장)한 그룹 목록 — 멤버 전속 (groups는 상단에서 선언)
+      // ① 대표는 히어로에 1번만 표시 — 목록은 '다른 데뷔 그룹'(비대표)만. 대표 교체는 여기 ⭐로(대표 실수 해체 방지 겸).
       const _repGid=this.repGroupGid();
-      document.getElementById('dgGroups').innerHTML = groups.length?
-        `<div class="dg-sub" style="margin-top:15px"><b>🏆 데뷔한 그룹</b><span class="muted">${groups.length}/5팀</span></div>
-         <div style="display:flex;flex-direction:column;gap:8px;margin-top:7px">${groups.map(g=>{ const isRep=g.gid===_repGid;
-           return `<div style="display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid ${isRep?'#f0c04a':'#f4dde3'};border-radius:14px;padding:10px 13px">
+      const _others=groups.filter(g=>g.gid!==_repGid);
+      document.getElementById('dgGroups').innerHTML = _others.length?
+        `<div class="dg-sub" style="margin-top:15px"><b>💼 다른 데뷔 그룹</b><span class="muted">전체 ${groups.length}/5팀</span></div>
+         <div style="display:flex;flex-direction:column;gap:8px;margin-top:7px">${_others.map(g=>
+           `<div style="display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 13px">
               <span style="flex:0 0 auto;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})">${this.logoHtml(g.logo,32)}</span>
-              <div style="flex:1;min-width:0;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})"><div style="font-weight:bold">${esc(g.name)}${isRep?' <span style="color:#e59500;font-size:11px">⭐대표</span>':''}</div>
+              <div style="flex:1;min-width:0;cursor:pointer" onclick="DG.shareSavedGroup(${g.gid})"><div style="font-weight:bold">${esc(g.name)}</div>
                 <div class="muted" style="font-size:12px">${g.grade} · 합산 ${g.sum} · ${g.n}/9명</div></div>
               <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 auto">
-                ${isRep?'<span class="muted" style="font-size:10px;text-align:center;line-height:1.3">순위전<br>출전중</span>':`<button class="cr-btn" style="padding:5px 9px;font-size:11px" onclick="DG.setRep(${g.gid})">⭐대표</button>`}
+                <button class="cr-btn" style="padding:5px 9px;font-size:11px" onclick="DG.setRep(${g.gid})">⭐대표</button>
                 <button class="cr-btn off" style="padding:5px 9px;font-size:11px;background:rgba(255,92,107,.16);color:#ff8a95;border:1px solid rgba(255,92,107,.4)" onclick="DG.disbandGroup(${g.gid})">해체</button>
               </div>
-            </div>`;}).join('')}</div>` : '';
+            </div>`).join('')}</div>` : '';
     },
     // ===== 편성(포지션 배치) =====
     openAssign(slotId){ this.load(); this._slot=slotId; this.renderAssign(); show('s-assign'); },
