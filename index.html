@@ -4617,12 +4617,9 @@ window.addEventListener("popstate", ()=>{
       const gs=Math.round(sTot*0.15), s=sTot-gs, f=100-sTot;
       return {gs,s,f};   // 🌟대성공(재료1 보존)·✨성공·💦실패(재료1 소실)
     },
-    combineResult(idA, idB){   // 결과 카드 id 결정 (N+N=랜덤 R 승격 · R+R=두 스탯 하이브리드 · 그 외=상위 풀 추첨)
+    combineResult(idA, idB){   // 결과 카드 id 결정 (R+R=두 스탯 하이브리드 · 그 외=상위 풀 추첨). 같은 카드끼리는 강화(합성 아님)
       const cA=CARDS[idA], cB=CARDS[idB];
-      if(!cA||!cB||cA.rr!==cB.rr) return null;
-      // N(노력파)은 유일 카드라 R로 올릴 길이 없었음 → 노력파 2장 = 랜덤 R 스탯카드 승격(도감 상위진입 경로 확보)
-      if(cA.rr===0){ if(idA!==idB) return null; return STATCARD[ORDER[Math.floor(Math.random()*ORDER.length)]]; }
-      if(idA===idB) return null;   // R+ 부터는 같은 카드끼리 합성 불가(강화로)
+      if(!cA||!cB||idA===idB||cA.rr!==cB.rr) return null;   // 같은 카드끼리 합성 불가(강화로) — 전 카드 일관
       if(cA.rr===1){ const ka=Object.keys(cA.eff.stat||{})[0], kb=Object.keys(cB.eff.stat||{})[0];
         if(!ka||!kb||ka===kb) return null;
         const key=[ka,kb].sort((x,y)=>ORDER.indexOf(x)-ORDER.indexOf(y));
@@ -4632,16 +4629,12 @@ window.addEventListener("popstate", ()=>{
     },
     combine(idA, starA, idB, starB){
       this.load();
-      const cA0=CARDS[idA], cB0=CARDS[idB];
-      const promote = idA===idB && cA0 && cA0.rr===0;   // 노력파 승격만 같은 카드 예외
-      if(idA===idB && !promote) return {err:'same'};
-      const cA=cA0, cB=cB0;
+      if(idA===idB) return {err:'same'};
+      const cA=CARDS[idA], cB=CARDS[idB];
       if(!cA||!cB) return {err:'bad'};
       if(cA.rr!==cB.rr) return {err:'rrdiff'};
       if(cA.rr>=4) return {err:'urmax'};
-      // 재고 확인: 승격이고 같은 별이면 2장 필요
-      if(promote && starA===starB){ if(this.countAt(idA,starA)<2) return {err:'need'}; }
-      else if(this.countAt(idA,starA)<1 || this.countAt(idB,starB)<1) return {err:'need'};
+      if(this.countAt(idA,starA)<1 || this.countAt(idB,starB)<1) return {err:'need'};
       const result=this.combineResult(idA, idB);
       if(!result) return {err:'norule'};
       const preOwn=this.owned(result);
@@ -4721,13 +4714,7 @@ window.addEventListener("popstate", ()=>{
     clearForge(i){ if(this.forge)this.forge[i]=null; this.renderForge(); },
     forgeVerdictInfo(){ const a=this.forge&&this.forge[0], b=this.forge&&this.forge[1];
       if(!a||!b) return {kind:'incomplete'};
-      // 노력파(N) 2장 = 강화가 아니라 'R 승격 합성'(같은 카드지만 예외). 유일 N카드의 상위진입 경로.
-      if(a.id===b.id && this.rrOf(a.id)===0){
-        const enough = a.star===b.star ? this.countAt(a.id,a.star)>=2 : (this.countAt(a.id,a.star)>=1 && this.countAt(b.id,b.star)>=1);
-        if(!enough) return {kind:'err', msg:'노력파 2장이 필요해'};
-        return {kind:'combine', mode:'promote', a, b, rrOut:1, odds:this.combineOdds(1)};
-      }
-      if(a.id===b.id){
+      if(a.id===b.id){   // 같은 카드끼리 = 강화(별↑). 노력파도 동일(전 카드 일관 규칙)
         if(a.star!==b.star) return {kind:'err', msg:'같은 카드는 같은 ★끼리만 강화돼'};
         if(a.star>=MAXSTAR) return {kind:'err', msg:'이미 ★5 (최대)'};
         if(this.countAt(a.id,a.star)<2) return {kind:'err', msg:'같은 ★ 2장이 필요해'};
@@ -4761,9 +4748,6 @@ window.addEventListener("popstate", ()=>{
         if(v.owned){ const rc=RAR_COLOR[this.rrOf(v.result)]; vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${rc}">${RARITY[this.rrOf(v.result)]}</b> ${esc(this.nmOf(v.result))}<br><span class="muted">성공 ${v.odds.gs+v.odds.s}% · 레어도 상승</span>`; }
         else vd.innerHTML=`<span class="fv-hi" style="color:#a855f7">⚗️ 합성</span> → <b style="color:${RAR_COLOR[this.rrOf(v.result)]}">${RARITY[this.rrOf(v.result)]}</b> ❔ 미개방 카드<br><span class="muted">합성해서 도감을 개방하면 결과·확률이 공개돼</span>`;
         on('⚗️ 합성하기'); }
-      else if(v.mode==='promote'){   // N(노력파)→ 랜덤 R 승격
-        vd.innerHTML=`<span class="fv-hi" style="color:#3d7bd6">⚗️ 승격</span> → <b style="color:#3d7bd6">R</b> 랜덤 스탯 카드<br><span class="muted">노력파 2장 → 성공 ${v.odds.gs+v.odds.s}% · R 카드 획득</span>`;
-        on('⚗️ 승격하기'); }
       else {   // ㉕ SR+ 풀 추첨: 후보군만 표시(개방=이모지·미개방=❔), 하나라도 개방됐으면 확률 공개
         const rc=RAR_COLOR[v.rrOut], anyOwned=v.pool.some(id=>this.owned(id));
         const cand=v.pool.map(id=>this.owned(id)?this.emOf(id):'❔').join(' ');
