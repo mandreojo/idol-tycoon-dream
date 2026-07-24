@@ -4366,15 +4366,17 @@ window.addEventListener("popstate", ()=>{
         stars.push(`★${s} <b>${n}장</b>${w?` <span style="color:#f0a01e">🔋${this.DUR_MAX-w}/${this.DUR_MAX}</span>`:''}`); }
       const rrName=['평범','희귀','영웅','전설','신화'][c.rr]||'';
       // 앞면 = 실물 카드(효과 요약을 카드 안 meta에)
-      const front=this.tcardHTML(type,{star:bs||1, locked:!owned, meta: owned? esc(this.cardDesc(type,bs)) : ((c.hyb||c.rr>=3)?'⚗️ 조합소 합성':'육성으로 획득')});
-      // 뒷면 = 상세 정보
+      const front=this.tcardHTML(type,{star:bs||1, locked:!owned, meta: owned? esc(this.cardDesc(type,bs)) : this.cardOrigin(type)});
+      // 뒷면 = 상세 정보 (효과 + 획득 경로 항상 명시 — 직관성)
       const back=`<div class="fb-name">${this.rarBadge(type)} ${owned?esc(c.nm):'???'}</div>
         <div class="fb-sub">${RARITY[c.rr]}(${rrName})${owned?` · 최고 ${this.starStr(bs)}`:''}</div>
         <div class="fb-rows" style="margin-top:7px">
           <div class="fb-sub" style="margin:0 0 3px">⚡ 효과</div>
-          <div style="font-size:12.5px;line-height:1.5">${owned?esc(this.cardDesc(type,bs)):(c.hyb||c.rr>=3?'미보유 — 조합소에서 합성':'미보유 — 육성을 마치면 획득')}</div>
-          ${owned&&stars.length?`<div class="fb-sub" style="margin:9px 0 3px">🎴 보유</div><div style="font-size:12.5px;line-height:1.7">${stars.join(' · ')}</div>`:''}
+          <div style="font-size:12.5px;line-height:1.5">${esc(this.cardDesc(type, owned?bs:1))}</div>
           ${c.eff&&(c.eff.growth||c.eff.gate)?`<div class="fb-sub" style="margin:9px 0 3px">✨ 특수</div><div style="font-size:12px;color:#c3b6dd">${c.eff.growth?`육성 성장률 +${Math.round(c.eff.growth*100)}% `:''}${c.eff.gate?`관문 파워 +${Math.round(c.eff.gate*100)}%`:''}</div>`:''}
+          <div class="fb-sub" style="margin:9px 0 3px">📥 획득 방법</div>
+          <div style="font-size:12px;color:#c3b6dd;line-height:1.55">${this.cardOrigin(type)}</div>
+          ${owned&&stars.length?`<div class="fb-sub" style="margin:9px 0 3px">🎴 보유</div><div style="font-size:12.5px;line-height:1.7">${stars.join(' · ')}</div>`:''}
         </div>`;
       this.showFlipCard(front, back, '');
     },
@@ -4659,6 +4661,16 @@ window.addEventListener("popstate", ()=>{
     rrOf(id){ return (CARDS[id]||{}).rr; },
     emOf(id){ return (CARDS[id]||{}).em||'🎴'; },
     nmOf(id){ return (CARDS[id]||{}).nm||id; },
+    // 카드별 정확한 획득 경로(직관성 — 도감·상세에 명시). 하이브리드는 재료 R카드 2종을 이름으로.
+    cardOrigin(id){ const c=CARDS[id]; if(!c) return '';
+      if(c.rr===0) return '🎯 육성 완주 시 획득';
+      if(c.rr===1){ const k=Object.keys(c.eff.stat||{})[0], nm=STATNM[k]||''; return `🎯 육성 완주(${nm} 위주 훈련) · 🤝 계약 해지 · ⚗️ N+N 합성`; }
+      if(c.hyb){ const ks=Object.keys(c.eff.stat||{}); const r1=this.nmOf(STATCARD[ks[0]]), r2=this.nmOf(STATCARD[ks[1]]);
+        return `⚗️ ${r1} + ${r2} 합성 · 🎯 육성 SR 드랍`; }
+      if(id==='genius') return '🎯 육성 완주 SR 드랍 전용 (합성으로는 안 나와)';
+      if(c.rr===3) return '⚗️ 서로 다른 SR 2장 합성 · 🎯 육성 대박 드랍';
+      if(c.rr===4) return '⚗️ 서로 다른 SSR 2장 합성 · 🎯 육성 초대박 드랍';
+      return ''; },
     // #1 드랍 공개: 뒷면 탭 → (SSR+ 골드 섬광 후) 실물 카드 팝. isNew는 NEW 뱃지와 별개 '새 카드!' 라벨
     revealDrop(el, id, isNew){
       if(el.dataset.revealed) return; el.dataset.revealed='1';
@@ -4849,8 +4861,10 @@ window.addEventListener("popstate", ()=>{
       if(hint) hint.innerHTML=`<span class="cdex-prog">카드 도감 · 수집 <b>${ownedN}</b> / ${all.length}</span>`;
       // ③ 도감도 카드 그리드 — 미보유는 흑백 잠금(❔·???)
       box.innerHTML=`<div class="tgrid">`+all.map(id=>{ const c=CARDS[id], owned=this.owned(id), bs=this.bestStar(id);
+        // 미보유 카드에 '얻는 법' 요약(하이브리드=재료·SSR/UR=합성·N/R=육성). 탭하면 상세에서 풀 안내.
+        const brief = c.hyb? '⚗️ 합성' : (c.rr>=4?'⚗️ SSR+SSR':(c.rr>=3?'⚗️ SR+SR':(id==='genius'?'🎯 SR 드랍':'🎯 육성')));
         return this.tcardHTML(id,{star:bs, locked:!owned, attr:`onclick="DG.showCardDetail('${id}')"`,
-          meta: owned? undefined : ((c.hyb||c.rr>=3)?'⚗️ 조합소에서 합성':'육성으로 획득')});
+          meta: owned? undefined : brief});
       }).join('')+`</div>`;
     },
     doMerge(type,star){
