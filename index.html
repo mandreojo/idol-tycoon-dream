@@ -3323,8 +3323,12 @@ window.addEventListener("popstate", ()=>{
   const ICO   = {vocal:'🎵',acting:'🎤',dance:'💪',visual:'✨',charm:'💬',creative:'🎼'};   // 스탯 아이콘(발성·리듬감·체력·스타일·화술·창조)
   // rr = 레어도 인덱스(고정). N=0 R=1 SR=2 (SSR/UR은 향후 이벤트·조합카드)
   // ⚠️이모지는 카드마다 고유(중복 금지) — 재율애비 지적. N/R/SR/SSR/UR 전 카드 유일 이모지 원칙.
+  //   N(rr0)=저티어 만능 보조 4종(전 재능 소폭). 서로 다른 N 2장 합성 → 랜덤 R 진입 경로.
   const CARDS = {
     effort:  {nm:'노력파',   em:'🔥', rr:0, eff:{all:15}},
+    attend:  {nm:'개근왕',   em:'📅', rr:0, eff:{all:12}},
+    positive:{nm:'긍정왕',   em:'🙂', rr:0, eff:{all:11}},
+    grit:    {nm:'잡초근성', em:'🌿', rr:0, eff:{all:10}},
     vocalC:  {nm:'황금성대', em:'🎙️', rr:1, eff:{stat:{vocal:55}}},
     danceC:  {nm:'무한체력', em:'💪', rr:1, eff:{stat:{dance:55}}},
     visualC: {nm:'스타일신', em:'✨', rr:1, eff:{stat:{visual:55}}},
@@ -3463,7 +3467,7 @@ window.addEventListener("popstate", ()=>{
     {id:'cards5',  ic:'🎴', nm:'수집가',         desc:'카드 5종 보유',             goal:5,   cur:d=>d.ownedTypes().length},
     {id:'cards12', ic:'🃏', nm:'카드 애호가',    desc:'카드 12종 보유',            goal:12,  cur:d=>d.ownedTypes().length},
     {id:'cards20', ic:'📚', nm:'카드 컬렉터',    desc:'카드 20종 보유',            goal:20,  cur:d=>d.ownedTypes().length},
-    {id:'dexfull', ic:'🏆', nm:'도감 완성',      desc:'카드 전 28종 수집',          goal:28,  cur:d=>d.ownedTypes().length},
+    {id:'dexfull', ic:'🏆', nm:'도감 완성',      desc:'카드 전 31종 수집',          goal:31,  cur:d=>d.ownedTypes().length},
     {id:'cardqty', ic:'🗂️', nm:'카드 부자',      desc:'카드 누적 50장 보유',        goal:50,  cur:d=>{let n=0;Object.keys(d.data.cards||{}).forEach(t=>{const c=d.data.cards[t];for(const s in c)n+=c[s];});return n;}},
     {id:'hyb1',    ic:'🎭', nm:'첫 합성체',      desc:'하이브리드 카드 1종 보유',    goal:1,   cur:d=>d.ownedTypes().filter(t=>(CARDS[t]||{}).hyb).length},
     {id:'hyb8',    ic:'🎨', nm:'하이브리드 수집가',desc:'하이브리드 8종 보유',       goal:8,   cur:d=>d.ownedTypes().filter(t=>(CARDS[t]||{}).hyb).length},
@@ -3955,11 +3959,12 @@ window.addEventListener("popstate", ()=>{
         const k = Math.random()<0.4 ? topK : ORDER[Math.floor(Math.random()*ORDER.length)];
         return STATCARD[k];
       }
-      return 'effort';                                                                                    // N
+      return this.randomN();                                                                             // N: 4종 랜덤(노력파·개근왕·긍정왕·잡초근성)
     },
+    randomN(){ const ns=Object.keys(CARDS).filter(id=>CARDS[id].rr===0); return ns[Math.floor(Math.random()*ns.length)]; },
     rollCards(topK, topG, debuted, stats){
       const out=[]; const gr=grank(topG);   // 0(F)~7(SS)
-      if(!debuted){ out.push('effort'); return out; }   // 데뷔 실패도 위로 1장
+      if(!debuted){ out.push(this.randomN()); return out; }   // 데뷔 실패도 위로 1장(랜덤 N)
       out.push(STATCARD[topK]);                          // ① 최다 훈련영역 카드 확정 1장
       if(Math.random() < 0.34 + gr*0.05) out.push(this.rollRandomCard(topK,gr));   // ② 랜덤 1장째(등급 비례)
       if(Math.random() < 0.06 + gr*0.05) out.push(this.rollRandomCard(topK,gr));   // ③ 랜덤 2장째(고등급일수록)
@@ -4617,9 +4622,10 @@ window.addEventListener("popstate", ()=>{
       const gs=Math.round(sTot*0.15), s=sTot-gs, f=100-sTot;
       return {gs,s,f};   // 🌟대성공(재료1 보존)·✨성공·💦실패(재료1 소실)
     },
-    combineResult(idA, idB){   // 결과 카드 id 결정 (R+R=두 스탯 하이브리드 · 그 외=상위 풀 추첨). 같은 카드끼리는 강화(합성 아님)
+    combineResult(idA, idB){   // 결과 카드 id 결정 (N+N=랜덤 R · R+R=두 스탯 하이브리드 · 그 외=상위 풀 추첨). 같은 카드끼리는 강화(합성 아님)
       const cA=CARDS[idA], cB=CARDS[idB];
       if(!cA||!cB||idA===idB||cA.rr!==cB.rr) return null;   // 같은 카드끼리 합성 불가(강화로) — 전 카드 일관
+      if(cA.rr===0){ return STATCARD[ORDER[Math.floor(Math.random()*ORDER.length)]]; }   // 서로 다른 N 2장 → 랜덤 R 스탯카드(N층의 상위 진입, R+R→SR과 같은 층위)
       if(cA.rr===1){ const ka=Object.keys(cA.eff.stat||{})[0], kb=Object.keys(cB.eff.stat||{})[0];
         if(!ka||!kb||ka===kb) return null;
         const key=[ka,kb].sort((x,y)=>ORDER.indexOf(x)-ORDER.indexOf(y));
@@ -4723,6 +4729,9 @@ window.addEventListener("popstate", ()=>{
       const rrA=this.rrOf(a.id), rrB=this.rrOf(b.id);
       if(rrA!==rrB) return {kind:'err', msg:'합성은 같은 레어도끼리만 (R+R · SR+SR …)'};
       if(rrA>=4) return {kind:'err', msg:'UR은 더 합칠 수 없어'};
+      // N+N = 랜덤 R 스탯카드(풀 추첨). N은 rr0라 RARPOOL에 없으니 R 스탯카드 6종을 후보로.
+      if(rrA===0){ const pool=ORDER.map(k=>STATCARD[k]);
+        return {kind:'combine', mode:'pool', a, b, pool, rrOut:1, odds:this.combineOdds(1)}; }
       // ㉕ 미리보기: R+R은 결과 확정(하이브리드), SR+ 이상은 풀 추첨이라 사전 롤 금지(실결과와 어긋남) → 후보군만
       if(rrA===1){ const result=this.combineResult(a.id,b.id);
         if(!result) return {kind:'err', msg:'이 조합은 합성 규칙이 없어'};
